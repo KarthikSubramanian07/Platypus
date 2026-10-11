@@ -3,7 +3,7 @@ import { cors } from "hono/cors";
 import { streamSSE } from "hono/streaming";
 import type { Db } from "../db/repo";
 import { defaultBus, type EventBus } from "./bus";
-import { listEvents } from "./log";
+import { allEvents, listEvents } from "./log";
 import type { PlatypusEvent } from "./types";
 
 export interface EventsAppOptions {
@@ -47,7 +47,9 @@ export function createEventsApp({ db, bus = defaultBus, heartbeatMs = 15_000, ma
 
   app.get("/events.jsonl", (c) => {
     c.header("content-type", "application/x-ndjson");
-    return c.body(listEvents(db, { limit: 10_000 }).map((e) => JSON.stringify(e)).join("\n") + "\n");
+    let body = "";
+    for (const e of allEvents(db)) body += JSON.stringify(e) + "\n";
+    return c.body(body || "\n");
   });
 
   app.get("/events/stream", (c) => {
@@ -76,7 +78,7 @@ export function createEventsApp({ db, bus = defaultBus, heartbeatMs = 15_000, ma
       });
       stream.onAbort(() => unsubscribe());
 
-      for (const event of listEvents(db, { ...(lastId ? { afterId: lastId } : {}), limit: 10_000 })) await write(event);
+      for (const event of allEvents(db, lastId ? { afterId: lastId } : {})) await write(event);
       replaying = false;
       for (const event of pending.sort((a, b) => (a.id < b.id ? -1 : 1))) await write(event);
       pending.length = 0;
