@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Platypus story · one call, then every job by text</title>
+    <meta name="description" content="The Platypus golden path as a story that moves with the live event stream: an agent asks, Darwin has no agent, one honest AI call books the job and gets a yes to texts, and the next job is booked with one letter." />
+    <link rel="canonical" href="https://tryplatypus.pages.dev/live-story" />
+    <meta name="theme-color" content="#f4f1ea" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body class="story-page" data-hydrating="true">
+    <header class="head">
+      <a class="brand" href="/" aria-label="Platypus home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-word">platypus</span>
+      </a>
+      <nav class="steps" aria-label="Scenes">
+        <ol id="steps"></ol>
+      </nav>
+      <div class="head-right">
+        <span id="replayed" class="tag" hidden title="These events are the golden-path fixture, re-emitted by the server. Nothing here is a new call.">Fixture replay</span>
+        <span id="conn" class="conn" data-state="connecting" role="status">Connecting</span>
+        <button id="replay" class="pill" type="button">Replay</button>
+      </div>
+    </header>
+
+    <main class="story">
+      <div class="scenes" id="scenes">
+        <section class="scene" data-scene="0" aria-labelledby="cap-0">
+          <h2 class="cap" id="cap-0"></h2>
+          <figure class="focal ask">
+            <figcaption class="ask-from"><span class="ask-dot" aria-hidden="true"></span><span id="ask-agent">A customer's agent</span></figcaption>
+            <blockquote class="ask-quote" id="ask-quote"></blockquote>
+            <ul class="ask-facts" id="ask-facts"></ul>
+          </figure>
+        </section>
+
+        <section class="scene" data-scene="1" aria-labelledby="cap-1">
+          <h2 class="cap" id="cap-1"></h2>
+          <figure class="focal darwin">
+            <p class="darwin-head"><span>Darwin Search</span><span id="darwin-latency"></span></p>
+            <p class="darwin-query" id="darwin-query"></p>
+            <div class="darwin-body">
+              <p class="darwin-result" id="darwin-result"></p>
+              <p class="darwin-line" id="darwin-line"></p>
+              <p class="route" id="route" hidden></p>
+            </div>
+          </figure>
+        </section>
+
+        <section class="scene" data-scene="2" aria-labelledby="cap-2">
+          <h2 class="cap" id="cap-2"></h2>
+        </section>
+
+        <section class="scene" data-scene="3" aria-labelledby="cap-3">
+          <h2 class="cap" id="cap-3"></h2>
+          <figure class="focal shop" id="shop" data-flipped="false">
+            <div class="shop-card">
+              <div class="shop-face shop-front" id="shop-front">
+                <p class="shop-trade" data-field="trade"></p>
+                <p class="shop-name" data-field="name"></p>
+                <p class="shop-state"><span class="switch" aria-hidden="true"></span><span>Phone-only</span></p>
+              </div>
+              <div class="shop-face shop-back" id="shop-back">
+                <p class="shop-trade" data-field="trade"></p>
+                <p class="shop-name" data-field="name"></p>
+                <p class="shop-state"><span class="switch switch-on" aria-hidden="true"></span><span id="shop-rail">Text-enabled</span></p>
+                <p class="shop-cell" id="shop-cell"></p>
+              </div>
+            </div>
+          </figure>
+        </section>
+
+        <section class="scene" data-scene="4" aria-labelledby="cap-4">
+          <h2 class="cap" id="cap-4"></h2>
+        </section>
+
+        <section class="scene" data-scene="5" aria-labelledby="cap-5">
+          <h2 class="cap" id="cap-5"></h2>
+        </section>
+
+        <section class="scene" data-scene="6" aria-labelledby="cap-6">
+          <h2 class="cap" id="cap-6"></h2>
+          <figure class="focal payoff">
+            <ol class="ledger" aria-label="One call, then a Y for every job after">
+              <li class="led-call"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" /></svg><span id="pay-call">Call</span></li>
+              <li class="led-y led-real"><b>Y</b><span id="pay-y"></span></li>
+              <li class="led-y" aria-hidden="true"><b>Y</b></li>
+              <li class="led-y" aria-hidden="true"><b>Y</b></li>
+              <li class="led-y" aria-hidden="true"><b>Y</b></li>
+              <li class="led-y" aria-hidden="true"><b>Y</b></li>
+              <li class="led-y" aria-hidden="true"><b>Y</b></li>
+            </ol>
+            <figcaption class="payoff-note" id="pay-note"></figcaption>
+          </figure>
+        </section>
+      </div>
+
+      <aside class="stage" id="stage" aria-label="Sal's Auto's line">
+        <div id="phone-fit" class="phone-fit">
+          <div class="phone-shadow" aria-hidden="true"></div>
+          <div id="phone" class="iphone" data-screen="lock" role="img" aria-label="The shop's line, locked">
+            <div class="iphone-edge" aria-hidden="true"><i style="--k: 1"></i><i style="--k: 2"></i><i style="--k: 3"></i><i style="--k: 4"></i><i style="--k: 5"></i><i style="--k: 6"></i><i style="--k: 7"></i><i style="--k: 8"></i><i style="--k: 9"></i><i style="--k: 10"></i><i style="--k: 11"></i><i style="--k: 12"></i></div>
+            <span class="key key-side" aria-hidden="true"></span>
+            <div class="screen" aria-hidden="true">
+              <div class="statusbar">
+                <span class="sb-time" id="sb-time">9:41</span>
+                <span class="sb-icons">
+                  <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" /><rect x="5" y="5.5" width="3" height="6.5" rx="1" /><rect x="10" y="3" width="3" height="9" rx="1" /><rect x="15" y="0" width="3" height="12" rx="1" /></svg>
+                  <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2.6c2.2 0 4.2.9 5.7 2.3l1.1-1.1A9.6 9.6 0 0 0 8 1 9.6 9.6 0 0 0 1.2 3.8l1.1 1.1A8 8 0 0 1 8 2.6Zm0 3.2c1.3 0 2.5.5 3.4 1.4l1.1-1.1A6.4 6.4 0 0 0 8 4.2c-1.8 0-3.4.7-4.5 1.9l1.1 1.1A4.8 4.8 0 0 1 8 5.8Zm0 3.2c.5 0 .9.2 1.2.5L8 10.7 6.8 9.5c.3-.3.7-.5 1.2-.5Z" /></svg>
+                  <span class="sb-battery"><i></i></span>
+                </span>
+              </div>
+              <div class="island"></div>
+
+              <section class="scr scr-lock">
+                <p class="lock-date" id="lock-date">Monday, October 12</p>
+                <p class="lock-time" id="lock-time">9:41</p>
+                <p class="lock-hint">Sal's Auto · Dial line</p>
+              </section>
+
+              <section class="scr scr-incoming">
+                <p class="inc-label">Incoming call</p>
+                <p class="inc-name">Platypus</p>
+                <p class="inc-sub">AI assistant</p>
+                <div class="inc-avatar"><span class="ring"></span><span class="ring ring-2"></span><span class="inc-mark"></span></div>
+                <div class="inc-actions">
+                  <span class="inc-btn"><b class="round round-red"><svg viewBox="0 0 24 24" class="ico-hang"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" /></svg></b>Decline</span>
+                  <span class="inc-btn"><b class="round round-green"><svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" /></svg></b>Accept</span>
+                </div>
+              </section>
+
+              <section class="scr scr-call">
+                <p class="call-name">Platypus</p>
+                <p class="call-time" id="call-time">0:00</p>
+                <p class="call-said" id="call-said" hidden><span id="call-said-who">Sal's Auto</span><b id="call-said-text"></b></p>
+                <p class="tools-label">Booking while they talk</p>
+                <ol class="tools" id="tools"></ol>
+                <div class="call-end"><b class="round round-red"><svg viewBox="0 0 24 24" class="ico-hang"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" /></svg></b></div>
+              </section>
+
+              <section class="scr scr-messages">
+                <header class="im-head">
+                  <span class="im-back"><svg viewBox="0 0 12 20" width="12" height="20"><path d="M10 2 2 10l8 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+                  <span class="im-avatar">P</span>
+                  <span class="im-name">Platypus</span>
+                </header>
+                <div class="im-thread" id="thread">
+                  <p class="im-stamp"><b id="im-service">Text Message</b><span id="im-when">Today</span></p>
+                  <ol id="bubbles" class="bubbles"></ol>
+                </div>
+                <footer class="im-compose"><span class="im-plus"></span><span class="im-field" id="im-field">Text Message</span></footer>
+              </section>
+
+              <div class="home-bar"></div>
+            </div>
+            <div class="glare" aria-hidden="true"></div>
+          </div>
+        </div>
+        <p class="stage-note">Dial to Dial: a Dial number stands in for the shop's line.</p>
+      </aside>
+    </main>
+
+    <button id="follow" class="follow" type="button" hidden><span class="follow-dot" aria-hidden="true"></span><span id="follow-label">Follow live</span></button>
+    <p id="announce" class="sr-only" aria-live="polite"></p>
+    <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
+    <script type="module" src="/src/live-story.ts"></script>
+  </body>
+</html>

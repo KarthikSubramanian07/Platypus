@@ -41,7 +41,7 @@ export default defineConfig({
   plugins: [contentPages()],
   build: {
     rolldownOptions: {
-      input: { main: page("./index.html"), live: page("./live.html") },
+      input: { main: page("./index.html"), live: page("./live.html"), "live-story": page("./live-story.html") },
     },
   },
   server: {
