@@ -6,4 +6,4 @@ After one yes on the call, every future request is a text the owner answers with
 
 **Depends on:** `@platypus/shared` only.
 
-Status: shell. Built in workstream A.
+Status: shell. Built on the phone side; see [docs/workstreams.md](../../docs/workstreams.md).

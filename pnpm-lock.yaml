@@ -61,12 +61,6 @@ importers:
         specifier: workspace:*
         version: link:../shared
 
-  packages/keewano:
-    dependencies:
-      '@platypus/shared':
-        specifier: workspace:*
-        version: link:../shared
-
   packages/shared:
     dependencies:
       '@hono/node-server':
