@@ -59,7 +59,7 @@ Work in this order, against `FakeDial` through the fake `OwnerChannels` (`DIAL_I
 6. **`docs/video.md`:** a single-take run sheet, not an edited shot list.
    - HackerSquad records the shared screen, camera and mic live in the browser. There is no upload and no editing, and the limit is 5 minutes. Re-recording is allowed, and processing takes a few minutes before Submit unlocks.
    - Follow HackerSquad's order: the problem, the tech stack, the live demo.
-   - Map each beat to its screen and its speaker: Karthik for the agent side and the close, Eddy as the owner.
+   - Map each beat to its screen and its speaker: Eddy drives Claude Desktop and closes; Karthik answers his phone as the owner (the Dial number calls his phone).
    - Checklist: share the entire screen, Do Not Disturb on, phone on speaker by the laptop mic, webcam pointed at the phone, hotspot as backup, `pnpm demo:reset` before each take, and a QuickTime capture running as the finals backup.
 7. **`docs/submission.md`:** the problem, target user, how it works, time saved with the baseline and the word "estimate", what is real and what is mocked, and the partners used (Dial, Darwin).
 
@@ -94,7 +94,7 @@ Both sessions run with Alike, so they share decisions without anyone relaying th
 
 1. Merge both branches into `main`.
 2. Set `DIAL_IMPL=real`, `GATEWAY_IMPL=real` and `DEMO_MODE=live`, and set `DARWIN_ENABLED` based on whether Darwin is still working.
-3. Run `pnpm demo:reset`, then `pnpm dev`, and connect Claude Desktop through `mcp-remote`.
+3. Run `pnpm demo:reset`, then `pnpm dev` on the machine with the Dial keys and tunnel. Set `GATEWAY_TOKEN` there, and point Eddy's Claude Desktop at `npx -y mcp-remote https://<PUBLIC_BASE_URL>/mcp --header "Authorization:Bearer <GATEWAY_TOKEN>"` (or `http://localhost:8787/mcp` when it runs on the same laptop).
 4. Run the golden path three times with the real phone. Anything that fails twice goes back to its fake, and the video and the stage both say so.
 
 ## Flags

@@ -109,3 +109,15 @@ describe("gateway MCP over streamable HTTP", () => {
     expect(response.status).toBe(403);
   });
 });
+
+describe("GATEWAY_TOKEN", () => {
+  it("rejects a request without the bearer token and accepts one with it", async () => {
+    const app = createMcpApp({} as never, { token: "s3cret" });
+    const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} });
+    const headers = { "content-type": "application/json", accept: "application/json, text/event-stream" };
+    const denied = await app.request("/mcp", { method: "POST", headers, body });
+    expect(denied.status).toBe(401);
+    const allowed = await app.request("/mcp", { method: "POST", headers: { ...headers, authorization: "Bearer s3cret" }, body });
+    expect(allowed.status).not.toBe(401);
+  });
+});

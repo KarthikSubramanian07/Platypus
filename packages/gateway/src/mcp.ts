@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -60,16 +61,25 @@ const isAllowedOrigin = (origin: string | undefined): boolean => {
   }
 };
 
+const tokenMatches = (header: string | undefined, expected: string): boolean => {
+  const given = Buffer.from(header?.replace(/^Bearer\s+/i, "") ?? "");
+  const want = Buffer.from(expected);
+  return given.length === want.length && timingSafeEqual(given, want);
+};
+
 /**
  * Streamable HTTP at POST /mcp, stateless: a fresh server and transport per request, so no
  * session map to manage. GET (standalone SSE) and DELETE (session end) get 405, which clients
  * treat as "not supported".
  */
-export function createMcpApp(tools: GatewayTools): Hono {
+export function createMcpApp(tools: GatewayTools, options: { token?: string } = {}): Hono {
   const app = new Hono();
+  // Through a public tunnel /mcp is reachable from anywhere; GATEWAY_TOKEN makes callers prove they are ours.
+  const expected = options.token ?? process.env.GATEWAY_TOKEN;
 
   app.use("/mcp", async (c, next) => {
     if (!isAllowedOrigin(c.req.header("origin"))) return c.text("Forbidden origin", 403);
+    if (expected && !tokenMatches(c.req.header("authorization"), expected)) return c.text("Unauthorized", 401);
     await next();
   });
 
