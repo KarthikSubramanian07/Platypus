@@ -12,6 +12,11 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@platypus/shared": "workspace:*"
+    "@anthropic-ai/sdk": "^0.133.0",
+    "@platypus/shared": "workspace:*",
+    "chrono-node": "^2.10.2",
+    "hono": "^4.13.13",
+    "libphonenumber-js": "^1.13.15",
+    "zod": "^4.6.6"
   }
 }
