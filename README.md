@@ -21,7 +21,7 @@ A customer's agent (Claude, Muse, Dots, Instinct, anything that speaks MCP) call
 This is the demo, and the only thing that must work end to end.
 
 1. In Claude Desktop, a customer types: *"Oil change tomorrow afternoon, under $120, near 1025 Sansome."* Claude calls `search_providers`, then `request_booking`, on the Platypus MCP server.
-2. The gateway runs Darwin Search v3 with the budget and deadline as context. When no agent covers the job, the coverage gap shows on the dashboard as Darwin's `no_match` and its reason.
+2. The gateway runs Darwin Search v3 with the budget and deadline as context. When Darwin has no agent that is ready to take the job (for our trades it answers with listed agents, none of them ready), the dashboard shows that gap and its reason, and Platypus goes to the phone.
 3. The gateway attaches routing signals for the candidate shop: typical price, median reply time, and acceptance rate.
 4. There is no consent on record, so the route is **call**. Dial places an outbound call to Sal's Auto, which today is a teammate's phone. The AI discloses itself, then asks for a price and an opening.
 5. During the call, the voice agent calls our tools through Dial's Context MCP: `check_slot`, `hold_slot`, `create_booking`, `record_consent` and `set_text_number`. Each one lights up on the dashboard.
@@ -121,7 +121,7 @@ One foundation, then two sides in parallel: the **phone side** (`voice` and `tex
 ## Partner tools
 
 - **[Dial](https://getdial.ai)** provides the voice calls, the Context MCP integration that lets the voice agent book mid-call, and the owner text rail (iMessage, WhatsApp or Dial-to-Dial).
-- **[Darwin](https://darwin.so)** runs Search v3 before any call, so we never phone a business an existing agent already covers. The `no_match` result shows where the agentic web stops today.
+- **[Darwin](https://darwin.so)** runs Search v3 before any call, so we never phone a business an existing agent already covers. When no listed agent is ready to act, that gap shows where the agentic web stops today.
 - **[Alike](https://alike.help)** gives the team shared memory across its parallel coding sessions. It briefs each session with the others' decisions, which are recorded in [DECISIONS.md](DECISIONS.md).
 - **Claude** handles reply understanding, transcript mining, and the agent side of the demo.
 
