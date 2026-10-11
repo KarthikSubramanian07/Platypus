@@ -9,7 +9,7 @@ import { spawn } from "node:child_process";
 import { existsSync, rmSync } from "node:fs";
 import { Hono } from "hono";
 import { openDb } from "../packages/shared/src/db/index";
-import { createEventsApp, defaultBus, listEvents } from "../packages/shared/src/events/index";
+import { allEvents, createEventsApp, defaultBus } from "../packages/shared/src/events/index";
 import { auditEventLog, formatAuditReport } from "../packages/shared/src/audit/index";
 import { guardOperatorRoutes, operatorAccessFromEnv } from "../packages/shared/src/http/operator-access";
 import { loadGoldenPath, replayEvents } from "../packages/shared/src/testing/replay";
@@ -37,7 +37,7 @@ app.route("/", createEventsApp({ db, bus: defaultBus }));
 
 // Replays the whole log against the non-negotiables. 200 when clean, 409 with the violations.
 app.get("/audit", (c) => {
-  const result = auditEventLog(listEvents(db, { limit: 10_000 }));
+  const result = auditEventLog([...allEvents(db)]);
   return c.req.query("format") === "text"
     ? c.text(formatAuditReport(result, { source: "live" }), result.ok ? 200 : 409)
     : c.json(result, result.ok ? 200 : 409);
