@@ -83,7 +83,18 @@ These were checked on 2026-10-11 against `docs.getdial.ai/openapi.json`, `@getdi
   - FakeDarwin serves those two real recordings.
   - Its `no_match` mode is a test double labeled SYNTHETIC that refuses to run with `DEMO_MODE=live`.
   - The golden-path fixture carries the real 500, not a simulated `no_match`.
-  - The gateway workstream must retry live and record a real `no_match`. If none arrives within 30 minutes, it must default `DARWIN_ENABLED=false` and the Darwin beat is cut, never faked.
+  - The agent side must retry live and record a real `no_match`. If none arrives within 30 minutes, it must default `DARWIN_ENABLED=false` and the Darwin beat is cut, never faked.
+
+## Team plan
+
+**One foundation, then two parallel sides instead of three.**
+The original plan had three sessions after the foundation: voice and text, gateway, and dashboard plus an analytics partner. It now has two: the phone side (`voice`, `text`) and the agent side (`gateway`, the video shot list and the submission text). Why: two sides that meet only at the contracts are easier to keep in sync in one afternoon, and both still ship against fakes. The full dashboard, beyond the shell, has no named owner yet. See [docs/workstreams.md](docs/workstreams.md).
+
+**No analytics partner today.**
+The earlier plan forwarded events to Keewano for routing signals. It is removed from the repository entirely. Routing signals are computed from the local event log and labeled `source: "local"`. Why: a partner integration only counts if it is load-bearing, and the time is better spent making the phone ring reliably.
+
+**The flags that swap fakes for real.**
+`GATEWAY_IMPL` (phone side), `DIAL_IMPL` and `DARWIN_ENABLED` (agent side), and `DARWIN_ACT_ENABLED` (off unless Darwin enables Act for us). Turning Darwin off skips the step; nothing ever simulates it.
 
 ## Process
 

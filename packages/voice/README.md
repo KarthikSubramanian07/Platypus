@@ -6,4 +6,4 @@ The phone call that turns a phone-only business into an agent-native one.
 
 **Depends on:** `@platypus/shared` only. Until the real gateway lands it uses `FakeGateway` from `@platypus/shared/testing` (flag `GATEWAY_IMPL=fake|real`).
 
-Status: shell. Built in workstream A.
+Status: shell. Built on the phone side; see [docs/workstreams.md](../../docs/workstreams.md).
