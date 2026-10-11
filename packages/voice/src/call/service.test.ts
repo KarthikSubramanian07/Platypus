@@ -7,7 +7,7 @@ import { DialInsufficientCreditError, DialNetworkError, type DialCalls } from ".
 import { createFakeDialCalls } from "../dial/fake-adapter";
 import type { WireCall } from "../dial/wire";
 import { DISCLOSURE } from "./instruction";
-import { CallPlacementError, CallRefusedError, createCallService, type CallService } from "./service";
+import { CallPlacementError, CallRefusedError, createCallService, MAX_CALLS_PER_NUMBER_PER_HOUR, type CallService } from "./service";
 
 const NOW = "2026-10-11T19:00:00.000Z";
 
@@ -263,6 +263,23 @@ describe("refusals before dialing", () => {
     const s = setup();
     updateRow(s.db, "businesses", s.businessId, { do_not_call: true });
     await expect(s.service.startOnboardingCall({ booking_id: s.bookingId, business_id: s.businessId })).rejects.toMatchObject({ code: "do_not_call" });
+  });
+
+  it("refuses a seventh call to one phone within an hour, however many agents and bookings ask", async () => {
+    const s = setup();
+    const now = manualClock().now().getTime();
+    const pastCall = (i: number, minutesAgo: number) =>
+      s.db
+        .prepare("INSERT INTO calls (id, business_id, direction, to_e164, status, created_at, updated_at) VALUES (?, ?, 'outbound', ?, 'Terminated', ?, ?)")
+        .run(`call_past_${i}`, s.businessId, s.phone, new Date(now - minutesAgo * 60_000).toISOString(), new Date(now).toISOString());
+    pastCall(0, 61); // outside the window: does not count
+    for (let i = 1; i < MAX_CALLS_PER_NUMBER_PER_HOUR; i++) pastCall(i, 5 * i);
+    const place = vi.spyOn(s.calls, "placeCall");
+    await runCall(s); // the sixth in the hour is still allowed
+    expect(place).toHaveBeenCalledTimes(1);
+    await expect(s.service.startOnboardingCall({ booking_id: s.bookingId, business_id: s.businessId })).rejects.toMatchObject({ code: "rate_limited" });
+    expect(place).toHaveBeenCalledTimes(1);
+    expect(listEvents(s.db, { type: "call.refused" }).at(-1)?.payload).toEqual({ code: "rate_limited" });
   });
 
   it("refuses after an owner asked not to be called again on a call", async () => {
