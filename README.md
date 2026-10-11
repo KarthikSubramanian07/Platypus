@@ -6,9 +6,11 @@
 
 ![Tests](https://img.shields.io/badge/tests-1000%2B%20passing-1c5449) ![License](https://img.shields.io/badge/license-MIT-22231f) ![Built on](https://img.shields.io/badge/built%20on-Dial%20·%20Darwin%20·%20Alike-1c5449)
 
-**[tryplatypus.pages.dev](https://tryplatypus.pages.dev)** · **[Watch the demo run](https://tryplatypus.pages.dev/live-story)** · **[For agents](https://tryplatypus.pages.dev/developers)**
+**Website:** [tryplatypus.pages.dev](https://tryplatypus.pages.dev/) · **[Watch the demo run](https://tryplatypus.pages.dev/live-story)** · **[For agents](https://tryplatypus.pages.dev/developers)**
 
-![Platypus: we make Main Street agent-native](docs/site-hero.png)
+[![Watch the Platypus film (under 3 minutes, captioned)](docs/film-poster.jpg)](https://tryplatypus.pages.dev/#film)
+
+*Click to watch the film: under 3 minutes, captioned, no sound needed.*
 
 Most of the 33 million US small businesses will never build an API. They have a phone. Every personal agent that "calls for you" calls the same shop again for every booking. **We call once.** The call books a real, paying job, then asks the owner one question: *"Next time a customer's agent needs you, can I text you instead?"* After a yes, every agent books that shop by text, and the owner answers with one letter.
 

@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { marked } from "marked";
 import { defineConfig, type Plugin } from "vite";
@@ -26,6 +26,9 @@ function contentPages(): Plugin {
       return { build: { rolldownOptions: { input } } };
     },
     generateBundle() {
+      // The film lives in media/ at the repo root (too large to sit in public/); ship it with the site.
+      const film = page("../../media/ad-v1/platypus_ad_v1.mp4");
+      if (existsSync(film)) this.emitFile({ type: "asset", fileName: "media/platypus-film.mp4", source: readFileSync(film) });
       for (const slug of ["index", "technical", "business"]) this.emitFile({ type: "asset", fileName: `${slug}.md`, source: content(slug) });
       for (const site of SITE_PAGES) {
         if (!site.notFound) this.emitFile({ type: "asset", fileName: `${site.slug}.md`, source: content(site.slug) });
