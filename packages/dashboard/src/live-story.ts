@@ -12,7 +12,7 @@ import { confirmSeconds, currentCall, evidenceMessage, initialState, reduce, red
 import { askFacts, callElapsedMs, darwinSummary, phoneLabel, railOf } from "./story";
 
 /**
- * /live-story: the golden path as seven scenes, moved along by the event stream. Every page
+ * /live-story: step 0 (the customer asks their own agent), the golden path's seven steps, then the payoff, moved along by the event stream. Every page
  * load starts at scene 1 and plays forward: the static build plays the recorded run, a live
  * page plays the backlog it connected to the same way, then carries on with live events.
  * When the story moves on the page scrolls to that scene by itself; the shop's line is pinned
@@ -85,7 +85,9 @@ function advance(): void {
 
 const stepNodes = SCENES.map((scene, i) => {
   const li = el("li", "step");
-  const button = el("button", "", scene.label);
+  const button = el("button", "");
+  if (scene.step) button.append(el("span", "step-num", scene.step));
+  button.append(el("span", "step-label", scene.label));
   button.type = "button";
   button.addEventListener("click", () => {
     if (i === story.shown) return follow();
@@ -151,12 +153,12 @@ function readyAgent(d: DarwinView | undefined) {
 
 /** The scene's caption: fixed words, except where the events carry the exact ones. */
 function caption(scene: number): string {
-  if (scene === 1) return darwinCaption(firstDarwin);
+  if (scene === 2) return darwinCaption(firstDarwin);
   const quote = quoteCaption(shop()?.consentQuote);
-  if (scene === 3 && quote) return quote;
+  if (scene === 5 && quote) return quote;
   const { byText } = storyBookings(state);
   const reply = byText ? evidenceMessage(state, byText)?.body : undefined;
-  if (scene === 5 && reply && reply.length <= 12) {
+  if (scene === 7 && reply && reply.length <= 12) {
     const seconds = confirmSeconds(state, byText!);
     const said = /[.!?]$/.test(reply) ? reply : `${reply}.`;
     if (seconds === undefined) return `“${said}” Booked.`;
@@ -195,7 +197,8 @@ function renderSteps(): void {
     const button = li.firstElementChild as HTMLButtonElement;
     if (i === story.view) button.setAttribute("aria-current", "step");
     else button.removeAttribute("aria-current");
-    button.title = i === story.shown ? `${SCENES[i]!.label}: where the story is now` : SCENES[i]!.label;
+    const name = SCENES[i]!.step ? `Step ${SCENES[i]!.step}, ${SCENES[i]!.label}` : SCENES[i]!.label;
+    button.title = i === story.shown ? `${name}: where the story is now` : name;
   }
 }
 
@@ -287,6 +290,7 @@ function renderScenes(): void {
 const phone = $("#phone");
 const stage = $("#stage");
 const SCREEN_LABELS: Record<string, string> = {
+  agent: "The customer's phone, asking their agent",
   lock: "The shop's line, locked",
   incoming: "The shop's line: an incoming call from Platypus, AI assistant",
   call: "The shop's line, on the call with Platypus while it books",
@@ -311,7 +315,7 @@ function renderCall(scene: number, screen: string): void {
   setText($("#call-time"), screen === "ended" ? (call.canceled ? "Call ended early" : `Call ended · ${elapsed}`) : elapsed);
   const b = shop();
   const said = $("#call-said");
-  said.hidden = !(scene >= 3 && b?.consentQuote);
+  said.hidden = !(scene >= 5 && b?.consentQuote);
   setText($("#call-said-who"), b?.name ?? "The shop");
   setText($("#call-said-text"), b?.consentQuote ? `“${b.consentQuote}”` : "");
 }
@@ -322,7 +326,7 @@ const receipt = el("li", "receipt");
 function renderThread(scene: number, f: number): void {
   const messages = threadAt(state, scene);
   // Before the text scene the thread is not on screen, so its first text rises in with the scene.
-  const before = new Set(scene > 4 ? threadAt(state, scene - 1).map((m) => m.id) : []);
+  const before = new Set(scene > 6 ? threadAt(state, scene - 1).map((m) => m.id) : []);
   const channel = (messages[0]?.channel ?? shop()?.rail ?? "sms").toLowerCase();
   phone.dataset.rail = channel === "imessage" ? "imessage" : "sms";
   setText($("#im-service"), channel === "imessage" ? "iMessage" : channel === "whatsapp" ? "WhatsApp" : `Text Message${channel === "dial" ? " · Dial" : ""}`);
@@ -369,7 +373,7 @@ addEventListener("resize", fitPhone);
 // scroll to the next scene both play them, so nothing runs on a timer of its own.
 
 const storyEl = $(".story");
-const SCREEN_NODES: Record<string, HTMLElement> = { lock: $(".scr-lock"), incoming: $(".scr-incoming"), call: $(".scr-call"), ended: $(".scr-call"), messages: $(".scr-messages") };
+const SCREEN_NODES: Record<string, HTMLElement> = { agent: $(".scr-agent"), lock: $(".scr-lock"), incoming: $(".scr-incoming"), call: $(".scr-call"), ended: $(".scr-call"), messages: $(".scr-messages") };
 
 /** Where the scroll is in the story: 2 is scene 3 at rest, 2.5 is halfway on to scene 4. */
 function scrollStory(): number {
@@ -410,10 +414,11 @@ function renderPhone(): void {
   }
   // Scrubbed by the same progress: the shop's card turns over into the yes, the Ys line up in the
   // payoff, and the phone turns from a three-quarter stance to face the reader as the texts begin.
-  storyEl.style.setProperty("--k-yes", clamp01(at - 2).toFixed(3));
+  storyEl.style.setProperty("--k-yes", clamp01(at - 4).toFixed(3));
   storyEl.style.setProperty("--k-payoff", clamp01(at - (PAYOFF - 1)).toFixed(3));
-  fit.style.setProperty("--ry", `${(-13 + 11 * clamp01(at - 3)).toFixed(2)}deg`);
-  fit.style.setProperty("--rx", `${(3 - 2 * clamp01(at - 3)).toFixed(2)}deg`);
+  fit.style.setProperty("--ry", `${(-13 + 11 * clamp01(at - 5)).toFixed(2)}deg`);
+  fit.style.setProperty("--rx", `${(3 - 2 * clamp01(at - 5)).toFixed(2)}deg`);
+  if (leaving === "agent" || arriving === "agent") renderAgent();
   const now = Date.now();
   const clock = shopTime(now, { hour: "numeric", minute: "2-digit" }).replace(/ [AP]M$/, "");
   setText($("#sb-time"), clock);
@@ -444,14 +449,44 @@ function say(message: string): void {
 const RECORDED_RAIL = railOf(reduceAll(GOLDEN_PATH));
 const stageNote = stage.querySelector<HTMLElement>(".stage-note");
 
-/** The Dial-to-Dial note and label only when the events' rail is dial; a real phone is the owner's phone. */
+const DIAL_NOTE = stageNote?.textContent ?? "";
+const AGENT_NOTE = "Your phone, with your agent open.";
+
+/**
+ * The note under the phone: step 0 says whose phone it is; after that, the Dial-to-Dial note
+ * only when the events' rail is dial, since a real phone is simply the owner's phone.
+ */
 function renderRail(): void {
   const rail = RECORDING ? RECORDED_RAIL : railOf(state);
   setText($("#lock-hint"), phoneLabel(rail));
-  if (stageNote && stageNote.hidden !== (rail !== "dial")) {
-    stageNote.hidden = rail !== "dial";
+  if (!stageNote) return;
+  const onAgent = phone.dataset.screen === "agent";
+  setText(stageNote, onAgent ? AGENT_NOTE : DIAL_NOTE);
+  const hide = !onAgent && rail !== "dial";
+  if (stageNote.hidden !== hide) {
+    stageNote.hidden = hide;
     fitPhone();
   }
+}
+
+/**
+ * Step 0, on the customer's phone: their words type themselves into the agent, then the agent
+ * says it is asking Platypus. The words are the real ask from the event stream.
+ */
+const TYPE_MS = 1_700;
+const typing = { start: undefined as number | undefined };
+function renderAgent(): void {
+  const words = firstAsk?.utterance ?? "";
+  if (words && typing.start === undefined) typing.start = performance.now();
+  const elapsed = typing.start === undefined ? 0 : performance.now() - typing.start;
+  const instant = stillMotion.matches;
+  const shown = instant ? words.length : Math.min(words.length, Math.floor((elapsed / TYPE_MS) * words.length));
+  const done = words.length > 0 && shown >= words.length;
+  setText($("#ag-ask-text"), words.slice(0, shown));
+  $("#ag-ask").dataset.typing = String(!done);
+  $("#ag-reply").hidden = !(done && (instant || elapsed > TYPE_MS + 450));
+  $("#ag-tool").hidden = !(done && (instant || elapsed > TYPE_MS + 1_100));
+  if (words && !instant && elapsed < TYPE_MS + 1_200) schedule();
 }
 
 let frame = 0;
@@ -459,8 +494,8 @@ function render(): void {
   frame = 0;
   renderSteps();
   renderScenes();
-  renderRail();
   renderPhone();
+  renderRail();
   $("#follow").hidden = story.following;
   setText($("#follow-label"), RECORDING ? "Follow the run" : "Follow live");
   $("#replayed").hidden = RECORDING || !state.replayed;
@@ -505,6 +540,7 @@ function resetTo(next: DashboardState): void {
   body.dataset.hydrating = "true";
   state = next;
   firstAsk = next.ask?.tool === "search_providers" ? next.ask : undefined;
+  typing.start = undefined;
   firstDarwin = next.darwin;
   story.shown = 0;
   story.shownAt = performance.now();

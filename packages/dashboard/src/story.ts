@@ -6,7 +6,7 @@ import { currentCall, type AskView, type BookingView, type CallView, type Darwin
  * tested like the reducer. Nothing here invents a fact the events did not carry.
  */
 
-export type PhoneScreen = "lock" | "incoming" | "call" | "ended" | "messages";
+export type PhoneScreen = "agent" | "lock" | "incoming" | "call" | "ended" | "messages";
 
 /**
  * What the owner's phone shows. A live call always wins; otherwise the text thread

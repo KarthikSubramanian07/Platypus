@@ -22,8 +22,8 @@ const source = resolveSource(location.search, { PROD: import.meta.env.PROD, VITE
 const RECORDING = source.mode === "recording";
 const BASE = source.base;
 
-// The live dashboard keeps ?events= so it follows the same server as this page.
-for (const link of document.querySelectorAll<HTMLAnchorElement>("a[data-live-link]")) link.href = `/live${location.search}`;
+// The live demo keeps ?events= so it follows the same server as this page.
+for (const link of document.querySelectorAll<HTMLAnchorElement>("a[data-live-link]")) link.href = `/live-story${location.search}`;
 
 const list = document.querySelector<HTMLOListElement>("#events")!;
 const empty = document.querySelector<HTMLParagraphElement>("#empty")!;

@@ -29,6 +29,11 @@
       <div class="scenes" id="scenes">
         <section class="scene" data-scene="0" aria-labelledby="cap-0">
           <h2 class="cap" id="cap-0"></h2>
+          <p class="scene-sub">On your phone, in plain words. Muse, Claude, Dots: any agent that speaks MCP. <span class="scene-fine">This run used Claude Desktop.</span></p>
+        </section>
+
+        <section class="scene" data-scene="1" aria-labelledby="cap-1">
+          <h2 class="cap" id="cap-1"></h2>
           <figure class="focal ask">
             <figcaption class="ask-from"><span class="ask-dot" aria-hidden="true"></span><span id="ask-agent">A customer's agent</span></figcaption>
             <blockquote class="ask-quote" id="ask-quote"></blockquote>
@@ -36,8 +41,8 @@
           </figure>
         </section>
 
-        <section class="scene" data-scene="1" aria-labelledby="cap-1">
-          <h2 class="cap" id="cap-1"></h2>
+        <section class="scene" data-scene="2" aria-labelledby="cap-2">
+          <h2 class="cap" id="cap-2"></h2>
           <figure class="focal darwin">
             <p class="darwin-head"><span>Darwin Search</span><span id="darwin-latency"></span></p>
             <p class="darwin-query" id="darwin-query"></p>
@@ -49,8 +54,13 @@
           </figure>
         </section>
 
-        <section class="scene" data-scene="2" aria-labelledby="cap-2">
-          <h2 class="cap" id="cap-2"></h2>
+        <section class="scene" data-scene="3" aria-labelledby="cap-3">
+          <h2 class="cap" id="cap-3"></h2>
+          <p class="scene-sub">The first thing it says: it's an AI, calling for a customer.</p>
+        </section>
+
+        <section class="scene" data-scene="4" aria-labelledby="cap-4">
+          <h2 class="cap" id="cap-4"></h2>
           <figure class="focal work">
             <figcaption class="work-head">Platypus, while the shop talks</figcaption>
             <ol class="tools" id="tools"></ol>
@@ -58,8 +68,8 @@
           </figure>
         </section>
 
-        <section class="scene" data-scene="3" aria-labelledby="cap-3">
-          <h2 class="cap" id="cap-3"></h2>
+        <section class="scene" data-scene="5" aria-labelledby="cap-5">
+          <h2 class="cap" id="cap-5"></h2>
           <figure class="focal shop" id="shop" data-flipped="false">
             <div class="shop-card">
               <div class="shop-face shop-front" id="shop-front">
@@ -78,17 +88,17 @@
           <p class="proof" data-proof="call" hidden><b></b><span></span></p>
         </section>
 
-        <section class="scene" data-scene="4" aria-labelledby="cap-4">
-          <h2 class="cap" id="cap-4"></h2>
+        <section class="scene" data-scene="6" aria-labelledby="cap-6">
+          <h2 class="cap" id="cap-6"></h2>
         </section>
 
-        <section class="scene" data-scene="5" aria-labelledby="cap-5">
-          <h2 class="cap" id="cap-5"></h2>
+        <section class="scene" data-scene="7" aria-labelledby="cap-7">
+          <h2 class="cap" id="cap-7"></h2>
           <p class="proof proof-lead" data-proof="text" hidden><b></b><span></span></p>
         </section>
 
-        <section class="scene" data-scene="6" aria-labelledby="cap-6">
-          <h2 class="cap" id="cap-6"></h2>
+        <section class="scene" data-scene="8" aria-labelledby="cap-8">
+          <h2 class="cap" id="cap-8"></h2>
           <figure class="focal payoff">
             <ol class="ledger" aria-label="One call, then a Y for every job after">
               <li class="led-call"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" /></svg><span id="pay-call">Call</span></li>
@@ -104,7 +114,7 @@
         </section>
       </div>
 
-      <aside class="stage" id="stage" aria-label="Eddy's Auto's line">
+      <aside class="stage" id="stage" aria-label="The phone in the story">
         <div id="phone-fit" class="phone-fit">
           <div class="phone-shadow" aria-hidden="true"></div>
           <div id="phone" class="iphone" data-screen="lock" role="img" aria-label="The shop's line, locked">
@@ -120,6 +130,20 @@
                 </span>
               </div>
               <div class="island"></div>
+
+              <section class="scr scr-agent">
+                <header class="ag-head">
+                  <span class="ag-avatar" aria-hidden="true"></span>
+                  <span class="ag-name">Muse</span>
+                  <span class="ag-sub">your agent</span>
+                </header>
+                <div class="ag-thread">
+                  <p class="ag-bubble ag-me" id="ag-ask"><span id="ag-ask-text"></span><i class="ag-caret"></i></p>
+                  <p class="ag-bubble ag-them" id="ag-reply" hidden>On it. Asking Platypus for a shop that can do it.</p>
+                  <p class="ag-tool" id="ag-tool" hidden><span class="ag-tool-dot"></span>Platypus · search_providers</p>
+                </div>
+                <footer class="ag-compose"><span>Ask anything</span><b aria-hidden="true">↑</b></footer>
+              </section>
 
               <section class="scr scr-lock">
                 <p class="lock-date" id="lock-date">Monday, October 12</p>

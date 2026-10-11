@@ -33,7 +33,7 @@ const ORGANIZATION = {
   "@id": `${SITE_ORIGIN}/#org`,
   name: "Platypus",
   url: `${SITE_ORIGIN}/`,
-  logo: `${SITE_ORIGIN}/favicon.svg`,
+  logo: `${SITE_ORIGIN}/brand/png/platypus-mark.png`,
   sameAs: ["https://github.com/KarthikSubramanian07/Platypus"],
   address: { "@type": "PostalAddress", addressLocality: "San Francisco", addressRegion: "CA", addressCountry: "US" },
   contactPoint: { "@type": "ContactPoint", contactType: "customer support", url: `${SITE_ORIGIN}/contact`, availableLanguage: "en" },
@@ -79,7 +79,7 @@ export function renderPage(page: SitePage, bodyHtml: string): string {
         <span class="brand-word">platypus</span>
       </a>
       <div class="nav-links">
-        <a class="nav-live" href="/live">Live demo</a>
+        <a class="nav-live" href="/live-story">Live demo</a>
         <a href="/technical">Technical</a>
         <a href="/business">Business</a>
         <a href="/developers"${page.slug === "developers" ? ' aria-current="page"' : ""}>Developers</a>

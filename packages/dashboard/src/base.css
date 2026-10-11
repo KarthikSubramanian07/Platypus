@@ -27,7 +27,7 @@
   --mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
   --radius: 18px;
   --shadow: 0 1px 0 rgba(34, 35, 31, 0.04), 0 14px 40px -20px rgba(28, 84, 73, 0.28);
-  --wrap: min(1240px, calc(100% - 48px));
+  --wrap: min(1200px, calc(100% - clamp(48px, 9vw, 160px)));
 }
 
 * { box-sizing: border-box; }

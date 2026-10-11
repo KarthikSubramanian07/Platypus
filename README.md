@@ -1,10 +1,12 @@
+<p align="center"><img src="packages/dashboard/public/brand/platypus-lockup.svg" alt="Platypus" width="360" /></p>
+
 # Platypus
 
 **We make Main Street agent-native.** One honest AI call makes a phone-only business bookable by every AI agent, by text, forever.
 
 ![Tests](https://img.shields.io/badge/tests-1000%2B%20passing-1c5449) ![License](https://img.shields.io/badge/license-MIT-22231f) ![Built on](https://img.shields.io/badge/built%20on-Dial%20·%20Darwin%20·%20Alike-1c5449)
 
-**[tryplatypus.pages.dev](https://tryplatypus.pages.dev)** · **[Watch the demo run](https://tryplatypus.pages.dev/live)** · **[For agents](https://tryplatypus.pages.dev/developers)**
+**[tryplatypus.pages.dev](https://tryplatypus.pages.dev)** · **[Watch the demo run](https://tryplatypus.pages.dev/live-story)** · **[For agents](https://tryplatypus.pages.dev/developers)**
 
 ![Platypus: we make Main Street agent-native](docs/site-hero.png)
 
