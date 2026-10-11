@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatCallOffset, formatClock, formatConfidence, formatLatency, formatMoney, formatRail, formatSlot, formatTrade, GOLDEN_STEPS, initials, stepFor, summarize, type StreamEvent } from "./format";
+import { customerHoursPerYear, formatCallOffset, formatClock, formatConfidence, formatLatency, formatMoney, formatRail, formatSlot, formatTrade, GOLDEN_STEPS, initials, ownerHoursPerYear, stepFor, summarize, type StreamEvent } from "./format";
 
 describe("live dashboard formatters", () => {
   it("formats money from cents, and nothing for a missing price", () => {
@@ -71,5 +71,18 @@ describe("stepFor", () => {
     const { GOLDEN_PATH } = await import("./fixture");
     const keys = new Set(GOLDEN_PATH.map(stepFor).filter(Boolean));
     expect([...keys]).toEqual(GOLDEN_STEPS.map((s) => s.key));
+  });
+});
+
+describe("time saved", () => {
+  it("matches the figures printed on the page", () => {
+    expect(customerHoursPerYear(4)).toBe(15);
+    expect(customerHoursPerYear(40)).toBe(154);
+    expect(ownerHoursPerYear(10)).toBe(33);
+  });
+
+  it("saves nothing when nothing is booked", () => {
+    expect(customerHoursPerYear(0)).toBe(0);
+    expect(ownerHoursPerYear(0)).toBe(0);
   });
 });

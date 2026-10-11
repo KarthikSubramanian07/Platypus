@@ -9,6 +9,7 @@ on:
     paths:
       - "packages/dashboard/**"
       - "packages/shared/src/testing/fixtures/golden-path.jsonl"
+      - "pnpm-lock.yaml"
       - ".github/workflows/deploy-dashboard.yml"
   workflow_dispatch:
 
@@ -37,7 +38,9 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy packages/dashboard/dist --project-name tryplatypus --branch main
+          # Run from the package so wrangler bundles packages/dashboard/functions (Markdown negotiation, 404s).
+          workingDirectory: packages/dashboard
+          command: pages deploy dist --project-name tryplatypus --branch main
       - name: Explain the skipped deploy
         if: env.HAS_TOKEN != 'true'
         run: echo "CLOUDFLARE_API_TOKEN is not set; built the dashboard but did not deploy."

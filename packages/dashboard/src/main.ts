@@ -5,7 +5,17 @@ import "./styles.css";
 import { el } from "./dom";
 import { connectLive, CONNECTION_LABELS, requestReplay, resolveSource } from "./events";
 import { GOLDEN_PATH, playRecording } from "./fixture";
-import { formatConfidence, formatTime, GOLDEN_STEPS, stepFor, summarize, type StepKey, type StreamEvent } from "./format";
+import {
+  customerHoursPerYear,
+  formatConfidence,
+  formatTime,
+  GOLDEN_STEPS,
+  ownerHoursPerYear,
+  stepFor,
+  summarize,
+  type StepKey,
+  type StreamEvent,
+} from "./format";
 
 const source = resolveSource(location.search, { PROD: import.meta.env.PROD, VITE_EVENTS_URL: import.meta.env.VITE_EVENTS_URL as string | undefined });
 const RECORDING = source.mode === "recording";
@@ -39,6 +49,14 @@ function markStep(key: StepKey): void {
     node.dataset.state = reached.has(step.key) ? (step.key === key ? "current" : "done") : "todo";
   }
   caption.textContent = GOLDEN_STEPS.find((s) => s.key === key)!.caption;
+  if (key === "confirmed") {
+    // The last beat lands, then the nemesis gets the last word.
+    setTimeout(() => {
+      if (!reached.has("confirmed")) return;
+      caption.dataset.done = "";
+      caption.textContent = "Booked by text in seconds. Curse you, phone tag!";
+    }, 2_600);
+  }
 }
 
 function resetView(): void {
@@ -47,6 +65,7 @@ function resetView(): void {
   reached.clear();
   for (const node of stepNodes.values()) node.dataset.state = "todo";
   caption.textContent = "";
+  delete caption.dataset.done;
   empty.hidden = false;
   count.textContent = "0 events";
 }
@@ -101,7 +120,7 @@ async function playLocal(): Promise<void> {
 
 replay.addEventListener("click", async () => {
   replay.disabled = true;
-  document.querySelector("#log")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.querySelector("#demo")?.scrollIntoView({ behavior: "smooth", block: "start" });
   try {
     if (RECORDING) void playLocal();
     else {
@@ -123,8 +142,34 @@ if (RECORDING) {
       observer.disconnect();
       void playLocal();
     }
-  }, { threshold: 0.25 });
-  observer.observe(document.querySelector("#log")!);
+  }, { threshold: 0.15 });
+  observer.observe(document.querySelector("#demo")!);
 } else {
   connect();
 }
+
+// Time-saved calculator: two sliders, same math as the README.
+function bindCalculator(inputId: string, countId: string, hoursId: string, hours: (n: number) => number): void {
+  const input = document.querySelector<HTMLInputElement>(`#${inputId}`);
+  const countOut = document.querySelector<HTMLOutputElement>(`#${countId}`);
+  const hoursOut = document.querySelector<HTMLElement>(`#${hoursId}`);
+  if (!input || !countOut || !hoursOut) return;
+  const update = () => {
+    const n = Number(input.value);
+    countOut.textContent = String(n);
+    hoursOut.textContent = hours(n).toLocaleString("en-US");
+  };
+  input.addEventListener("input", update);
+  update();
+}
+bindCalculator("calc-customer", "calc-customer-n", "calc-customer-h", customerHoursPerYear);
+bindCalculator("calc-owner", "calc-owner-n", "calc-owner-h", ownerHoursPerYear);
+
+console.log(
+  "%cOh, there you are.%c\nReading the source? It's all here: https://github.com/KarthikSubramanian07/Platypus",
+  "font: 600 16px Georgia, serif; color: #16a39a",
+  "font: 12px monospace; color: #72726e",
+);
+
+import { listenForAgentP } from "./agent-p";
+listenForAgentP();

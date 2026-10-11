@@ -115,3 +115,27 @@ export function initials(name: string): string {
   const parts = name.replace(/[^\p{L}\p{N}\s]/gu, "").split(/\s+/).filter(Boolean);
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
 }
+
+/**
+ * Time-saved estimates shown on the page. Transparent assumptions, not measurements:
+ * calling around costs 15 to 25 minutes of attention per booking (20 used here); with
+ * Platypus it is 0.8 minutes (setup amortized, typing, review, and a correction on about
+ * 1 in 5). For the owner, a 3 to 5 minute booking call (4 used) becomes a 5 to 10 second
+ * text reply (10 used, the conservative end).
+ */
+export const TIME_SAVED = {
+  customerBeforeMin: 20,
+  customerAfterMin: 0.8,
+  ownerCallMin: 4,
+  ownerReplyMin: 10 / 60,
+} as const;
+
+/** Hours a customer gets back in a year, booking this many times a month. */
+export function customerHoursPerYear(bookingsPerMonth: number): number {
+  return Math.round((bookingsPerMonth * 12 * (TIME_SAVED.customerBeforeMin - TIME_SAVED.customerAfterMin)) / 60);
+}
+
+/** Hours an owner gets back in a year, receiving this many agent bookings a week. */
+export function ownerHoursPerYear(bookingsPerWeek: number): number {
+  return Math.round((bookingsPerWeek * 52 * (TIME_SAVED.ownerCallMin - TIME_SAVED.ownerReplyMin)) / 60);
+}
