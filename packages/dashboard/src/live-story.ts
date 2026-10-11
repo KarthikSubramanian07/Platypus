@@ -135,8 +135,14 @@ function shop(): BusinessView | undefined {
   return consented ?? (callShop ? state.businesses[callShop] : undefined);
 }
 
+/** The agent Darwin found that can take the job, if any: then the story leaves the golden path. */
+function readyAgent(d: DarwinView | undefined) {
+  return d?.agents.find((a) => a.canStartThread || a.id === d.candidateAgentId);
+}
+
 /** The scene's caption: fixed words, except where the events carry the exact ones. */
 function caption(scene: number): string {
+  if (scene === 1 && readyAgent(firstDarwin)) return "Darwin first. An agent is ready.";
   const quote = shop()?.consentQuote;
   if (scene === 3 && quote) return `“${quote}”`;
   const { byText } = storyBookings(state);
@@ -195,7 +201,7 @@ function renderDarwin(): void {
   const d = firstDarwin;
   setText($("#darwin-latency"), d?.latencyMs ? (formatLatency(d.latencyMs) ?? "") : "");
   setText($("#darwin-query"), d?.query ?? "");
-  const ready = d?.agents.find((a) => a.canStartThread || a.id === d.candidateAgentId);
+  const ready = readyAgent(d);
   setText($("#darwin-result"), !d ? "Not searched yet." : ready ? `${ready.name ?? ready.id} can take it.` : "No agent ready to book.");
   setText($("#darwin-line"), d ? (darwinSummary(d) ?? "") : "");
   const first = state.bookingOrder[0] ? state.bookings[state.bookingOrder[0]] : undefined;
