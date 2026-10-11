@@ -106,6 +106,8 @@ interface ReplyOptions {
   kind: MessageKind;
   /** Keyword confirmations (STOP, HELP, PAUSE, JOIN, UNDO) answer the owner even when texting is off. */
   requireOptIn: boolean;
+  /** Even when texting is paused, send only while consent stands (UNDO after STOP gets no reply). */
+  requireConsent?: boolean;
   reason: string;
 }
 
@@ -113,6 +115,11 @@ interface ReplyOptions {
 async function reply(deps: TextDeps, business: Business, input: InboundInput, to: string, body: string, options: ReplyOptions): Promise<Message | null> {
   const fresh = getRow(deps.db, "businesses", business.id) ?? business;
   const refs = { business_id: business.id, ...(options.booking_id ? { booking_id: options.booking_id } : {}) };
+  if (options.requireConsent && !options.requireOptIn && !getActiveConsent(deps.db, business.id)) {
+    const why = "no text consent on record (revoked or never given)";
+    record(deps, { type: "message.not_sent", actor: "system", refs, payload: { kind: options.kind, reason: why }, reason: why });
+    return null;
+  }
   if (options.requireOptIn) {
     const blocked = textingBlockedReason(deps, fresh);
     if (blocked) {
@@ -392,12 +399,12 @@ async function handleKeyword(deps: TextDeps, business: Business, message: Messag
         (b) => b.confirmation_evidence?.kind === "rule" || b.confirmation_evidence?.kind === "text",
       );
       if (!target) {
-        await say(NOTHING_TO_UNDO_COPY, { kind: "undo", requireOptIn: false, reason: "nothing to undo" });
+        await say(NOTHING_TO_UNDO_COPY, { kind: "undo", requireOptIn: false, requireConsent: true, reason: "nothing to undo" });
         return "nothing_to_undo";
       }
       const cancelled = transition(bookingCtx(deps), target.id, "cancelled", { actor: "owner", reason: "owner texted UNDO", payload: { message_id: message.id } });
       updateRow(deps.db, "messages", message.id, { booking_id: target.id });
-      await say(composeUndone(cancelled, business.timezone), { kind: "undo", booking_id: target.id, requireOptIn: false, reason: "confirming the undo" });
+      await say(composeUndone(cancelled, business.timezone), { kind: "undo", booking_id: target.id, requireOptIn: false, requireConsent: true, reason: "confirming the undo" });
       return "undone";
     }
     default:
