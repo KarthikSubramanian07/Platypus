@@ -35,7 +35,8 @@
     "ci:golden-path": "tsx scripts/ci/validate-golden-path.ts",
     "ci:eval-summary": "tsx scripts/ci/eval-summary.ts",
     "ci:bundle-budget": "tsx scripts/ci/bundle-budget.ts",
-    "ci:smoke": "tsx scripts/ci/dashboard-smoke.ts"
+    "ci:smoke": "tsx scripts/ci/dashboard-smoke.ts",
+    "dial:owner-sim": "tsx scripts/owner-sim.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

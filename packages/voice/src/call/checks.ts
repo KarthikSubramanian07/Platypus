@@ -25,7 +25,20 @@ export interface DisclosureCheck {
  * ("Sal's Auto?"); that is expected and allowed.
  */
 export function checkDisclosure(turns: readonly TimedTurn[]): DisclosureCheck {
-  const first = turns.findIndex((t) => t.speaker === "agent");
+  const expectedWords = words(DISCLOSURE);
+  // A first attempt cut off when both sides speak at once ("Hi, this", then the full line)
+  // is still a disclosure-first opening, so skip agent turns that are only a prefix of it.
+  // Anything else said before the disclosure still fails.
+  const isClippedStart = (text: string) => {
+    const w = words(text);
+    return w.length > 0 && w.length < expectedWords.length && w.every((word, i) => expectedWords[i] === word);
+  };
+  let first = turns.findIndex((t) => t.speaker === "agent");
+  while (first >= 0 && isClippedStart(turns[first]!.text)) {
+    const next = turns.findIndex((t, i) => i > first && t.speaker === "agent");
+    if (next < 0) break;
+    first = next;
+  }
   if (first < 0) return { ok: false, similarity: 0, first_agent_words: null };
   const opening: string[] = [];
   for (let i = first; i < turns.length && turns[i]!.speaker === "agent"; i++) opening.push(turns[i]!.text);
