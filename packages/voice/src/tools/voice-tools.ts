@@ -21,7 +21,7 @@ import {
 import { getBusiness, getRow, insertRow, selectRows, updateRow, type Business, type Call, type Db, type Hold } from "@platypus/shared/db";
 import { emit, type EmitInput, type EventBus, type PlatypusEvent } from "@platypus/shared/events";
 // shared does not export ./ids yet; one monotonic ULID source keeps ids ordered across packages.
-import { newId } from "../../../shared/src/ids";
+import { newId } from "@platypus/shared/ids";
 import { sanitizeUntrustedText } from "@platypus/shared/safety";
 import type { z } from "zod";
 import { generateSlots } from "./business-hours";
@@ -268,7 +268,8 @@ export function createVoiceTools(deps: VoiceToolsDeps): VoiceTools {
           const consent = insertRow(db, "consents", {
             id: newId("consent", clock.now().getTime()),
             business_id: call.business_id,
-            channel: i.channel,
+            // The owner agreed to texts; the rail is ours to choose, and never sms to a non-Dial number.
+            channel: textChannel,
             source: "call",
             quoted_sentence: quote,
             call_id: call.id,
@@ -283,7 +284,7 @@ export function createVoiceTools(deps: VoiceToolsDeps): VoiceTools {
             type: "consent.recorded",
             actor: "voice",
             refs: { consent_id: consent.id, business_id: call.business_id, call_id: call.id },
-            payload: { channel: i.channel, quoted_sentence: quote, source: "call" },
+            payload: { channel: textChannel, requested_channel: i.channel, quoted_sentence: quote, source: "call" },
             reason: "owner said yes to texts on the call",
           });
           if (before.channel_state !== "text_enabled" || before.channel_pref !== textChannel) {

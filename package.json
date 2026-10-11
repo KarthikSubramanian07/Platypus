@@ -23,7 +23,9 @@
     "test:watch": "vitest",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "demo:reset": "tsx scripts/demo-reset.ts",
-    "tunnel": "tsx scripts/tunnel.ts"
+    "tunnel": "tsx scripts/tunnel.ts",
+    "dial:register-mcp": "tsx packages/voice/scripts/register-mcp.ts",
+    "dial:mcp-status": "tsx packages/voice/scripts/mcp-status.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

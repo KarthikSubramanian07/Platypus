@@ -14,7 +14,9 @@
     "./booking": "./src/booking/index.ts",
     "./contracts": "./src/contracts/index.ts",
     "./darwin": "./src/darwin/index.ts",
-    "./testing": "./src/testing/index.ts"
+    "./testing": "./src/testing/index.ts",
+    "./ids": "./src/ids.ts",
+    "./clock": "./src/clock.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
