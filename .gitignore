@@ -1,5 +1,6 @@
 # Dependencies and build output
 node_modules/
+crates/platypus-audit/target/
 dist/
 coverage/
 artifacts/
