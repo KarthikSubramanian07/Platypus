@@ -524,23 +524,18 @@ function randomLogs(seed: number, count: number): Case[] {
 }
 
 /**
- * Logs where the TS auditor itself is wrong, so the two are expected to disagree.
- * KNOWN TS BUG (stats counter keys): audit.ts counts stats in plain objects
- * (`m[k] = (m[k] ?? 0) + 1`), so a key that is an Object.prototype property such as
- * "constructor" or "toString" (an actor string, a message channel, a booking route or
- * an evidence kind) starts from the inherited function and the count becomes a string
- * like "function Object() { [native code] }1"; "__proto__" is dropped entirely. The Rust
- * side counts 1. The harness runs this case, expects the stats to differ, and skips it.
+ * Stats keys that are Object.prototype properties. audit.ts once counted them in plain
+ * objects, so "toString" started from the inherited function and "__proto__" vanished;
+ * this harness found it. Both sides must now count each one like any other key.
  */
-const KNOWN_TS_BUGS: Case[] = [
-  {
-    name: "known TS bug: stats key inherited from Object.prototype",
-    events: [
-      { id: "evt_1", type: "consent.recorded", actor: "owner", refs: { business_id: "b_A" }, payload: {}, reason: "joined", confidence: 1, created_at: "2026-10-12T02:00:00Z" },
-      { id: "evt_2", type: "message.sent", actor: "system", refs: { business_id: "b_A" }, payload: { channel: "toString" }, reason: null, confidence: 1, created_at: "2026-10-12T02:00:01Z" },
-    ],
-  },
-];
+const PROTOTYPE_KEYS: Case[] = ["toString", "constructor", "__proto__", "hasOwnProperty"].map((key) => ({
+  name: `stats key named ${key}`,
+  events: [
+    { id: "evt_1", type: "consent.recorded", actor: "owner", refs: { business_id: "b_A" }, payload: {}, reason: "joined", confidence: 1, created_at: "2026-10-12T02:00:00Z" },
+    { id: "evt_2", type: "message.sent", actor: "system", refs: { business_id: "b_A" }, payload: { channel: key }, reason: null, confidence: 1, created_at: "2026-10-12T02:00:01Z" },
+    { id: "evt_3", type: "booking.pending", actor: key, refs: { business_id: "b_A", booking_id: "b1" }, payload: { route: key }, reason: "requested", confidence: 1, created_at: "2026-10-12T02:00:02Z" },
+  ],
+}));
 
 // ---- Main ---------------------------------------------------------------------------------
 
@@ -558,6 +553,7 @@ const corpus: Case[] = [
   ...scenarios(),
   ...corruptions(golden),
   ...randomLogs(SEED, RANDOM_LOGS),
+  ...PROTOTYPE_KEYS,
 ];
 
 let failures = 0;
@@ -575,17 +571,9 @@ for (const c of corpus) {
   }
 }
 
-let skipped = 0;
-for (const c of KNOWN_TS_BUGS) {
-  const rust = runRust(bin, c.events);
-  const still = rust.result ? diff(auditEventLog(c.events as never), rust.result).length > 0 : true;
-  if (still) skipped++;
-  else console.log(`audit-differential: "${c.name}" now agrees; the TS bug looks fixed, so remove it from KNOWN_TS_BUGS.`);
-}
-
 const summary = failures
   ? `audit-differential: ${failures} of ${corpus.length} logs disagree (seed ${SEED})`
-  : `audit-differential: ${corpus.length} logs, TS and Rust agree on every verdict${skipped ? ` (${skipped} known TS bug skipped)` : ""}`;
+  : `audit-differential: ${corpus.length} logs, TS and Rust agree on every verdict`;
 console.log(summary);
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${failures ? "❌" : "✅"} ${summary}\n`);
 process.exit(failures ? 1 : 0);

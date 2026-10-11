@@ -38,4 +38,4 @@ Exit codes: 0 when every rule holds, 1 on any violation, 2 when the log cannot b
 ## Known differences
 
 - `Date.parse` accepts many free-form formats through V8's legacy parser. This crate accepts the ISO 8601 shapes V8 accepts (which is all Platypus writes) and treats anything else as unreadable. A date-time with no offset is local time in JavaScript and UTC here; the harness pins `TZ=UTC`.
-- The TypeScript auditor counts stats in plain objects, so a key such as `constructor` or `toString` (an actor, a channel, a route or an evidence kind) corrupts its count. This crate counts it correctly. The harness keeps one such log as a known TypeScript bug and checks that it still differs.
+- The harness found that the TypeScript auditor counted stats in plain objects, so a key such as `constructor` or `toString` (an actor, a channel, a route or an evidence kind) corrupted its count and `__proto__` vanished. The TypeScript side now uses prototype-free counters, and the corpus keeps those keys as regular cases both sides must agree on.
