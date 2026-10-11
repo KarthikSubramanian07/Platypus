@@ -1,0 +1,215 @@
+<!doctype html>
+<!-- README diagrams, drawn in the site's own type and palette. Rendered to docs/readme-*.png by shoot.ts. -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Platypus README diagrams</title>
+<style>
+  @font-face { font-family: "Serif"; src: url("../../packages/dashboard/node_modules/@fontsource/source-serif-4/files/source-serif-4-latin-400-normal.woff2"); font-weight: 400; }
+  @font-face { font-family: "Serif"; src: url("../../packages/dashboard/node_modules/@fontsource/source-serif-4/files/source-serif-4-latin-600-normal.woff2"); font-weight: 600; }
+  @font-face { font-family: "Serif"; src: url("../../packages/dashboard/node_modules/@fontsource/source-serif-4/files/source-serif-4-latin-400-italic.woff2"); font-style: italic; }
+  @font-face { font-family: "Sans"; src: url("../../packages/dashboard/node_modules/@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2"); font-weight: 100 1000; }
+  @font-face { font-family: "Mono"; src: url("../../packages/dashboard/node_modules/@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2"); font-weight: 100 800; }
+
+  :root {
+    --bg: #f4f1ea; --panel: #f9f8f3; --ink: #22231f; --muted: #6a6962; --faint: #aeaba1;
+    --line: #e1ddd2; --green: #1c5449; --deep: #153f37; --mint: #9fd3c1; --lime: #cfe6dc; --rust: #b4532a;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 400 17px/1.45 "Sans", system-ui; -webkit-font-smoothing: antialiased; }
+  .fig { width: 1200px; padding: 56px 64px 60px; background: var(--bg);
+    background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 48px 48px; background-position: -1px -1px; position: relative; }
+  .fig::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 40%, rgba(244,241,234,.55), var(--bg) 78%); }
+  .fig > * { position: relative; }
+  .eyebrow { font: 500 13px/1 "Mono"; letter-spacing: .14em; text-transform: uppercase; color: var(--green); }
+  h2 { font: 400 46px/1.08 "Serif"; letter-spacing: -.015em; margin: 14px 0 0; }
+  h2 em { color: var(--green); }
+  .sub { color: var(--muted); font-size: 18px; margin-top: 12px; max-width: 760px; }
+
+  /* ---------- the loop ---------- */
+  .steps { display: grid; grid-template-columns: 1fr 44px 1fr 44px 1fr; align-items: stretch; margin-top: 40px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 24px 24px 22px;
+    box-shadow: 0 1px 0 rgba(34,35,31,.03), 0 18px 40px -28px rgba(21,63,55,.35); display: flex; flex-direction: column; }
+  .card.dark { background: var(--green); border-color: var(--green); color: #f4f1ea; }
+  .num { font: 500 12px/1 "Mono"; letter-spacing: .14em; color: var(--green); text-transform: uppercase; }
+  .dark .num { color: var(--mint); }
+  .card h3 { font: 600 25px/1.15 "Serif"; margin: 10px 0 16px; }
+  .meta { margin-top: auto; padding-top: 16px; border-top: 1px dashed var(--line); font: 400 13px/1.4 "Mono"; color: var(--muted); }
+  .dark .meta { border-color: rgba(159,211,193,.35); color: var(--lime); }
+  .arrow { display: grid; place-items: center; color: var(--green); }
+  .quote { font: italic 400 19px/1.35 "Serif"; color: var(--ink); }
+  .bubble { font-size: 15px; line-height: 1.35; padding: 10px 14px; border-radius: 18px; max-width: 92%; }
+  .b-in { background: #fff; border: 1px solid var(--line); border-bottom-left-radius: 6px; color: var(--ink); }
+  .b-out { background: var(--mint); color: var(--deep); border-bottom-right-radius: 6px; margin-left: auto; font-weight: 600; }
+  .dark .b-in { background: #f9f8f3; border-color: transparent; }
+  .stack { display: flex; flex-direction: column; gap: 8px; }
+  .flip { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; font: 500 12px/1 "Mono"; letter-spacing: .08em; }
+  .tag { padding: 6px 9px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--muted); }
+  .tag.on { background: var(--green); border-color: var(--green); color: #f4f1ea; }
+
+  .tracks { margin-top: 30px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 22px 26px; display: grid; gap: 16px; }
+  .track { display: grid; grid-template-columns: 170px 1fr 130px; align-items: center; gap: 18px; }
+  .track b { font: 500 13px/1 "Mono"; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .track.us b { color: var(--green); }
+  .track .total { font: 400 22px/1 "Serif"; text-align: right; }
+  .track.us .total { color: var(--green); }
+  .line { display: flex; align-items: center; gap: 0; }
+  .line i { flex: 1; height: 2px; background: var(--line); }
+  .dot { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+  .call { background: #fff; border: 1.5px solid var(--rust); color: var(--rust); }
+  .text { background: var(--green); color: #f4f1ea; }
+  .dot svg { width: 16px; height: 16px; }
+
+  /* ---------- architecture ---------- */
+  .arch { display: grid; grid-template-columns: 220px 56px 1fr 56px 290px; margin-top: 40px; align-items: start; }
+  .link { align-self: stretch; display: grid; place-items: center; color: var(--green); padding-top: 22px; }
+  .col-label { font: 500 12px/1 "Mono"; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .agents { display: grid; gap: 10px; }
+  .chip { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; }
+  .chip small { margin-left: auto; font: 400 12px "Mono"; color: var(--faint); }
+  .gw { position: relative; }
+  .gw .card { padding: 22px; }
+  .gw h3 { margin: 6px 0 4px; }
+  .mono { font: 400 13px/1.5 "Mono"; color: var(--muted); }
+  .routes { display: grid; gap: 8px; margin-top: 16px; }
+  .route { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 12px; background: #fff; border: 1px solid var(--line); font-size: 15px; }
+  .route code { font: 500 12.5px "Mono"; padding: 5px 9px; border-radius: 8px; background: var(--lime); color: var(--deep); }
+  .route.off code { background: #efe9df; color: var(--muted); }
+  .route .q { color: var(--muted); }
+  .route .q b { color: var(--ink); font-weight: 600; }
+  .side { display: grid; gap: 14px; }
+  .side .card { padding: 18px 20px; }
+  .side h4 { font: 600 20px/1.1 "Serif"; margin: 6px 0 6px; }
+  .side p { font-size: 14.5px; color: var(--muted); }
+  .core { margin-top: 28px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; background: var(--green); border-radius: 18px; padding: 22px; color: #f4f1ea; position: relative; }
+  .core > div { padding: 4px 18px; border-left: 1px solid rgba(159,211,193,.3); }
+  .core > div:first-child { border-left: 0; }
+  .core b { display: block; font: 600 19px/1.2 "Serif"; margin: 6px 0 6px; }
+  .core span { font-size: 14px; color: var(--lime); }
+  .core .k { font: 500 11.5px/1 "Mono"; letter-spacing: .14em; color: var(--mint); text-transform: uppercase; }
+  .receipt { margin-top: 16px; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--lime); color: var(--deep); font-size: 14px; }
+  .receipt span { font: 600 11px/1 "Mono"; letter-spacing: .12em; text-transform: uppercase; padding: 5px 7px; border-radius: 6px; background: var(--green); color: #f4f1ea; }
+  .receipt.on { background: rgba(159,211,193,.18); color: #f4f1ea; }
+  .receipt.on span { background: var(--mint); color: var(--deep); }
+  .wire { color: var(--green); }
+  svg.links { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+</style>
+</head>
+<body>
+
+<!-- ====================================================== THE LOOP -->
+<section class="fig" id="loop">
+  <p class="eyebrow">How it works</p>
+  <h2>Call once. <em>Text forever.</em></h2>
+  <p class="sub">The first agent request reaches a phone-only shop by one honest AI call. The call books a real job and asks one question. After a yes, every agent books by text.</p>
+
+  <div class="steps">
+    <div class="card">
+      <p class="num">01 · One honest call</p>
+      <h3>Books a paying job, live</h3>
+      <div class="stack">
+        <p class="quote">“Hi, I’m an AI assistant calling for a customer. Do you have an oil change tomorrow afternoon?”</p>
+      </div>
+      <div class="receipt"><span>Booked</span><b>Sal’s Auto · Tue 2:00pm · $89</b></div>
+      <p class="meta">booked through our tools, mid-call</p>
+    </div>
+    <div class="arrow"><svg width="30" height="16" viewBox="0 0 30 16" fill="none"><path d="M1 8h26m-7-7 7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="card">
+      <p class="num">02 · One question</p>
+      <h3>“Can I text you next time?”</h3>
+      <div class="stack">
+        <p class="bubble b-in">Next time a customer's agent needs you, can I text you instead?</p>
+        <p class="bubble b-out">Yeah, text me.</p>
+      </div>
+      <div class="flip"><span class="tag">PHONE-ONLY</span><svg width="18" height="10" viewBox="0 0 18 10" fill="none"><path d="M1 5h15m-4-4 4 4-4 4" stroke="#1c5449" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="tag on">TEXT-ENABLED</span></div>
+      <p class="meta">stored with the quote and call id</p>
+    </div>
+    <div class="arrow"><svg width="30" height="16" viewBox="0 0 30 16" fill="none"><path d="M1 8h26m-7-7 7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="card dark">
+      <p class="num">03 · Every agent after</p>
+      <h3>One text, one letter</h3>
+      <div class="stack">
+        <p class="bubble b-in">New job via Platypus (AI-assisted): brake inspection, Tue 10am. Reply Y, N, or a time.</p>
+        <p class="bubble b-out">Y</p>
+      </div>
+      <div class="receipt on"><span>Confirmed</span><b>SAL-9S2 · in seconds</b></div>
+      <p class="meta">confirmed only on the owner’s yes</p>
+    </div>
+  </div>
+
+  <div class="tracks">
+    <div class="track">
+      <b>Everyone else</b>
+      <div class="line" id="others"></div>
+      <span class="total">every time</span>
+    </div>
+    <div class="track us">
+      <b>Platypus</b>
+      <div class="line" id="us"></div>
+      <span class="total">once, ever</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================== ARCHITECTURE -->
+<section class="fig" id="arch">
+  <p class="eyebrow">Architecture</p>
+  <h2>One gateway. <em>Three ways to reach a shop.</em></h2>
+  <p class="sub">Agents speak MCP to the gateway. It asks Darwin first, then picks the lightest route the owner has agreed to. Every change lands in one append-only log.</p>
+
+  <div class="arch" id="arch-grid">
+    <div>
+      <p class="col-label">Customer agents</p>
+      <div class="agents">
+        <div class="chip" id="a1">Claude <small>MCP</small></div>
+        <div class="chip">Muse <small>MCP</small></div>
+        <div class="chip">Dots <small>MCP</small></div>
+        <div class="chip">any MCP client <small>9 tools</small></div>
+      </div>
+    </div>
+
+    <div class="link"><svg width="40" height="16" viewBox="0 0 40 16" fill="none"><path d="M1 8h36m-7-7 7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="gw" id="gw">
+      <p class="col-label">gateway</p>
+      <div class="card">
+        <p class="num">request_booking</p>
+        <h3>decideBookingRoute()</h3>
+        <p class="mono">idempotency keys · rate limits · Darwin first</p>
+        <div class="routes">
+          <div class="route"><span class="q"><b>Darwin</b> has a ready agent?</span><code>darwin_act</code></div>
+          <div class="route"><span class="q"><b>Owner</b> already said yes?</span><code>text</code></div>
+          <div class="route"><span class="q"><b>Otherwise,</b> a published line</span><code>call</code></div>
+          <div class="route off"><span class="q">Paused, unlisted or do-not-call</span><code>never contacted</code></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="link"><svg width="40" height="16" viewBox="0 0 40 16" fill="none"><path d="M1 8h36m-7-7 7 7-7 7M39 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div>
+      <p class="col-label">Partners</p>
+      <div class="side">
+        <div class="card"><p class="num">Darwin · Search v3</p><h4>Is there an agent already?</h4><p>Asked before every booking. Today: no ready agent for local trades.</p></div>
+        <div class="card"><p class="num">Dial · voice</p><h4>The call</h4><p>AI disclosure is sentence one. Five booking tools run mid-call over Context MCP.</p></div>
+        <div class="card"><p class="num">Dial · text</p><h4>The text</h4><p>Signed webhooks. STOP and PAUSE win before any model reads it.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="core">
+    <div><p class="k">shared · gate</p><b>confirm(evidence)</b><span>The only way in. A quoted yes, a Y, or an approved rule.</span></div>
+    <div><p class="k">shared · state</p><b>Booking machine</b><span>Holds, counters, expiry. transition() refuses confirmed.</span></div>
+    <div><p class="k">shared · log</p><b>Append-only events</b><span>Actor, reason, confidence. Triggers block edits.</span></div>
+    <div><p class="k">audit</p><b>Two auditors</b><span>TypeScript and Rust replay every log in CI and must agree.</span></div>
+  </div>
+</section>
+
+<script>
+  const phone = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>';
+  const msg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+  const row = (el, kinds) => { el.innerHTML = kinds.map((k) => `<span class="dot ${k}">${k === "call" ? phone : msg}</span>`).join("<i></i>"); };
+  row(document.getElementById("others"), Array(8).fill("call"));
+  row(document.getElementById("us"), ["call", ...Array(7).fill("text")]);
+</script>
+</body>
+</html>
