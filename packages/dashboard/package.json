@@ -1,0 +1,20 @@
+{
+  "name": "@platypus/dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The live view of Platypus: every event, every call, every business flipping from phone-only to text-enabled.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@platypus/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^8.3.4"
+  }
+}

@@ -1,0 +1,35 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.vite/
+
+# Secrets. ALLOWED_NUMBERS, API keys and webhook secrets live only in .env.
+.env
+.env.*
+!.env.example
+
+# Local data. Databases hold real phone numbers once a real call has happened.
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data/
+
+# Evidence and transcript dumps from real calls never enter the public repo.
+evidence/
+transcripts/
+*.transcript.json
+*.transcript.txt
+recordings/
+darwin-cache/
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+*.log
