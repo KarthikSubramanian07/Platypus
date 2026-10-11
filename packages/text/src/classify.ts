@@ -73,7 +73,18 @@ const ACCEPT_WORDS = new Set([
 const ACCEPT_EMOJI = new Set(["👍", "👌", "✅", "👍👍", "🙌"]);
 const DECLINE_WORDS = new Set(["n", "no", "nope", "nah", "no thanks", "no thank you", "can't", "cant", "cannot", "pass", "not this time", "no sorry", "sorry no"]);
 const DECLINE_EMOJI = new Set(["👎"]);
-const EXPLICIT_YES = /\b(y|yes|yep|yup|yeah|ya|si|sí)\b/;
+const YES_TOKENS = new Set(["y", "yes", "yep", "yup", "yeah", "ya", "si", "sí"]);
+/**
+ * Words that turn a yes into a no, a condition or an excuse ("yes but not tomorrow", "yeah no",
+ * "yes, unless it rains"). With any of them, or a question mark, a model accept asks instead:
+ * the model may have misread the reply, or been talked into it, and asking costs one text.
+ */
+const CONTRADICTS_YES = new Set([
+  "no", "not", "nope", "nah", "never", "cant", "can't", "cannot", "wont", "won't", "dont", "don't", "unable",
+  "busy", "slammed", "but", "though", "unless", "instead", "except", "if", "ignore", "instructions",
+]);
+/** True when one whole word of the normalized reply is a yes ("y'all" is not). */
+const hasExplicitYes = (words: string): boolean => words.split(" ").some((w) => YES_TOKENS.has(w));
 
 const TAPBACK_TEXT = /^(Liked|Loved|Disliked|Laughed at|Emphasized|Questioned) [“"](.+)[”"]$/s;
 const TAPBACK_REACTED = /^Reacted (.+?) to [“"](.+)[”"]$/s;
@@ -161,7 +172,7 @@ export function classifyDeterministic(text: string, ctx: ReplyContext): Classify
   if (ACCEPT_WORDS.has(lexicon) || ACCEPT_EMOJI.has(lexicon)) {
     // "okay?" and "Y?" are the owner asking, not agreeing. Normalizing strips the "?", so check the raw text.
     if (/[?？¿]/.test(text)) return result("question", 0.5, "clarify", `a yes asked as a question (${text.trim().slice(0, 20)}); asking for an explicit Y`);
-    return result("accept", EXPLICIT_YES.test(lexicon) ? 1 : 0.98, "confirm", `exact match: ${text.trim().slice(0, 20)}`);
+    return result("accept", hasExplicitYes(lexicon) ? 1 : 0.98, "confirm", `exact match: ${text.trim().slice(0, 20)}`);
   }
   if (DECLINE_WORDS.has(lexicon) || DECLINE_EMOJI.has(lexicon)) {
     return result("decline", 1, "decline", `exact match: ${text.trim().slice(0, 20)}`);
@@ -232,7 +243,10 @@ export function applyThresholds(text: string, out: ModelOutput, ctx: ReplyContex
 
   switch (out.class) {
     case "accept": {
-      if (!EXPLICIT_YES.test(words)) confidence = Math.min(confidence, IMPLICIT_ACCEPT_CAP);
+      if (/[?？¿]/.test(text) || words.split(" ").some((w) => CONTRADICTS_YES.has(w))) {
+        return asked("model said accept, but the reply also says no, sets a condition or asks a question");
+      }
+      if (!hasExplicitYes(words)) confidence = Math.min(confidence, IMPLICIT_ACCEPT_CAP);
       const timeDiffers = Boolean(out.extracted.time) && !matchesOffer(time, ctx.offer);
       const priceDiffers = price !== null && price !== (ctx.offer?.price_cents ?? null);
       if (timeDiffers || priceDiffers) return asked("model said accept, but the reply names a different time or a price");
