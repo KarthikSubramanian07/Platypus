@@ -17,7 +17,7 @@ Most of the 33 million US small businesses will never build an API. They have a 
 | Market and path (15%) | [Why it wins](#why-it-wins) |
 | Originality (10%) | The call *is* the onboarding: it books a paying job and converts the shop in the same 75 seconds |
 | Product and demo (10%) | [The demo](#the-demo), and [/live](https://tryplatypus.pages.dev/live) in your browser |
-| Dial, Darwin, Alike | [Partners](#partners), with what breaks without each one |
+| Dial, Darwin, Alike | [Built on Dial and Darwin](#built-on-dial-and-darwin): what each one does here and what breaks without it |
 
 Agents evaluating this repo should start at [AGENTS.md](AGENTS.md).
 
@@ -34,6 +34,39 @@ An oil change turns Eddy's Auto agent-native. The next booking, a brake inspecti
 ![The live operator view after the demo run](docs/live-dashboard.png)
 
 Run it yourself at [/live](https://tryplatypus.pages.dev/live), or locally with no keys (see [Run it](#run-it)).
+
+---
+
+## Built on Dial and Darwin
+
+Platypus is a thin layer of trust between two great tools. Dial gives an AI a real phone. Darwin tells every agent what already exists. Put them together and a business with nothing but a phone line becomes something any agent can book.
+
+### Dial: the whole phone side, in one platform
+
+Dial is the reason a one-call onboarding is possible at all. Without Dial, this would have taken a telephony vendor, a speech stack, an SMS provider and a week of glue code.
+
+- **A real AI voice call** through `POST /v1/calls`, which opens with *"Hi, I'm an AI assistant calling for a customer"*. The disclosure is hard-coded as the first sentence.
+- **Context MCP is the killer feature.** Dial's voice agent calls our booking tools *during* the call: `check_slot`, `hold_slot`, `create_booking`, `record_consent` and `set_text_number`. The job is held and booked while the owner is still talking, through the same state machine the rest of the system uses, and each tool call is authorized against the live call. No other voice platform we know makes this so direct.
+- **One number for calls and texts.** The number that called the owner is the number that texts them next time, over iMessage, WhatsApp or SMS. To the owner it is one contact, which is why they say yes.
+- **Signed webhooks** (`X-Dial-Signature`, HMAC-SHA256) and per-event dedupe make inbound replies safe to act on.
+
+*Without Dial there is no call and no consent, so no shop ever becomes agent-native.* Integration is in [`packages/voice`](packages/voice) and [`packages/text`](packages/text). The request shapes were checked against Dial's OpenAPI spec and SDK.
+
+### Darwin: the map of what agents can already do
+
+Darwin is the search engine agents use to find other agents, and Platypus asks it before every booking. That one question keeps Platypus honest: we only phone a business when no agent can already do the job.
+
+- **Search v3 before every call**, with the trade, service, area, budget and deadline as context. For the demo's oil change, Darwin answers `no_match` in about a second. Platypus treats that as a fact and routes to a call.
+- **Darwin's answer is what proves the market.** Across all six seeded trades, it finds no agent that can take the job. Darwin turns "local services aren't agent-ready" from a pitch line into a measured result, and every response we show is [recorded, never simulated](docs/darwin.md).
+- **Ready for the handoff.** When Darwin lists an agent that can start a thread, and an Act credential is configured, the router picks `darwin_act` and hands the job to it through Darwin Act. Platypus never competes with a real agent.
+- **Darwin's MCP server is in this repo's [`.mcp.json`](.mcp.json)**, so every coding session here sees the same `search` tool customer agents use.
+- **The future is Darwin Publish.** Each shop Platypus converts becomes supply an agent can execute. Publishing those shops to Darwin makes every one discoverable by every agent at once.
+
+*Without Darwin we would call shops that agents can already book, and we couldn't show the gap is real.* Integration is in [`packages/shared/src/darwin`](packages/shared/src/darwin).
+
+### Alike: memory for the build
+
+The phone side and the agent side were built in parallel coding sessions. Alike anchored decisions to file paths and carried them into every session, so no session undid the confirmation rule, the number allowlist or the Darwin rules. [DECISIONS.md](DECISIONS.md) is what Alike recorded.
 
 ---
 
@@ -69,16 +102,6 @@ The architecture is built so that a booking is never confirmed just because a mo
 | [`text`](packages/text) | Owner texts: signed webhooks, STOP and PAUSE handled before any model, reply classification |
 | [`shared`](packages/shared) | Zod contracts, SQLite, the event log and SSE stream, the booking state machine, the fakes |
 | [`dashboard`](packages/dashboard) | The site and the `/live` operator view, on Cloudflare Pages |
-
----
-
-## Partners
-
-**Dial is how the owner is reached.** It places the outbound AI call with the disclosure as the first sentence. Through Context MCP, the voice agent calls `check_slot`, `hold_slot`, `create_booking`, `record_consent` and `set_text_number` *during* the call. Afterward, the same number texts the owner over iMessage, WhatsApp or SMS. *Without Dial there is no call and no consent, so no shop ever becomes agent-native.*
-
-**Darwin decides whether we call at all.** Platypus runs a Search v3 query before every booking, with the budget and deadline as context. For the demo's oil change, Darwin answers `no_match` in about a second. Across the six seeded trades, it finds no ready agent for any of them. That is the gap Platypus fills, and the evidence for it is [recorded, not simulated](docs/darwin.md). *Without Darwin, we would phone shops that agents can already book.*
-
-**Alike kept the build coherent.** The phone side and the agent side were built in parallel coding sessions. Alike anchored decisions to file paths and carried them into every session, so no session undid the confirmation rule, the number allowlist or the Darwin rules. [DECISIONS.md](DECISIONS.md) is what Alike recorded. *Without Alike, parallel agents would have rewritten each other's contracts.*
 
 ---
 
