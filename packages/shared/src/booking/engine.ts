@@ -320,6 +320,7 @@ export function attachHold(ctx: BookingContext, holdId: string, bookingId: strin
     if (!hold || hold.status !== "active") throw new BookingError("hold_not_active", "The hold has expired or does not exist");
     const booking = getBooking(ctx, bookingId);
     if (hold.business_id !== booking.business_id) throw new BookingError("hold_not_active", "The hold belongs to a different business");
+    if (hold.booking_id && hold.booking_id !== booking.id) throw new BookingError("hold_not_active", "The hold belongs to a different booking");
     assertSlotOpen(booking);
     if (!Number.isInteger(priceCents) || priceCents < 0) throw new BookingError("invalid_slot", "Price must be a non-negative integer of cents");
     const iso = now.toISOString();
