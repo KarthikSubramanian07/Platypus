@@ -21,7 +21,9 @@
     "typecheck": "pnpm -r --parallel typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "pnpm lint && pnpm typecheck && pnpm test"
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "demo:reset": "tsx scripts/demo-reset.ts",
+    "tunnel": "tsx scripts/tunnel.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
