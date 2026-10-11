@@ -26,6 +26,18 @@ const stubModel = (out: Partial<ModelOutput>): ReplyModel => ({
 });
 
 describe("keywords", () => {
+  it("honors a STOP written to dodge the exact rules", () => {
+    for (const t of ["ＳＴＯＰ", "S\u200BTOP", "\u2060stop", "ѕтор", "S T O P", "s.t.o.p", "ＵＮＳＵＢＳＣＲＩＢＥ"]) {
+      expect({ t, keyword: matchKeyword(t)?.keyword }).toEqual({ t, keyword: "stop" });
+    }
+    expect(matchKeyword("ＳＴＯＰ")?.rule).toContain("disguised");
+    expect(matchKeyword("Ｈ Ｅ Ｌ Ｐ")?.keyword).toBe("help");
+  });
+
+  it("folds disguises without turning ordinary replies into keywords", () => {
+    for (const t of ["нет", "спасибо", "y e s", "I m on it", "stop by at 3", "Ｙｅｓ ｐｌｅａｓｅ"]) expect({ t, keyword: matchKeyword(t)?.keyword ?? null }).toEqual({ t, keyword: null });
+  });
+
   it.each(["STOP", "stop", "Stop.", "STOPALL", "unsubscribe", "cancel", "end", "quit", "revoke", "opt out", "Opt-out", "optout", "please stop", "stop please!!"])("%s is an opt-out", (t) => {
     expect(matchKeyword(t)?.keyword).toBe("stop");
   });
