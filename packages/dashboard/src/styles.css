@@ -185,6 +185,8 @@ main { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
   letter-spacing: -0.01em;
 }
 
+.live-cta { grid-column: 2; margin: 18px 0 0; }
+
 /* ---- Bands ----------------------------------------------------------------- */
 .band {
   margin-top: 128px;
@@ -230,7 +232,7 @@ h3 { font: 600 18px/1.3 var(--sans); letter-spacing: -0.01em; }
   .stage { grid-template-columns: 1fr; }
   .steps { position: static; display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 0; }
   .step { padding: 2px 0; }
-  .caption { grid-column: 1; }
+  .caption, .live-cta { grid-column: 1; }
   .grid3 { grid-template-columns: 1fr; }
   .event { grid-template-columns: 64px 1fr; padding: 10px 14px; }
   .event-time { grid-row: span 2; }
