@@ -4,7 +4,7 @@
 
 `ai-agents` · `mcp` · `voice-agents` · `sms` · `local-services` · `dial` · `darwin` · `speedhacks` · `sf-tech-week` · `typescript`
 
-![CI](https://github.com/KarthikSubramanian07/Platypus/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/KarthikSubramanian07/Platypus/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/KarthikSubramanian07/Platypus/actions/workflows/ci.yml) [![CodeQL](https://github.com/KarthikSubramanian07/Platypus/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/KarthikSubramanian07/Platypus/actions/workflows/codeql.yml)
 
 **Live:** [tryplatypus.pages.dev](https://tryplatypus.pages.dev) replays the golden path in your browser.
 
