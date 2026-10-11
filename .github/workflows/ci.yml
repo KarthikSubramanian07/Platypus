@@ -203,10 +203,36 @@ jobs:
             exit 1
           fi
 
+  audit-rust:
+    name: Audit, second implementation (Rust)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: crates/platypus-audit
+      - name: Format
+        working-directory: crates/platypus-audit
+        run: cargo fmt --check
+      - name: Clippy
+        working-directory: crates/platypus-audit
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Unit tests
+        working-directory: crates/platypus-audit
+        run: cargo test
+      # TS and Rust auditors on the golden path, its corruptions and seeded random logs; any disagreement fails.
+      - name: Differential check against the TypeScript auditor
+        run: pnpm ci:audit-diff
+
   ci-ok:
     name: ci-ok
     if: ${{ always() }}
-    needs: [lint, typecheck, test, build, e2e, smoke, eval, security, contracts]
+    needs: [lint, typecheck, test, build, e2e, smoke, eval, security, contracts, audit-rust]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
