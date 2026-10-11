@@ -85,6 +85,17 @@ These were checked on 2026-10-11 against `docs.getdial.ai/openapi.json`, `@getdi
   - The golden-path fixture carries the real 500, not a simulated `no_match`.
   - The agent side must retry live and record a real `no_match`. If none arrives within 30 minutes, it must default `DARWIN_ENABLED=false` and the Darwin beat is cut, never faked.
 
+## Design
+
+**Granola's palette, developer-tool structure.**
+The public page uses Granola's colors: white and warm off-white surfaces, near-black ink, and lime and olive accents. It borrows its structure from developer-tool pages such as trymarlo.pages.dev and tryvivian.pages.dev: a faint grid, monospace eyebrows, and window-chrome panels. Type stays Source Serif 4 for display and DM Sans for text, with JetBrains Mono for data. This replaces the earlier paper-and-green palette. Why: the page is the first thing a judge opens, and it should read as calm and precise rather than as a generic dashboard.
+
+**The deployed page replays a recording.**
+Cloudflare Pages serves static files, so there is no event server behind tryplatypus.pages.dev. In a production build without `VITE_EVENTS_URL`, the page plays the bundled golden-path fixture and says "Recorded run". `?events=<url>` points it at a live server.
+
+**tryplatypus.pages.dev, not platypus.pages.dev.**
+Another Cloudflare account already holds `platypus`, and Cloudflare would have given us `platypus-9i6.pages.dev`. `tryplatypus` is clean and matches the naming of the reference sites.
+
 ## Team plan
 
 **One foundation, then two parallel sides instead of three.**

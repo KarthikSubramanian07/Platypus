@@ -3,37 +3,117 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Platypus · Live event log</title>
-    <meta name="description" content="Platypus makes phone-only businesses bookable by every AI agent. One call. Agent-native forever. This is the live event log." />
+    <title>Platypus · One call. Agent-native forever.</title>
+    <meta name="description" content="Platypus makes phone-only businesses bookable by every AI agent. One AI call books the job and earns consent to text; after that, every agent books by text." />
+    <link rel="canonical" href="https://tryplatypus.pages.dev/" />
     <meta property="og:title" content="Platypus · We make Main Street agent-native" />
     <meta property="og:description" content="One call makes any phone-only business bookable by every AI agent. Call once, agent-native forever." />
     <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary" />
-    <meta name="theme-color" content="#F4F1EA" />
+    <meta property="og:url" content="https://tryplatypus.pages.dev/" />
+    <meta property="og:image" content="https://tryplatypus.pages.dev/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#FFFFFF" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Platypus",
+        "applicationCategory": "BusinessApplication",
+        "description": "One call makes any phone-only business bookable by every AI agent.",
+        "url": "https://tryplatypus.pages.dev/",
+        "license": "https://opensource.org/licenses/MIT"
+      }
+    </script>
   </head>
   <body>
-    <header class="masthead">
-      <div>
-        <h1>Platypus</h1>
-        <p class="tagline">One call. Agent-native forever.</p>
+    <nav class="nav" aria-label="Primary">
+      <a class="brand" href="/" aria-label="Platypus home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-word">platypus</span>
+      </a>
+      <div class="nav-links">
+        <a href="#log">Live log</a>
+        <a href="#how">How it works</a>
+        <a href="#rules">Rules</a>
       </div>
-      <div class="status">
-        <span id="conn" class="conn" data-state="connecting">Connecting</span>
-        <span id="count" class="count">0 events</span>
-        <button id="replay" class="replay" type="button">Replay golden path</button>
+      <a class="nav-source" href="https://github.com/KarthikSubramanian07/Platypus" rel="noopener">Source <span aria-hidden="true">↗</span></a>
+    </nav>
+
+    <header class="hero">
+      <p class="eyebrow">SpeedHacks · SF Tech Week · Built on Dial and Darwin</p>
+      <h1>One call.<br />Agent-native forever.</h1>
+      <p class="lede">
+        Your agent can book a flight. It can't book Main Street. Platypus calls a phone-only business once,
+        books the job through its own tools while the owner is on the line, and asks to text next time.
+        After one yes, every agent books that business by text.
+      </p>
+      <div class="actions">
+        <button id="replay" class="btn btn-primary" type="button">Watch the golden path</button>
+        <a class="btn btn-ghost" href="https://github.com/KarthikSubramanian07/Platypus" rel="noopener">Read the source <span aria-hidden="true">↗</span></a>
       </div>
+      <p class="mono-strip">MCP · Dial voice + Context MCP · Darwin Search v3 · iMessage / WhatsApp</p>
     </header>
+
     <main>
-      <section class="card">
-        <div class="card-head">
-          <h2>Event log</h2>
-          <p class="hint">Every state change, with who did it and how sure we are. Newest at the bottom.</p>
+      <section id="log" class="stage" aria-labelledby="log-title">
+        <ol id="steps" class="steps" aria-label="Golden path progress"></ol>
+
+        <div class="window">
+          <div class="window-bar">
+            <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="window-title" id="log-title">platypus · event log</span>
+            <span class="window-meta">
+              <span id="conn" class="conn" data-state="connecting">Connecting</span>
+              <span id="count" class="count">0 events</span>
+            </span>
+          </div>
+          <ol id="events" class="events" aria-live="polite"></ol>
+          <p id="empty" class="empty">Waiting for the first event.</p>
         </div>
-        <ol id="events" class="events" aria-live="polite"></ol>
-        <p id="empty" class="empty">Waiting for the first event. Run <code>pnpm dev</code> or press Replay.</p>
+        <p class="caption" id="caption"></p>
+      </section>
+
+      <section id="how" class="band">
+        <p class="eyebrow">How it works</p>
+        <h2>The call is the onboarding, not the product.</h2>
+        <div class="grid3">
+          <article>
+            <p class="num">01</p>
+            <h3>An agent asks</h3>
+            <p>Claude, Muse or any MCP client calls <code>request_booking</code>. We check Darwin first; if no agent covers the job, we route to the phone.</p>
+          </article>
+          <article>
+            <p class="num">02</p>
+            <h3>One honest call</h3>
+            <p>The first sentence says it is an AI. The voice agent books through <code>hold_slot</code> and <code>create_booking</code> mid-call, then asks: can I text you next time?</p>
+          </article>
+          <article>
+            <p class="num">03</p>
+            <h3>Texts forever after</h3>
+            <p>The yes is stored with the owner's exact words. Every later request is one text, answered with one letter.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="rules" class="band">
+        <p class="eyebrow">Rules the code enforces</p>
+        <h2>Confirmed means the owner said yes.</h2>
+        <ul class="rules">
+          <li><span>01</span>Only <code>confirm()</code> can set a booking to confirmed, and only with evidence: a quoted yes on the call, a Y by text, or a rule the owner approved.</li>
+          <li><span>02</span>Consent cannot be stored without the owner's sentence and the call it came from. The database refuses it.</li>
+          <li><span>03</span>Every state change is an append-only event with who did it, why, and how sure we are.</li>
+          <li><span>04</span>Only allowed numbers can ever ring. The check sits at the lowest layer, including the test fakes.</li>
+        </ul>
       </section>
     </main>
+
+    <footer class="footer">
+      <span>MIT licensed</span>
+      <span>Built at SpeedHacks, San Francisco, October 2026</span>
+      <a href="https://github.com/KarthikSubramanian07/Platypus" rel="noopener">GitHub ↗</a>
+    </footer>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
