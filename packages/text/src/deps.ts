@@ -20,6 +20,8 @@ export interface TextDeps {
   db: Db;
   bus?: Pick<EventBus, "publish">;
   clock?: Clock;
+  /** Overrides MAX_REQUESTS_PER_BUSINESS_PER_HOUR (outbound.ts). */
+  maxRequestsPerHour?: number;
   messaging: DialMessaging;
   /** TEXT_CHANNEL: the owner rail. Never "sms" (that is the "dial" rail, Dial-to-Dial only). */
   textChannel: TextChannel;

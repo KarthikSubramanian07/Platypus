@@ -28,6 +28,21 @@ export class RoutingUnavailableError extends Error {
 
 const DAY_MS = 86_400_000;
 
+/**
+ * New jobs one business may be texted about in any hour, across every agent. Agents name
+ * themselves and can cancel and re-request, so per-agent limits upstream cannot protect an
+ * owner's phone on their own. Counted from the messages table, so it survives restarts.
+ */
+export const MAX_REQUESTS_PER_BUSINESS_PER_HOUR = 10;
+
+/** Too many requests to this owner in the last hour. Not a reason to call instead: the booking waits. */
+export class OwnerRateLimitedError extends Error {
+  constructor(public readonly limit: number) {
+    super(`This owner was already texted about ${limit} jobs in the last hour; the request was not sent.`);
+    this.name = "OwnerRateLimitedError";
+  }
+}
+
 /** Kept separate so a test can assert the exact Dial channel each rail maps to. */
 export function dialChannelFor(rail: Rail): DialSendChannel {
   return rail === "dial" ? "sms" : rail;
@@ -236,6 +251,22 @@ export async function sendBookingRequest(deps: TextDeps, input: { booking_id: st
   business = resumeIfPauseElapsed(deps, business);
   const blocked = textingBlockedReason(deps, business);
   if (blocked) return needsCall(deps, business, booking, blocked);
+
+  const hourAgo = new Date(now(deps).getTime() - 3_600_000).toISOString();
+  const { n: jobsLastHour } = deps.db
+    .prepare("SELECT COUNT(DISTINCT booking_id) AS n FROM messages WHERE business_id = ? AND direction = 'outbound' AND booking_id IS NOT NULL AND created_at > ?")
+    .get(business.id, hourAgo) as { n: number };
+  const limit = deps.maxRequestsPerHour ?? MAX_REQUESTS_PER_BUSINESS_PER_HOUR;
+  if (jobsLastHour >= limit) {
+    record(deps, {
+      type: "message.rate_limited",
+      actor: "system",
+      refs: { business_id: business.id, booking_id: booking.id },
+      payload: { jobs_last_hour: jobsLastHour, limit },
+      reason: "too many job requests to this owner in the last hour; the booking stays pending",
+    });
+    throw new OwnerRateLimitedError(limit);
+  }
 
   const reasons: string[] = [];
   for (const number of candidateNumbers(business, deps)) {
