@@ -1,0 +1,21 @@
+[package]
+name = "platypus-audit"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "An independent Rust reading of the Platypus event-log auditor (rules R1 to R8), checked against the TypeScript one on every log."
+publish = false
+
+[lib]
+name = "platypus_audit"
+path = "src/lib.rs"
+
+[[bin]]
+name = "platypus-audit"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = { version = "1", features = ["preserve_order"] }
+
+[profile.release]
+opt-level = 3
