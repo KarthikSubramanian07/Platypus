@@ -130,3 +130,12 @@ Hosted agents such as Claude Desktop reach the gateway through a public tunnel, 
 
 **`confirm_booking` cannot confirm on the owner's behalf.**
 Only the owner's own yes (on the call, by text, or through a rule they confirmed) confirms a booking. On a booking the owner countered, `confirm_booking` returns `owner_confirmation_required`, and the agent polls `get_booking` instead. `cancel_booking` and `reschedule_booking` update the booking but do not notify the owner yet, because `OwnerChannels`, the contract between the agent side and the phone side, has no method for it. Adding one is a contract change left for after the event.
+
+**Platypus reads Darwin's answer the way Darwin's own guide says to.**
+Darwin's SpeedHacks and Use Search results guides set four rules, and the gateway follows each one:
+- **Status comes first.** If Darwin asks a question (`needs_input`) or finds nothing, that is never presented as a recommendation, even when agents are listed alongside it.
+- **"Usable" needs three signals.** An agent counts only when it is `ready`, can start a thread, and Darwin declared its setup. Darwin says a missing setup declaration means "unknown", not "nothing needed", so Platypus never routes a booking through Darwin Act on one.
+- **Every agent is explained.** The calling agent sees every agent in Darwin's order, with Darwin's own reasons and uncertainties. Each is labeled `usable` or `listed, not ready`.
+- **Questions are answered in the same search.** When Darwin asks a question, the calling agent is told to search again with more detail. Platypus sends that detail as a refinement of the same Darwin search (its `previousResponseId`, and the anonymous search token), not as a new search.
+
+Why: the integration should be faithful to Darwin rather than optimistic, and a booking must never go to an agent whose requirements nobody knows. Cost: today no local-service result passes the three checks, so every booking still goes by call or text. A refinement is one more Darwin round trip, so only `search_providers` makes one. `request_booking` reuses that answer, which keeps the demo's phone call as fast as before. If a refinement fails, Darwin's earlier question stands.
