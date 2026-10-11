@@ -109,10 +109,7 @@
           <div>
             <h2 id="demo-title">Watch one oil change make a shop agent-native.</h2>
           </div>
-          <p class="section-lede">
-            This is the real event log, replayed from a run recorded against our test fakes through the real booking state machine.
-            Every row is an append-only event with an actor, a reason and a confidence. Today the shop's owner, Sal, is Dial's AI on a second Dial number. Sal is not a mechanic either.
-          </p>
+          <p class="section-lede">The real event log, replayed from a recorded run through the real booking engine. Sal, the owner, is Dial's AI on a second Dial number. Sal is not a mechanic either.</p>
         </div>
 
         <div class="stage">
@@ -135,10 +132,13 @@
           </div>
         </div>
 
-        <a class="live-shot" href="/live" data-live-link>
-          <img src="/live-dashboard.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="The live operator dashboard mid-call: Darwin's answer and route on the left, the call with five mid-call tools ticked and the booking confirmed in the middle, and Sal's Auto flipped to text-enabled among six businesses on the right." />
-          <span class="live-shot-label">Open the live operator dashboard <span aria-hidden="true">→</span></span>
-        </a>
+        <div class="live-cta">
+          <div>
+            <p class="live-cta-title">See the whole run, panel by panel</p>
+            <p>The operator dashboard: Darwin's answer, the call with its five mid-call tools, the shop flipping to text-enabled, and the owner's phone.</p>
+          </div>
+          <a class="btn btn-primary btn-live" href="/live" data-live-link><span class="live-dot" aria-hidden="true"></span>Open the live dashboard <span aria-hidden="true">→</span></a>
+        </div>
       </section>
 
       <!-- ============================== SHIFT ============================= -->
@@ -147,27 +147,25 @@
           <div>
             <h2 id="shift-title">In one month, every lab shipped a personal agent. Then they all added phone calls.</h2>
           </div>
-          <p class="section-lede">Demand arrived in four weeks. Phone calling was Muse's single most requested feature. Everyone is building the demand side. Nobody is connecting the businesses that run on a phone.</p>
+          <p class="section-lede">Everyone is building the demand side. Nobody is connecting the businesses that run on a phone.</p>
         </div>
         <ol class="timeline">
-          <li><time>Sep 8</time><h3>Meta launches Muse</h3><p>Books, shops, fills forms. 2.5M downloads in two weeks; calling US businesses in public beta from Sep 16.</p></li>
-          <li><time>Sep 16</time><h3>Instinct Concierge</h3><p>The SMS-native agent adds business calls in early access. Books call by call; nothing persists.</p></li>
-          <li><time>Sep 29</time><h3>OpenAI launches Dots</h3><p>Always-on agents inside ChatGPT with their own cloud computer. SMS "coming soon".</p></li>
-          <li><time>Oct 6</time><h3>Personal Agent Protocol</h3><p>Three routes for a business: a website, an API, or its own agent. A three-person shop has none.</p></li>
+          <li><time>Sep 8</time><h3>Meta launches Muse</h3><p>2.5M downloads in two weeks. Calling US businesses from Sep 16.</p></li>
+          <li><time>Sep 16</time><h3>Instinct Concierge</h3><p>Adds business calls. Books call by call; nothing persists.</p></li>
+          <li><time>Sep 29</time><h3>OpenAI launches Dots</h3><p>Always-on agents in ChatGPT. SMS "coming soon".</p></li>
+          <li><time>Oct 6</time><h3>Personal Agent Protocol</h3><p>A business needs a website, an API or its own agent. A three-person shop has none.</p></li>
         </ol>
 
         <div class="problem">
           <div class="problem-copy">
             <h3>Agents can book Delta and Walmart. Nothing in between.</h3>
-            <p><b>Websites are shutting the door.</b> Amazon blocked Muse; Yelp, eBay, Zillow and airlines block agents.</p>
-            <p><b>The standard skips the long tail.</b> The protocol only works for businesses that already have a site, an API or an agent.</p>
-            <p><b>Phone calls don't scale.</b> Businesses hang up when they hear it's AI. Meta tested human contractors on Muse calls for exactly that reason.</p>
+            <p>Websites are blocking agents. The new standard only covers businesses with a site, an API or an agent. And businesses hang up on AI calls: Meta put human contractors on Muse's calls for exactly that reason.</p>
           </div>
           <ul class="routes" aria-label="The routes a small business does and doesn't have">
             <li><span aria-hidden="true">×</span><div><b>A website agents can use</b><small>Most of Main Street has a basic page or none.</small></div></li>
             <li><span aria-hidden="true">×</span><div><b>An API (MCP or OpenAPI)</b><small>No developer. No software budget.</small></div></li>
             <li><span aria-hidden="true">×</span><div><b>Their own agent</b><small>They have a phone and a van.</small></div></li>
-            <li class="routes-yes"><span aria-hidden="true">✓</span><div><b>A phone</b><small>All 33 million of them have one. Even Doofenshmirtz Evil Incorporated has a landline. That's our way in.</small></div></li>
+            <li class="routes-yes"><span aria-hidden="true">✓</span><div><b>A phone</b><small>All 33 million have one. Even Doofenshmirtz Evil Inc. has a landline.</small></div></li>
           </ul>
         </div>
       </section>
@@ -177,11 +175,7 @@
         <div class="insight-copy">
           <h2 id="insight-title">The call is the onboarding, not the product.</h2>
           <p class="insight-sub">Everyone else calls a business every time. We call it once.</p>
-          <p>
-            On that call our agent says it's an AI, gets price and availability, books the job, and asks one question:
-            <em>"Can I text you future requests instead of calling?"</em> A yes turns a phone number into supply every
-            agent platform can route to, forever. The owner keeps working the way they already do: by text, one word at a time.
-          </p>
+          <p>The call books a paying job, then asks one question: <em>"Can I text you next time?"</em> A yes turns a phone number into supply every agent can route to, forever.</p>
           <p class="insight-big">One call. Agent-native forever.</p>
         </div>
         <figure class="chart" aria-labelledby="chart-cap">
@@ -220,10 +214,7 @@
           <div>
             <h2 id="time-title">There are 104 days of summer vacation. Spend none of them on hold.</h2>
           </div>
-          <p class="section-lede">
-            One booking, two people, every minute counted. Setup, review and corrections are included because the rubric asks,
-            and because you'd ask. These are <strong>transparent estimates</strong>; opt-in rate and reply seconds are measured live on the dashboard.
-          </p>
+          <p class="section-lede">One booking, every minute counted: setup, review and corrections included. <strong>Transparent estimates</strong>; opt-in rate and reply seconds are measured live.</p>
         </div>
 
         <div class="compare">
@@ -238,7 +229,7 @@
               <li><span>Phone tag and callbacks</span><b>5:00</b><i style="--w: 56%"></i></li>
               <li><span>Confirm details, add it to the calendar</span><b>2:00</b><i style="--w: 22%"></i></li>
             </ul>
-            <p class="ledger-foot">15 to 25 minutes per booking, spread over an afternoon. And the owner stops working on a car to pick up, every single time: 3 to 5 minutes a call.</p>
+            <p class="ledger-foot">15 to 25 minutes, spread over an afternoon. The owner loses 3 to 5 minutes per call, mid-job.</p>
           </article>
 
           <article class="ledger ledger-after">
@@ -252,7 +243,7 @@
               <li><span>Review the typed result: shop, time, price, code</span><b>0:20</b><i style="--w: 3.7%"></i></li>
               <li><span>Corrections: about 1 in 5 owners counter; you send one more sentence</span><b>0:10</b><i style="--w: 1.9%"></i></li>
             </ul>
-            <p class="ledger-foot">Bars share one scale with the left column. The owner spends 75 seconds once on a call that brings a paying job, then 5 to 10 seconds per job by text.</p>
+            <p class="ledger-foot">Same scale as the left. The owner spends 75 seconds once, then 5 to 10 seconds per job.</p>
           </article>
         </div>
 
@@ -268,7 +259,7 @@
             <input id="calc-owner" type="range" min="1" max="80" value="10" />
             <p class="calc-out"><b id="calc-owner-h">33</b> owner hours back a year <span>a 4 minute call becomes a 10 second "Y"</span></p>
           </div>
-          <p class="calc-note">A property manager booking 40 trade jobs a month gets back about 150 hours a year. Every later agent that needs a flipped shop saves the whole call. The math is in the <a href="https://github.com/KarthikSubramanian07/Platypus#time-saved" rel="noopener">README</a> and tested in code.</p>
+          <p class="calc-note">Every later agent that needs a flipped shop saves the whole call. Math in the <a href="https://github.com/KarthikSubramanian07/Platypus#time-saved" rel="noopener">README</a>, tested in code.</p>
         </div>
       </section>
 
@@ -278,36 +269,34 @@
           <div>
             <h2 id="how-title">Any agent asks Platypus. Platypus finds a route, or makes one.</h2>
           </div>
-          <p class="section-lede">
-            The customer never sees us. Their agent asks us. The business texts us. Two worlds, one bridge, one event log underneath.
-          </p>
+          <p class="section-lede">The customer never sees us. Their agent asks us. The business texts us.</p>
         </div>
 
         <ol class="flow">
           <li>
             <p class="num">01 · ask</p>
             <h3>An agent asks</h3>
-            <p>Claude or any MCP client calls <code>request_booking</code>. The gateway searches Darwin first, in case an agent already covers the job.</p>
+            <p>Any MCP client calls <code>request_booking</code>.</p>
           </li>
           <li>
             <p class="num">02 · route</p>
             <h3>Route the cheapest way</h3>
-            <p><code>darwin_act</code> if a ready agent exists, <code>text</code> if the owner said yes before, otherwise <code>call</code>. Paused or do-not-call businesses are never contacted.</p>
+            <p>Darwin agent if one is ready, text if the owner said yes before, otherwise one call.</p>
           </li>
           <li>
             <p class="num">03 · call once</p>
             <h3>One honest call</h3>
-            <p>Dial rings the shop. The first sentence says it is an AI. While the owner talks, the voice agent books through <code>check_slot</code>, <code>hold_slot</code> and <code>create_booking</code>.</p>
+            <p>Dial rings the shop, says it's an AI first, and books mid-call through our tools.</p>
           </li>
           <li>
             <p class="num">04 · consent</p>
             <h3>"Yeah, text me."</h3>
-            <p><code>record_consent</code> stores the owner's exact sentence and the call it came from, then asks for the best cell to text. The shop flips from phone-only to text-enabled.</p>
+            <p>The owner's exact words and the call id are stored. The shop flips to text-enabled.</p>
           </li>
           <li>
             <p class="num">05 · text forever</p>
             <h3>Every agent, by text</h3>
-            <p>The next request is one text. The owner replies <b>Y</b>, <b>N</b> or a time. <code>confirm()</code> checks the evidence and the agent gets a typed outcome in seconds.</p>
+            <p>Next request: one text. The owner replies <b>Y</b>, <b>N</b> or a time. Confirmed in seconds.</p>
           </li>
         </ol>
 
@@ -348,36 +337,35 @@
           <div>
             <h2 id="moat-title">Consent compounds. Calls don't.</h2>
           </div>
-          <p class="section-lede">
-            Every agent that calls a business starts from zero, and the next agent calls it again. Every yes we collect is supply
-            that no other agent can reach without making that call itself. That's why Meta needed humans and we won't.
-          </p>
+          <p class="section-lede">Every yes we collect is supply no other agent can reach without making that call itself. That's why Meta needed humans and we won't.</p>
         </div>
         <div class="moat">
           <article>
             <p class="num">01</p>
             <h3>The consent graph</h3>
-            <p>Each business's yes is stored with the owner's own words and the call it came from. It's an asset, not a log line, and nobody else holds it.</p>
+            <p>Every yes, in the owner's own words, with the call it came from. Nobody else holds it.</p>
           </article>
           <article>
             <p class="num">02</p>
             <h3>Signals only real bookings create</h3>
-            <p>Every call teaches us what a business actually charges, how fast it replies, and whether it shows up. Reply speed, acceptance and no-shows become routing signals. Nothing to game.</p>
+            <p>What a shop really charges, how fast it replies, whether it shows up. Nothing to game.</p>
           </article>
           <article>
             <p class="num">03</p>
             <h3>Neutral by design</h3>
-            <p>Muse, Dots, Claude and Instinct can all route through the same supply instead of each re-calling the same shop. Every platform is a distribution partner, not a rival.</p>
+            <p>Muse, Dots, Claude and Instinct all route through the same supply. Every platform is a partner.</p>
           </article>
           <article>
             <p class="num">04</p>
             <h3>The owner's relationship</h3>
-            <p>We text owners work, not leads, and charge only when a job is confirmed. Autopilot rules they write by text answer for them when they're busy.</p>
+            <p>We text owners work, not leads, and charge only for confirmed jobs.</p>
           </article>
         </div>
 
+        <details class="more">
+          <summary>Everyone else is on one side of the bridge: the landscape</summary>
         <div class="landscape" role="region" aria-labelledby="landscape-title" tabindex="0">
-          <h3 id="landscape-title">Everyone else is on one side of the bridge.</h3>
+          <h3 id="landscape-title" class="sr-only">The landscape</h3>
           <table>
             <thead>
               <tr><th scope="col">Category</th><th scope="col">Examples</th><th scope="col">What they do</th><th scope="col">Why Platypus is different</th></tr>
@@ -392,6 +380,7 @@
           </table>
           <p class="landscape-note">Google's call is a lookup. Ours is onboarding.</p>
         </div>
+        </details>
       </section>
 
       <!-- =========================== GUARANTEES =========================== -->
@@ -400,9 +389,7 @@
           <div>
             <h2 id="g-title">A booking is never confirmed because the AI said so.</h2>
           </div>
-          <p class="section-lede">
-            It's confirmed when the owner says yes, on the call or by text. An agent that books things for strangers has to be boringly trustworthy,
-            so these are types, constraints and triggers, not guidelines in a prompt, and a test proves each one. 777 tests run on every push.
+          <p class="section-lede">These are types, constraints and triggers, not prompt guidelines. A test proves each one; 800 run on every push.
             <span class="aside">A model saying "booked" is not evidence. Curse you, Hallucinat-inator!</span>
           </p>
         </div>
@@ -410,7 +397,7 @@
         <div class="rules">
           <article class="rule">
             <header><span>01</span><h3>Only <code>confirm()</code> can confirm, and only with evidence</h3></header>
-            <p>A quoted yes on a call where the slot was held, an inbound text classified as yes, or a rule the owner approved. <code>transition()</code> refuses <code>confirmed</code> outright.</p>
+            <p>A quoted yes on the call, a Y by text, or a rule the owner approved. Nothing else can be expressed.</p>
             <pre><code><span class="k">export function</span> <span class="f">confirm</span>(ctx, bookingId,
   evidence: <span class="t">ConfirmationEvidence</span>) {
   <span class="c">// "call" | "text" | "rule". A transcript
@@ -420,7 +407,7 @@
           </article>
           <article class="rule">
             <header><span>02</span><h3>Consent cannot exist without its proof</h3></header>
-            <p>The database itself refuses a consent row without the owner's sentence and the call, or the JOIN text.</p>
+            <p>The database refuses a consent row without the owner's sentence and the call.</p>
             <pre><code><span class="k">CHECK</span> (
   (source = <span class="s">'call'</span> <span class="k">AND</span> call_id <span class="k">IS NOT NULL</span>
     <span class="k">AND</span> <span class="f">LENGTH</span>(quoted_sentence) &gt; 0)
@@ -431,7 +418,7 @@
           </article>
           <article class="rule">
             <header><span>03</span><h3>Every change is an append-only event</h3></header>
-            <p>Each event names its actor, reason and confidence, and is published only after its transaction commits. Nobody can edit history, including us.</p>
+            <p>Actor, reason and confidence on every event. Nobody can edit history, including us.</p>
             <pre><code><span class="k">CREATE TRIGGER</span> events_no_update
   <span class="k">BEFORE UPDATE ON</span> events
 <span class="k">BEGIN</span>
@@ -441,7 +428,7 @@
           </article>
           <article class="rule">
             <header><span>04</span><h3>Only allowed numbers can ever ring</h3></header>
-            <p>The check runs immediately before any network request that can reach a phone, in the real Dial adapter and in the fakes.</p>
+            <p>Checked right before anything that can reach a phone, in the real adapter and the fakes.</p>
             <pre><code><span class="k">export function</span> <span class="f">assertAllowedNumber</span>(number,
   allowed = <span class="f">parseAllowedNumbers</span>(env.ALLOWED_NUMBERS)) {
   <span class="k">if</span> (!allowed.<span class="f">includes</span>(number))
@@ -450,12 +437,15 @@
             <a class="src" href="https://github.com/KarthikSubramanian07/Platypus/blob/main/packages/shared/src/safety.ts" rel="noopener">shared/src/safety.ts ↗</a>
           </article>
         </div>
-        <ul class="minor-rules">
-          <li>Agent and owner text is data, not instructions: links stripped, length capped, rendered as text.</li>
-          <li>Mid-call tools check that each request comes from the live call's number and names that call's business.</li>
-          <li>STOP, HELP and PAUSE are handled before any model sees the message.</li>
-          <li>Darwin is never simulated in live mode. If it is down, the step is skipped and the log says so.</li>
-        </ul>
+        <details class="more">
+          <summary>Four more rules</summary>
+          <ul class="minor-rules">
+            <li>Agent and owner text is data, not instructions: links stripped, length capped, rendered as text.</li>
+            <li>Mid-call tools check that each request comes from the live call's number and names that call's business.</li>
+            <li>STOP, HELP and PAUSE are handled before any model sees the message.</li>
+            <li>Darwin is never simulated in live mode. If it is down, the step is skipped and the log says so.</li>
+          </ul>
+        </details>
       </section>
 
       <!-- ============================ PARTNERS ============================ -->
@@ -464,40 +454,34 @@
           <div>
             <h2 id="p-title">The deepest use of Dial and Darwin in the room.</h2>
           </div>
-          <p class="section-lede">
-            Most teams will place a call. We let the call book through our tools and collect consent through our tools. Most teams will search Darwin. We show where its coverage ends and fill the gap.
-            We removed another partner integration today because it wasn't doing real work.
-          </p>
+          <p class="section-lede">Most teams will place a call; ours books and collects consent through our tools mid-call. Most teams will search Darwin; we show where its coverage ends and fill the gap.</p>
         </div>
 
         <div class="partners">
           <article class="partner partner-dial">
             <header><h3>Dial</h3><p>the owner's channel</p></header>
             <ul>
-              <li><b>Outbound AI voice</b> with a per-call prompt. The AI disclosure is hard-coded as the first sentence, not left to the model.</li>
-              <li><b>Context MCP</b>: the voice agent calls our booking tools <em>during</em> the call, authorized per request by the caller number: <code>check_slot</code>, <code>hold_slot</code>, <code>create_booking</code>, <code>record_consent</code>, <code>set_text_number</code>.</li>
-              <li><b>The same number texts afterward</b> over iMessage, WhatsApp or Dial, through signed webhooks: <code>X-Dial-Signature</code> HMAC and <code>X-Dial-Event-ID</code> deduplication.</li>
-              <li>Shapes checked against Dial's OpenAPI spec and SDK; FakeDial enforces the same limits.</li>
+              <li><b>Outbound AI voice</b>, AI disclosure hard-coded as sentence one.</li>
+              <li><b>Context MCP</b>: five booking tools called <em>during</em> the call, authorized by caller number.</li>
+              <li><b>The same number texts afterward</b>, through HMAC-signed, deduplicated webhooks.</li>
             </ul>
             <p class="partner-why">Without Dial: no call, no consent, and no business ever becomes agent-native. It's a week of glue we didn't have to write.</p>
           </article>
           <article class="partner partner-darwin">
             <header><h3>Darwin</h3><p>discovery, and the gap we fill</p></header>
             <ul>
-              <li><b>Search v3 before every booking</b>, with budget and deadline as context. We never call when an agent already covers the job.</li>
-              <li><b>Typed answers we branch on</b>: readiness and reasons. Today Darwin lists agents for our trades and none is ready, which is exactly the gap.</li>
-              <li><b>A search ladder</b> that rides out Darwin's HTTP 500s, retries 429 with <code>Retry-After</code>, caches for ten minutes, and keeps every <code>x-request-id</code>.</li>
-              <li><code>darwin_act</code> hands the job over when a ready agent exists. A daily workflow checks the live API for all six seeded businesses.</li>
+              <li><b>Search v3 before every booking</b>; we never call a shop an agent already covers.</li>
+              <li><b>Typed answers we branch on.</b> Today no listed agent is ready for our trades: that's the gap.</li>
+              <li><b>A search ladder</b> that rides out 500s, honors 429s, caches, and is smoke-tested live daily.</li>
             </ul>
             <p class="partner-why">Without Darwin: we'd call shops that are already agent-native. The day Publish ships, every business on Platypus becomes executable local supply in Darwin.</p>
           </article>
           <article class="partner partner-alike">
             <header><h3>Alike</h3><p>memory for the build itself</p></header>
             <ul>
-              <li><b>Parallel Claude Code sessions</b> on separate packages all day, with no meetings until integration.</li>
-              <li>Alike briefed each session with the others' decisions, anchored to file paths, so nobody undid the confirmation rule, the number allowlist or the Darwin cut rule.</li>
-              <li>Real examples that crossed sessions: <em>"never use simulated Darwin responses in live demos"</em> and <em>"only allowed numbers may ring"</em>.</li>
-              <li>The <a href="https://github.com/KarthikSubramanian07/Platypus/blob/main/DECISIONS.md" rel="noopener">decisions log</a> in the repo is what Alike recorded.</li>
+              <li><b>Parallel coding sessions</b> on separate packages, no meetings until integration.</li>
+              <li>Decisions anchored to file paths reached every session: <em>"never simulate Darwin live"</em>, <em>"only allowed numbers may ring"</em>.</li>
+              <li>The <a href="https://github.com/KarthikSubramanian07/Platypus/blob/main/DECISIONS.md" rel="noopener">decisions log</a> is what Alike recorded.</li>
             </ul>
             <p class="partner-why">Without Alike: parallel agents rewrite each other's contracts and nobody notices until 4:59pm.</p>
           </article>
@@ -510,29 +494,27 @@
           <div>
             <h2 id="m-title">We sell to the owner. Agents bring the customers.</h2>
           </div>
-          <p class="section-lede">
-            33 million US small businesses, and most will never build an API. All of them have a phone. Home services first,
-            then clinics, auto shops, salons, movers: anything with a phone. Why now: demand arrived in September, the agent protocol spec
-            lands at the end of October, and Dial and Darwin just became real infrastructure. Supply is up for grabs for a few months.
-          </p>
+          <p class="section-lede">Home services first, then clinics, auto shops, salons, movers. Supply is up for grabs for a few months.</p>
         </div>
         <div class="market">
           <article>
             <p class="num">Per confirmed booking</p>
             <h3>Owners pay for jobs, not leads</h3>
-            <p>Owners already pay per lead on marketplaces. We charge only for real, confirmed jobs.</p>
+            <p>They already pay per lead on marketplaces.</p>
           </article>
           <article>
             <p class="num">Autopilot subscription</p>
             <h3>The front office as software</h3>
-            <p>Rules by text ("oil changes Tuesday to Thursday under $100, auto-yes"), live availability, instant quotes, crew dispatch.</p>
+            <p>Rules by text: "oil changes Tue to Thu under $100, auto-yes."</p>
           </article>
           <article>
             <p class="num">Platform access</p>
             <h3>Agent platforms pay for reach</h3>
-            <p>Routing signals, volume and response SLAs. Platforms cannot onboard millions of phone-only businesses one by one.</p>
+            <p>Routing signals and SLAs. They can't onboard millions of shops one by one.</p>
           </article>
         </div>
+        <details class="more">
+          <summary>What's next, and the risks we say out loud</summary>
         <div class="next">
           <div>
             <p class="num">Next, in order</p>
@@ -554,6 +536,7 @@
             </dl>
           </div>
         </div>
+        </details>
       </section>
 
       <!-- ============================= HONEST ============================= -->
@@ -562,7 +545,7 @@
           <div>
             <h2 id="h-title">What works today, and what doesn't yet.</h2>
           </div>
-          <p class="section-lede">The rules ask us to mark every mock, and you'd ask anyway. The whole product is about only claiming what's true.</p>
+          <p class="section-lede">The rules ask us to mark every mock. The whole product is about only claiming what's true.</p>
         </div>
         <div class="honest">
           <div>
