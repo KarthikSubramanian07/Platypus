@@ -77,7 +77,7 @@ describe("generateSlots", () => {
   });
 
   it("never offers a time outside business hours, even when the window is wider", () => {
-    // Saturday 06:00 to 20:00 PDT; Sal's is open 09:00-14:00 on Saturdays.
+    // Saturday 06:00 to 20:00 PDT; Eddy's is open 09:00-14:00 on Saturdays.
     const slots = generateSlots({
       hours: SALS_HOURS,
       timeZone: LA,

@@ -69,7 +69,7 @@ We found no credible published figure for minutes per booking, so the customer b
 
 **Mocked or not yet built**
 
-- Sal's Auto is not a business: its line is Karthik's phone, and he is not a mechanic. No oil change is booked at any real shop.
+- Eddy's Auto is not a business: its line is Karthik's phone, and he is not a mechanic. No oil change is booked at any real shop.
 - The other five shops on the dashboard are fictional, with phone numbers reserved for fiction.
 - SMS to arbitrary regular phone numbers still needs 10DLC registration. iMessage is approved, and the demo uses iMessage to one phone.
 - Darwin's answer for our trades varies: with our application key it returns `no_match` for the auto shop and listed-but-not-ready agents for two trades; anonymous search returned listed agents, none ready. We report exactly what Darwin returns. We do not use Darwin Act or Publish, and Darwin is never simulated.

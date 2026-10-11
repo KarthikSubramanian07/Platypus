@@ -110,7 +110,7 @@ export function formatTrade(trade: string | undefined): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-/** Two-letter initials for an avatar: "Sal's Auto" -> "SA". */
+/** Two-letter initials for an avatar: "Eddy's Auto" -> "SA". */
 export function initials(name: string): string {
   const parts = name.replace(/[^\p{L}\p{N}\s]/gu, "").split(/\s+/).filter(Boolean);
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";

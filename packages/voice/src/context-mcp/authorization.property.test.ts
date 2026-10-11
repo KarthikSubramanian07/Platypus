@@ -43,7 +43,7 @@ describe("Context MCP authorization, property-based", () => {
         const businessId = biz === "sal" ? f.sal.id : biz === "mira" ? f.mira.id : biz === "unknown" ? "biz_unknown" : undefined;
         const input = { ...(businessId ? { business_id: businessId } : {}), window: TOMORROW_AFTERNOON };
 
-        // The oracle: the only live outbound call in the fixture is to Sal's number, about Sal's Auto.
+        // The oracle: the only live outbound call in the fixture is to the demo shop's number, about Eddy's Auto.
         const authorized = isE164(number) && dir === "outbound" && state === "live" && number === f.sal.phone_e164 && biz === "sal";
         const before = f.events("voice.tool_called").length;
         const outcome = await tools.check_slot(input as never, ctx).then(

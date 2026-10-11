@@ -7,7 +7,7 @@ import { AGENT_HEADER, DEFAULT_AGENT_ID, MAX_BODY_BYTES, MIN_TOKEN_CHARS, agentI
 const BOOKING: BookingView = {
   booking_id: "bk_1",
   provider_id: "prov_1",
-  provider_name: "Sal's Auto",
+  provider_name: "Eddy's Auto",
   service: "oil change",
   status: "pending",
   route: "call",

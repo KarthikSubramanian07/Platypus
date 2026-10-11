@@ -162,7 +162,7 @@ export const CLARIFY_RE = /^\s*(sorry|what|huh|pardon|come again|say (that )?aga
 export const THIS_LINE_RE = /\b(this (one|number|line|phone)|same number|the one you('re| are)? call(ed|ing)|this is (my|a) cell|you'?ve got it)\b/i;
 
 export function findOwnerName(turnText: string): string | null {
-  const m = turnText.match(/\b(?:this is|it'?s|i'?m|my name is|speaking,?)\s+([A-Z][a-z]{1,20})\b/);
+  const m = turnText.match(/\b(?:this is|it'?s|i'?m|my name is|speaking,?)\s+([A-Z][a-z]{1,20})\b(?!['’]s)/);
   if (!m) return null;
   if (/^(Sal|Auto|The|Not|Just|Here)$/.test(m[1]!)) return null;
   return m[1]!;

@@ -47,7 +47,7 @@ export const AGENT_NUMBER = "+15550100000";
 
 /**
  * An in-memory database seeded with the six businesses, a pending oil-change
- * booking for Sal's Auto, and a live outbound call to Sal's (fictional) number.
+ * booking for Eddy's Auto, and a live outbound call to Sal's (fictional) number.
  */
 export function callFixture(): CallFixture {
   const db = openDb(":memory:");

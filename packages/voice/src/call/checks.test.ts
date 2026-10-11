@@ -5,7 +5,7 @@ const turn = (speaker: "agent" | "user", text: string, startMs: number) => ({ sp
 
 describe("checkDisclosure", () => {
   it("passes when the agent's first words are the disclosure", () => {
-    expect(checkDisclosure([turn("user", "Sal's Auto, this is Eddy.", 0), turn("agent", `${DISCLOSURE} Is this Sal's Auto?`, 2000)]).ok).toBe(true);
+    expect(checkDisclosure([turn("user", "Eddy's Auto, this is Eddy.", 0), turn("agent", `${DISCLOSURE} Is this Eddy's Auto?`, 2000)]).ok).toBe(true);
   });
 
   it("passes when both sides talk at once and the agent restarts with the full disclosure", () => {
@@ -14,7 +14,7 @@ describe("checkDisclosure", () => {
       turn("user", "Hi. This is", 1400),
       turn("agent", "Hi, this", 1400),
       turn("user", "Hi.", 6300),
-      turn("agent", `${DISCLOSURE} Is this Sal's Auto?`, 8700),
+      turn("agent", `${DISCLOSURE} Is this Eddy's Auto?`, 8700),
     ];
     expect(checkDisclosure(turns)).toMatchObject({ ok: true, similarity: 1 });
   });

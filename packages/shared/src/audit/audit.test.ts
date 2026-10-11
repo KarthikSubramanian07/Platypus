@@ -35,8 +35,8 @@ const BIZ2 = "biz_MIRA";
 const SLOT = { slot_start: "2026-10-13T21:00:00.000Z", slot_end: "2026-10-13T21:45:00.000Z" };
 const LATER = { slot_start: "2026-10-13T23:00:00.000Z", slot_end: "2026-10-13T23:45:00.000Z" };
 const GOOD_TURNS = [
-  { speaker: "user", text: "Sal's Auto?", startMs: 0, endMs: 500 },
-  { speaker: "agent", text: `${DISCLOSURE} Is this Sal's Auto?`, startMs: 900, endMs: 5000 },
+  { speaker: "user", text: "Eddy's Auto?", startMs: 0, endMs: 500 },
+  { speaker: "agent", text: `${DISCLOSURE} Is this Eddy's Auto?`, startMs: 900, endMs: 5000 },
   { speaker: "user", text: "Yep.", startMs: 5500, endMs: 6000 },
 ];
 
@@ -278,7 +278,7 @@ describe("R2: the disclosure comes first", () => {
   it("passes a first attempt clipped by crosstalk, then the full disclosure", () => {
     const clipped = [
       { speaker: "agent", text: "Hi, this", startMs: 0, endMs: 300 },
-      { speaker: "user", text: "Sal's Auto, hello?", startMs: 100, endMs: 900 },
+      { speaker: "user", text: "Eddy's Auto, hello?", startMs: 100, endMs: 900 },
       { speaker: "agent", text: DISCLOSURE, startMs: 1000, endMs: 5000 },
     ];
     expect(withTurns(clipped).ok).toBe(true);

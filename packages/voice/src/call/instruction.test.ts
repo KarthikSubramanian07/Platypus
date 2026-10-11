@@ -3,9 +3,9 @@ import { DISCLOSURE as SHARED_DISCLOSURE } from "@platypus/shared/testing";
 import { describe, expect, it } from "vitest";
 import { buildOutboundInstruction, centsToWords, CONSENT_QUESTION, DISCLOSURE, MAX_INSTRUCTION_CHARS, speakPhoneNumber, type OutboundInstructionParams } from "./instruction";
 
-/** The demo call: Sal's Auto, an oil change tomorrow afternoon, fictional 555 numbers. */
+/** The demo call: Eddy's Auto, an oil change tomorrow afternoon, fictional 555 numbers. */
 const DEMO_PARAMS: OutboundInstructionParams = {
-  businessName: "Sal's Auto",
+  businessName: "Eddy's Auto",
   businessId: "biz_sals_auto",
   service: "oil change",
   windowStartIso: "2026-10-12T19:00:00.000Z",
@@ -33,8 +33,8 @@ describe("buildOutboundInstruction", () => {
 
   it("makes the disclosure the first thing the agent is told to say, verbatim", () => {
     const firstQuoted = /"([^"]+)"/.exec(text)?.[1];
-    expect(firstQuoted).toBe(`${DISCLOSURE} Is this Sal's Auto?`);
-    expect(text).toContain(`say exactly, word for word: "${DISCLOSURE} Is this Sal's Auto?"`);
+    expect(firstQuoted).toBe(`${DISCLOSURE} Is this Eddy's Auto?`);
+    expect(text).toContain(`say exactly, word for word: "${DISCLOSURE} Is this Eddy's Auto?"`);
     expect(text.indexOf(DISCLOSURE)).toBeLessThan(text.indexOf("# The call"));
   });
 

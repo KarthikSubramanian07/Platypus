@@ -1,6 +1,6 @@
 /**
  * `pnpm demo:reset`: a clean slate for a take. Replaces the database file (the event log is
- * append-only, so it is never edited), re-runs migrations and the seed, and leaves Sal's Auto
+ * append-only, so it is never edited), re-runs migrations and the seed, and leaves Eddy's Auto
  * PHONE-ONLY with its real number from ALLOWED_NUMBERS[0].
  */
 import { existsSync, rmSync } from "node:fs";
@@ -17,4 +17,4 @@ const allowedNumbers = parseAllowedNumbers(process.env.ALLOWED_NUMBERS);
 const businesses = seed(db, { allowedNumbers, onSeeded: emitSeedEvents(db) });
 db.close();
 console.log(`Reset ${dbPath} (DEMO_MODE=${mode}).\n${describeSeed(businesses)}`);
-if (!allowedNumbers.length) console.warn("ALLOWED_NUMBERS is empty: Sal's Auto has a fictional number and cannot be called.");
+if (!allowedNumbers.length) console.warn("ALLOWED_NUMBERS is empty: Eddy's Auto has a fictional number and cannot be called.");
