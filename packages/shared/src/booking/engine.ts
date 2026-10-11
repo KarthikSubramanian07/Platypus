@@ -213,6 +213,7 @@ function verifyEvidence(ctx: BookingContext, booking: Booking, evidence: Confirm
         getRow(ctx.db, "calls", evidence.callId) ?? selectRows(ctx.db, "calls", "dial_call_id = ?", [evidence.callId])[0];
       if (!call) return fail("the call does not exist");
       if (call.business_id !== booking.business_id) return fail("the call was with a different business");
+      if (call.ended_at) return fail("the call has ended; a yes on a call is taken mid-call, through the booking tools");
       if (!evidence.quotedSentence?.trim()) return fail("the owner's yes must be quoted");
       if (booking.slot_start === null || booking.price_cents === null) return fail("it was not booked through hold_slot and create_booking");
       const holds = selectRows(ctx.db, "holds", "booking_id = ? AND status IN ('active', 'converted')", [booking.id]);
