@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Platypus · Live event log</title>
+    <meta name="description" content="Platypus makes phone-only businesses bookable by every AI agent. One call. Agent-native forever. This is the live event log." />
+    <meta property="og:title" content="Platypus · We make Main Street agent-native" />
+    <meta property="og:description" content="One call makes any phone-only business bookable by every AI agent. Call once, agent-native forever." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="theme-color" content="#F4F1EA" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <header class="masthead">
+      <div>
+        <h1>Platypus</h1>
+        <p class="tagline">One call. Agent-native forever.</p>
+      </div>
+      <div class="status">
+        <span id="conn" class="conn" data-state="connecting">Connecting</span>
+        <span id="count" class="count">0 events</span>
+        <button id="replay" class="replay" type="button">Replay golden path</button>
+      </div>
+    </header>
+    <main>
+      <section class="card">
+        <div class="card-head">
+          <h2>Event log</h2>
+          <p class="hint">Every state change, with who did it and how sure we are. Newest at the bottom.</p>
+        </div>
+        <ol id="events" class="events" aria-live="polite"></ol>
+        <p id="empty" class="empty">Waiting for the first event. Run <code>pnpm dev</code> or press Replay.</p>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

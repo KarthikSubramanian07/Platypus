@@ -1,0 +1,94 @@
+# Decisions
+
+Each entry gives the decision, why we made it, and what it costs. These are written for a reader who was not in the room. Newest entries are at the bottom of each section.
+
+## Product rules
+
+**A booking is confirmed only by evidence of the owner's yes.**
+`confirm(bookingId, evidence)` in `packages/shared/src/booking/engine.ts` is the only code path that sets `confirmed`. Evidence is one of three things:
+- a call (the call id plus the owner's quoted sentence, and the booking must hold a slot and a price set through `hold_slot` and `create_booking`);
+- a text (an inbound message from that business classified as `accept`);
+- a rule (an active autopilot rule the owner confirmed by text).
+
+Why: a false accept, booking a job the owner never agreed to, destroys trust faster than anything else, so it is made impossible to express rather than merely discouraged. Cost: a booking made on a call when the mid-call tools failed cannot be confirmed from the transcript. That is deliberate, and the fallback is a confirming text.
+
+**Consent is enforced by the schema, not only by code.**
+The `consents` table has a CHECK constraint. A row made on a call must carry the call id and a non-empty quoted sentence, and a row made by a JOIN text must reference that message. Why: no code path, present or future, can store consent without its proof.
+
+**The event log is append-only, enforced by a trigger.**
+Why: the log is the audit trail, the dashboard's source of truth, and the fixtures. Cost: `pnpm dev` in fakes mode resets the demo by replacing the database file, not by deleting rows.
+
+**The booking state machine adds a `cancelled` state.**
+Spec B.5.4 lists `cancelled` as a destination but not as a state, and `cancel_booking` needs one. The requesting agent may cancel from `quote_pending`, `quoted`, `pending`, `countered`, `confirmed` and `rescheduled`. `rescheduled` returns to `confirmed` only through `confirm()`, because moving a booking needs the owner's yes again.
+
+**Holds last 10 minutes and never overlap.**
+`placeHold` refuses a slot that overlaps another business's active hold or a confirmed booking. It sweeps expired holds first, and `confirm()` re-checks expiry, so a hold that lapsed mid-call cannot be confirmed.
+
+**Short codes use an unambiguous alphabet.**
+Codes look like `SAL-4K2`. Why: codes are read aloud on calls and typed on phones, so 0, O, 1, I and L are excluded.
+
+## Engineering
+
+**One pnpm workspace with six packages and no build step.**
+Packages export TypeScript source, and tsx, Vitest and Vite read it directly. Why: a contract change in `shared` is visible to every workstream instantly, with nothing to rebuild during a hackathon.
+
+**TypeScript is pinned to 6.0.**
+TypeScript 7 is the latest release, but typescript-eslint 8 supports TypeScript below 6.1 only. We will upgrade when typescript-eslint does.
+
+**better-sqlite3 12, not 13.**
+Version 13 dropped its prebuilt-binary install path and failed to build without node-gyp. Version 12.11 installs prebuilt binaries on Node 22 and 24.
+
+**The SQL is portable to Postgres.**
+Timestamps are ISO-8601 text, JSON is text, ids are prefixed ULIDs, and every foreign key points to a table created earlier. Only the append-only trigger is SQLite-specific, and it lives in its own `*.sqlite.sql` migration. Why: the spec names Postgres for production, and we did not want an ORM.
+
+**Event ids are monotonic ULIDs.**
+Replaying "everything after id X" is a string comparison. The SSE endpoint replays the backlog after `Last-Event-ID`, buffers events that arrive during the replay, and then streams live. A dashboard that reconnects after a dropped tunnel therefore neither misses nor duplicates an event.
+
+**Events are published after commit.**
+State changes run in one transaction, and their events reach live listeners only after it commits. A listener never sees a change that rolled back.
+
+**`pnpm run doctor` rather than `pnpm doctor`.**
+pnpm has a built-in `doctor` command that shadows the script, so the repo documents `pnpm run doctor`.
+
+**The fakes enforce the same rules as production.**
+- FakeDial refuses numbers outside `ALLOWED_NUMBERS`, refuses a second live call to the same number, and refuses `sms` to a non-Dial number.
+- FakeGateway books through the real state machine and authorizes every request on the caller number.
+
+Why: tests that pass against the fakes exercise the real rules.
+
+**The golden-path fixture is generated, not hand-written.**
+`pnpm fixtures:golden-path` runs the whole demo against the fakes on a manual clock. Its gateway and text steps are clearly marked stand-ins that document the event sequence those packages must produce.
+
+## Vendor facts that differ from the spec
+
+These were checked on 2026-10-11 against `docs.getdial.ai/openapi.json`, `@getdial/sdk` 0.41, and live calls to `api.darwin.so`.
+
+**Dial**
+- The documented base path is `/api/v1/...`; `/v1/...` also answers.
+- `POST /calls` returns `201 {"call": {...}}`, wrapped, not a bare object.
+- `POST /calls` accepts an `Idempotency-Key` header; a replay returns the original call with status 200. We still never retry blindly (non-negotiable 4): send the key and check `GET /calls` first.
+- `fromNumber` is the preferred field and `fromNumberId` is legacy; send exactly one.
+- Call states are `Queued`, `Ringing`, `In-Progress`, `Terminated` and `Unknown`. `terminationType` is one of `completed`, `busy`, `no-answer`, `failed` or `canceled`.
+- `call.transcribed` carries only the call id. Fetch `GET /calls/{id}` for `transcript` and `transcriptTurns`, which use the speakers `agent`, `user` and `transfer_target`.
+- Webhook signatures arrive in `X-Dial-Signature: t=<unix>,v1=<hex>`: HMAC-SHA256 over `${t}.${rawBody}`. Deduplicate on `X-Dial-Event-ID`.
+- There is no `GET /events/subscribe`. The live stream is `POST /api/v1/listen/subscribe`, which returns PubNub credentials and replays about two minutes after a reconnect. `POST /events/wait` exists and polls for 1 to 60 seconds.
+- Number lookup is `GET /lookup?number=...`, which returns `{supports: {imessage, whatsapp}}`.
+- Context MCP headers can be missing on Dial's first tool-discovery connection, so tool listing must not require them; tool calls must.
+
+**Darwin**
+- `searchToken` comes back in the response body, not as an `X-Search-Token` response header. We send it as the `X-Search-Token` request header on follow-ups.
+- `context[].at` for deadlines must be UTC with a `Z` suffix; an offset such as `-07:00` returns 400.
+- The demo query (oil change near 1025 Sansome, budget $120, deadline tomorrow 5pm Pacific) returned **HTTP 500** on two anonymous attempts on 2026-10-11, about 10 seconds and then about 1 second, instead of `no_match`. Restaurant, flight and hotel queries also returned 500, while Darwin's documented invoice example returned `completed` with 5 agents, none of them ready, in 8.7 seconds.
+- Consequences:
+  - FakeDarwin serves those two real recordings.
+  - Its `no_match` mode is a test double labeled SYNTHETIC that refuses to run with `DEMO_MODE=live`.
+  - The golden-path fixture carries the real 500, not a simulated `no_match`.
+  - The gateway workstream must retry live and record a real `no_match`. If none arrives within 30 minutes, it must default `DARWIN_ENABLED=false` and the Darwin beat is cut, never faked.
+
+## Process
+
+**Context7 was unavailable at the start of the foundation session.**
+Dial and Darwin shapes were taken from their OpenAPI specs, SDK type definitions and live responses instead. Hono's SSE API was checked against Context7 once it connected.
+
+**No AI attribution in commits.**
+Every commit is authored by the teammate running the session.
