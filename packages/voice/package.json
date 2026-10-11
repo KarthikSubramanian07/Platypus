@@ -1,0 +1,17 @@
+{
+  "name": "@platypus/voice",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dial outbound calls and the Context MCP server the voice agent calls mid-call.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@platypus/shared": "workspace:*"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@platypus/gateway",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The agent-facing MCP gateway: search_providers, request_booking and the booking tools, Darwin routing and routing signals.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@platypus/shared": "workspace:*"
+  }
+}

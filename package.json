@@ -1,0 +1,35 @@
+{
+  "name": "platypus",
+  "version": "0.1.0",
+  "private": true,
+  "description": "One call makes any phone-only business bookable by every AI agent. Call once, agent-native forever.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@10.34.6",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "tsx scripts/dev.ts",
+    "doctor": "tsx scripts/doctor.ts",
+    "db:migrate": "tsx packages/shared/src/db/cli.ts migrate",
+    "db:seed": "tsx packages/shared/src/db/cli.ts seed",
+    "contracts:export": "tsx packages/shared/src/contracts/export.ts",
+    "fixtures:golden-path": "tsx packages/shared/src/testing/fixtures/generate.ts",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r --parallel typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "pnpm lint && pnpm typecheck && pnpm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.0.0",
+    "eslint": "^10.12.0",
+    "globals": "^16.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^5.0.3"
+  }
+}

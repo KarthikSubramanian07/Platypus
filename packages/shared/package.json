@@ -1,0 +1,31 @@
+{
+  "name": "@platypus/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Contracts, database, event log, booking state machine and test fakes shared by every Platypus package.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/config.ts",
+    "./safety": "./src/safety.ts",
+    "./db": "./src/db/index.ts",
+    "./events": "./src/events/index.ts",
+    "./booking": "./src/booking/index.ts",
+    "./contracts": "./src/contracts/index.ts",
+    "./testing": "./src/testing/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.4",
+    "better-sqlite3": "^12.11.1",
+    "hono": "^4.13.13",
+    "ulid": "^3.0.2",
+    "zod": "^4.6.6"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13"
+  }
+}
