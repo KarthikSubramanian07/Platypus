@@ -61,7 +61,7 @@ All figures are **estimates**, not measurements.
 
 **Mocked or not yet built**
 
-- Sal's Auto is not a business: its line is a second Dial number, the owner on the call is [confirm: who answers the shop line — Dial's inbound AI playing the owner, or Karthik through Dial], and no oil change is booked at any real shop.
+- Sal's Auto is not a business: its line is a second Dial number, the owner on the call is [confirm: who answers the shop line: Dial's inbound AI playing the owner, or Karthik through Dial], and no oil change is booked at any real shop.
 - The other five shops on the dashboard are fictional, with phone numbers reserved for fiction.
 - No real phone number is involved yet: calls and texts run between two Dial numbers until Dial approves a real number. Dial approves real numbers after review, for messaging (SMS and iMessage) after a review on their backend, and plain SMS also needs 10DLC registration. The owner replies to texts from the dashboard's owner-phone panel, not from a phone.
 - Darwin has never returned `no_match` for our trades. It answers with a completed search and no ready agent, and we report exactly that. We do not use Darwin Act or Publish, and Darwin is never simulated.
