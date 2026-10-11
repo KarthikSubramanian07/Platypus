@@ -19,7 +19,7 @@ export interface SitePage {
 
 export const SITE_PAGES: readonly SitePage[] = [
   { slug: "about", title: "About Platypus", description: "Platypus is AI booking for phone-only businesses: one honest AI call makes a business bookable by every AI agent, by text.", schemaType: "AboutPage", note: "who we are, and why a platypus" },
-  { slug: "developers", title: "Platypus for developers", description: "Connect any AI agent to phone-only businesses over MCP: quickstart, endpoint, the nine tools, booking outcomes and API keys.", schemaType: "TechArticle", note: "for the builders" },
+  { slug: "developers", title: "Platypus for developers", description: "Connect any AI agent to phone-only businesses over MCP: quickstart, endpoint, the ten tools, booking outcomes and API keys.", schemaType: "TechArticle", note: "for the builders" },
   { slug: "contact", title: "Contact Platypus", description: "Reach the Platypus team on GitHub, opt a business out of calls and texts, or report a security problem.", schemaType: "ContactPage", note: "say hi, we read everything" },
   { slug: "privacy", title: "Privacy", description: "What the Platypus website and booking service store, why, and what we never do with it.", schemaType: "WebPage", note: "the boring, important bit" },
   { slug: "404", title: "Page not found", description: "There is no page at this address on tryplatypus.pages.dev.", schemaType: "WebPage", note: "well, this is awkward", notFound: true },

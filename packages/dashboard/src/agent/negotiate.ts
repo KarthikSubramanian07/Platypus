@@ -72,7 +72,7 @@ export function notFoundMarkdown(pathname: string): string {
     "Where to look instead:",
     "",
     `- [llms.txt](${SITE_ORIGIN}/llms.txt): what Platypus is, when to use it, and every page on this site.`,
-    `- [Developer guide](${SITE_ORIGIN}/developers.md): the MCP endpoint, the nine tools and booking outcomes.`,
+    `- [Developer guide](${SITE_ORIGIN}/developers.md): the MCP endpoint, the ten tools and booking outcomes.`,
     `- [Sitemap](${SITE_ORIGIN}/sitemap.xml): every HTML page.`,
     `- [Home](${SITE_ORIGIN}/index.md): the product in Markdown.`,
     "",
