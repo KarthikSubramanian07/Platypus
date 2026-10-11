@@ -424,3 +424,28 @@ describe("one Dial account, two numbers", () => {
     expect(getRow(h.db, "bookings", h.booking.id)!.status).toBe("confirmed");
   });
 });
+
+describe("the demo shop's iPhone as its iMessage line", () => {
+  const IPHONE = "+14155550142";
+
+  it("texts the owner line when the shop's own numbers cannot get iMessage, and reads its reply as the shop's", async () => {
+    const h = harness({
+      allowedNumbers: [harness().sal.phone_e164, IPHONE],
+      lookup: (n) => ({ imessage: n === IPHONE, whatsapp: false }),
+      overrides: { ownerLine: IPHONE },
+    });
+    await h.service.sendBookingRequest({ booking_id: h.booking.id, business_id: h.sal.id });
+    expect(h.outbox()).toEqual([{ to: IPHONE, body: GOLDEN_COPY, channel: "imessage" }]);
+
+    await h.post(h.inbound("Y", { from: IPHONE, channel: "imessage" }));
+    await h.service.drain();
+    expect(getRow(h.db, "bookings", h.booking.id)!.status).toBe("confirmed");
+    expect(h.outbox().at(-1)!.to).toBe(IPHONE);
+  });
+
+  it("still prefers the shop's own number when it can get iMessage", async () => {
+    const h = harness({ allowedNumbers: [harness().sal.phone_e164, IPHONE], overrides: { ownerLine: IPHONE } });
+    await h.service.sendBookingRequest({ booking_id: h.booking.id, business_id: h.sal.id });
+    expect(h.outbox()[0]!.to).toBe(h.sal.phone_e164);
+  });
+});

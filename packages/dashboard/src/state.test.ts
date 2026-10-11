@@ -29,7 +29,7 @@ describe("reduce over the golden path", () => {
   it("lists the six seeded businesses in order", () => {
     expect(state.businessOrder).toHaveLength(6);
     expect(state.businessOrder.map((id) => state.businesses[id]!.name)).toEqual([
-      "Sal's Auto",
+      "Eddy's Auto",
       "Mira Hair Studio",
       "Little Acorns Daycare",
       "Two Hills Moving",
@@ -38,7 +38,7 @@ describe("reduce over the golden path", () => {
     ]);
   });
 
-  it("flips only Sal's to text-enabled, with rail, masked cell and the consent quote", () => {
+  it("flips only Eddy's to text-enabled, with rail, masked cell and the consent quote", () => {
     const sal = state.businesses[SAL]!;
     expect(sal).toMatchObject({ channel: "text_enabled", rail: "imessage", numberMasked: "+1415•••0101", consentQuote: "Yeah, text me.", consentSource: "call" });
     const others = state.businessOrder.filter((id) => id !== SAL).map((id) => state.businesses[id]!);
@@ -86,10 +86,10 @@ describe("reduce over the golden path", () => {
     expect(state.messages[1]!.classification).toMatchObject({ class: "accept", method: "deterministic" });
   });
 
-  it("computes the supply table: Sal's replies in 4 s at $89 with a 1/1 opt-in, the rest blank", () => {
+  it("computes the supply table: Eddy's replies in 4 s at $89 with a 1/1 opt-in, the rest blank", () => {
     const rows = supplyRows(state);
     expect(rows).toHaveLength(6);
-    expect(rows[0]).toMatchObject({ name: "Sal's Auto", channel: "text_enabled", medianReplySeconds: 4, lastPriceCents: 8900, optIn: [{ version: "v1", consents: 1, calls: 1, rate: 1 }] });
+    expect(rows[0]).toMatchObject({ name: "Eddy's Auto", channel: "text_enabled", medianReplySeconds: 4, lastPriceCents: 8900, optIn: [{ version: "v1", consents: 1, calls: 1, rate: 1 }] });
     for (const row of rows.slice(1)) {
       expect(row.medianReplySeconds).toBeUndefined();
       expect(row.lastPriceCents).toBeUndefined();
@@ -123,7 +123,7 @@ describe("reduce, moment by moment", () => {
     expect(currentCall(upTo((e) => e.type === "call.status_changed" && e.payload.to === "Ringing"))!.state).toBe("Ringing");
   });
 
-  it("keeps Sal's phone-only until the consent flips it", () => {
+  it("keeps Eddy's phone-only until the consent flips it", () => {
     expect(upTo((e) => e.type === "consent.recorded").businesses[SAL]!.channel).toBe("phone_only");
     expect(upTo((e) => e.type === "business.channel_changed").businesses[SAL]!.channel).toBe("text_enabled");
   });

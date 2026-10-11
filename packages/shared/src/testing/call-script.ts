@@ -29,7 +29,7 @@ export interface GoldenCallOptions {
  * The demo call from the Demo Script, beat for beat, with the mid-call tool calls
  * where the voice agent makes them. About 70 seconds end to end.
  */
-export function goldenCallScript({ now, businessName = "Sal's Auto", ownerName = "Eddy", timeZone = "America/Los_Angeles" }: GoldenCallOptions): CallScriptStep[] {
+export function goldenCallScript({ now, businessName = "Eddy's Auto", ownerName = "Eddy", timeZone = "America/Los_Angeles" }: GoldenCallOptions): CallScriptStep[] {
   const tomorrow = localDate(now, timeZone, 1);
   const windowStart = zonedTime(tomorrow, 12, 0, timeZone).toISOString();
   const windowEnd = zonedTime(tomorrow, 17, 0, timeZone).toISOString();

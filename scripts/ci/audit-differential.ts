@@ -157,8 +157,8 @@ const BIZ2 = "biz_MIRA";
 const SLOT = { slot_start: "2026-10-13T21:00:00.000Z", slot_end: "2026-10-13T21:45:00.000Z" };
 const LATER = { slot_start: "2026-10-13T23:00:00.000Z", slot_end: "2026-10-13T23:45:00.000Z" };
 const GOOD_TURNS = [
-  { speaker: "user", text: "Sal's Auto?" },
-  { speaker: "agent", text: `${DISCLOSURE} Is this Sal's Auto?` },
+  { speaker: "user", text: "Eddy's Auto?" },
+  { speaker: "agent", text: `${DISCLOSURE} Is this Eddy's Auto?` },
   { speaker: "user", text: "Yep." },
 ];
 

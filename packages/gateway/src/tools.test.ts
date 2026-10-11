@@ -62,11 +62,11 @@ const request = (overrides: Record<string, unknown> = {}) => ({
 const types = () => listEvents(db).map((e) => e.type).filter((t) => t !== "business.listed");
 
 describe("search_providers", () => {
-  it("returns Sal's Auto with signals and Darwin's answer, logging the search in order", async () => {
+  it("returns Eddy's Auto with signals and Darwin's answer, logging the search in order", async () => {
     const { tools } = gateway({ darwin: createDarwin({ DEMO_MODE: "fakes" }) });
     const out = await tools.search_providers({ service: "oil change", location: "1025 Sansome St, San Francisco", budget_cents: 12000, window: WINDOW }, agent);
 
-    expect(out.providers.map((p) => p.display_name)).toEqual(["Sal's Auto"]);
+    expect(out.providers.map((p) => p.display_name)).toEqual(["Eddy's Auto"]);
     expect(out.providers[0]).toMatchObject({ next_step: "call", channel_state: "phone_only", signals: { source: "local" } });
     expect(out.darwin.status).toBe("completed");
     expect(out.darwin.agents.length).toBeGreaterThan(0);
@@ -249,7 +249,7 @@ describe("booking tools", () => {
     const { tools } = gateway({ darwin: null });
     const { booking_id } = await tools.request_booking(request(), agent);
 
-    expect(await tools.get_booking({ booking_id }, agent)).toMatchObject({ status: "pending", provider_name: "Sal's Auto", window: WINDOW, confirmed_by: null });
+    expect(await tools.get_booking({ booking_id }, agent)).toMatchObject({ status: "pending", provider_name: "Eddy's Auto", window: WINDOW, confirmed_by: null });
     expect(listEvents(db, { type: "agent.tool_called", bookingId: booking_id })[0]!.payload).toMatchObject({ tool: "get_booking", status: "pending" });
     await expect(tools.get_booking({ booking_id }, { agent_id: "someone-else" })).rejects.toMatchObject({ code: "not_found" });
 
@@ -277,7 +277,7 @@ describe("booking tools", () => {
     const { tools } = gateway({ darwin: null });
     for (let i = 0; i < RATE_LIMIT.calls; i++) await tools.get_provider({ provider_id: sal.id }, agent);
     await expect(tools.get_provider({ provider_id: sal.id }, agent)).rejects.toMatchObject({ code: "rate_limited" });
-    await expect(tools.get_provider({ provider_id: sal.id }, { agent_id: "another-agent" })).resolves.toMatchObject({ display_name: "Sal's Auto" });
+    await expect(tools.get_provider({ provider_id: sal.id }, { agent_id: "another-agent" })).resolves.toMatchObject({ display_name: "Eddy's Auto" });
     now += RATE_LIMIT.windowMs;
     await expect(tools.get_provider({ provider_id: sal.id }, agent)).resolves.toMatchObject({ next_step: "call" });
   });

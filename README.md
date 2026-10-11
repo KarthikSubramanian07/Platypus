@@ -55,7 +55,7 @@ sequenceDiagram
     V->>G: record_consent (quoted sentence + call id)
     Note over G: Shop flips PHONE-ONLY to TEXT-ENABLED
     A->>G: get_booking
-    G-->>A: Booked: Sal's Auto, tomorrow 2:00pm, $89, SAL-4K2
+    G-->>A: Booked: Eddy's Auto, tomorrow 2:00pm, $89, SAL-4K2
     C->>A: "Also book a brake inspection there next week"
     A->>G: request_booking
     G->>O: One text, no call
@@ -271,7 +271,7 @@ Owners pay **per confirmed booking** (they already pay per lead), then an **auto
 
 | Real | Mocked or not yet built |
 | --- | --- |
-| Contracts, booking state machine, holds, consent rules, event log, SSE stream, CI | Sal's Auto is not a real business. Its line is a second Dial number, answered by Dial's AI playing the owner, until Dial approves a real number. |
+| Contracts, booking state machine, holds, consent rules, event log, SSE stream, CI | Eddy's Auto is not a real business. Its line is a second Dial number, answered by Dial's AI playing the owner, until Dial approves a real number. |
 | The gateway's nine MCP tools, routing and the demo CLI | The site's replay runs on FakeDial; the live Dial call is on the phone side. |
 | The live Darwin Search v3 client, search ladder and daily smoke check | Darwin's answer varies: `no_match` for the auto shop with our application key, listed agents none ready anonymously. |
 | Dial shapes checked against Dial's OpenAPI spec and SDK | Texts to regular phones wait on 10DLC. Five of six seeded businesses use 555 numbers. |

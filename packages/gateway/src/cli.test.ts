@@ -8,7 +8,7 @@ const SLOT_START = new Date(2026, 9, 13, 14, 0).toISOString(); // Tue Oct 13, 2:
 const BOOKING: BookingView = {
   booking_id: "bk_1",
   provider_id: "prov_sal",
-  provider_name: "Sal's Auto",
+  provider_name: "Eddy's Auto",
   service: "oil change",
   status: "pending",
   route: "call",
@@ -31,7 +31,7 @@ function stubTools(requests: unknown[], agents: GatewayContext[], waits: unknown
       providers: [
         {
           provider_id: "prov_sal",
-          display_name: "Sal's Auto",
+          display_name: "Eddy's Auto",
           trade: "auto",
           address: "1200 Sansome St",
           channel_state: "phone_only",
@@ -74,7 +74,7 @@ describe("demo CLI", () => {
     expect(waits).toEqual([{ booking_id: "bk_1", since_status: "pending" }]);
     expect(lines).toContain("Darwin: no_match, no agent covers this shop");
     expect(lines.filter((l) => l.startsWith("Status:")).map((l) => l.split(" ")[1])).toEqual(["pending", "confirmed"]);
-    expect(lines.at(-1)).toBe("Booked: Sal's Auto, Tue 2:00pm, $89, code SAL-4K2");
+    expect(lines.at(-1)).toBe("Booked: Eddy's Auto, Tue 2:00pm, $89, code SAL-4K2");
     expect(requests).toEqual([
       expect.objectContaining({ provider_id: "prov_sal", service: "oil change", requested_by: "Alex's assistant", notes: "2019 Civic" }),
     ]);

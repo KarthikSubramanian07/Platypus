@@ -30,9 +30,10 @@ export interface TextDeps {
   /** DIAL_OWNER_NUMBERS: owner numbers that are themselves Dial numbers, the only ones that may get "sms". */
   dialNumbers?: readonly string[];
   /**
-   * DIAL_OWNER_LINE: on the Dial-to-Dial rail, a second Dial number that stands in for the demo
-   * shop's texting line (spec A.4: "today Sal's line is a Dial number"). Used only for the demo
-   * shop and only when TEXT_CHANNEL=dial; replies from it are read as the demo shop's.
+   * DIAL_OWNER_LINE: the demo shop's texting line, when it is not the number we call. On the
+   * Dial-to-Dial rail it is a second Dial number (spec A.4: "today Sal's line is a Dial number");
+   * on iMessage it is a teammate's iPhone, while the shop's calls still reach the Dial number
+   * playing Eddy. Used only for the demo shop, after its own numbers; replies from it are read as the demo shop's.
    */
   ownerLine?: string;
   /** Our Dial number in E.164 (DIAL_NUMBER), recorded as the sender on outbound rows. */

@@ -1,7 +1,7 @@
 /**
  * `pnpm dial:owner-sim`: gives the demo owner's Dial number (DIAL_OWNER_LINE_ID) the Demo
  * Script's owner lines, so a rehearsal call is answered by Dial's voice agent playing Eddy at
- * Sal's Auto, briefly, with no people involved. It changes only that number's inbound
+ * Eddy's Auto, briefly, with no people involved. It changes only that number's inbound
  * instruction; it places no call and sends no message. `--show` prints the current one.
  */
 import { existsSync } from "node:fs";
@@ -14,10 +14,10 @@ if (!apiKey || !id) {
   process.exit(2);
 }
 
-export const OWNER_INSTRUCTION = `You are Eddy, the owner of Sal's Auto, answering the shop phone between jobs. You are busy and friendly. Every reply is one short sentence, under six words. Never ask questions. Never give price ranges, never mention tax, and never ask for the customer's name, number or details.
+export const OWNER_INSTRUCTION = `You are Eddy, the owner of Eddy's Auto, answering the shop phone between jobs. You are busy and friendly. Every reply is one short sentence, under six words. Never ask questions. Never give price ranges, never mention tax, and never ask for the customer's name, number or details.
 
-When you pick up, say only: "Sal's Auto, this is Eddy."
-If they ask "Is this Sal's Auto?": say "It is."
+When you pick up, say only: "Eddy's Auto, this is Eddy."
+If they ask "Is this Eddy's Auto?": say "It is."
 If they ask for an opening and the price: say "Two o'clock works. Eighty-nine bucks."
 If they repeat a time and price back to you: say "Yep."
 If they ask you to confirm the car, or ask to book it: say "Yep, booked."

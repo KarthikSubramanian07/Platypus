@@ -43,7 +43,12 @@ describe("intent patterns", () => {
   it("do not call", () => expect(M.DNC_RE.test("Please don't call here again")).toBe(true));
   it("not do not call", () => expect(M.DNC_RE.test("call me anytime")).toBe(false));
   it("this one", () => expect(M.THIS_LINE_RE.test("This one.")).toBe(true));
-  it("owner name", () => expect(M.findOwnerName("Sal's Auto, this is Eddy.")).toBe("Eddy"));
+  it("owner name", () => expect(M.findOwnerName("Eddy's Auto, this is Eddy.")).toBe("Eddy"));
+  it("does not take the shop's name for the owner's", () => {
+    expect(M.findOwnerName("It's Eddy's Auto.")).toBeNull();
+    expect(M.findOwnerName("It’s Eddy’s Auto.")).toBeNull();
+    expect(M.findOwnerName("Hi, it's Mira.")).toBe("Mira");
+  });
   it("phone in words", () => expect(M.findSpokenPhone("four one five, five five five, oh one two three")).toBe("+14155550123"));
   it("phone in digits", () => expect(M.findSpokenPhone("415 555 0123")).toBe("+14155550123"));
   it("asked if AI", () => expect(M.AI_Q_RE.test("wait, are you a robot?")).toBe(true));

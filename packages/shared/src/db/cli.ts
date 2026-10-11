@@ -18,7 +18,7 @@ if (command === "migrate") {
 } else if (command === "seed") {
   const allowedNumbers = parseAllowedNumbers(process.env.ALLOWED_NUMBERS);
   if (allowedNumbers.length === 0) {
-    console.warn("ALLOWED_NUMBERS is empty: Sal's Auto gets a fictional 555 number and cannot be called.");
+    console.warn("ALLOWED_NUMBERS is empty: Eddy's Auto gets a fictional 555 number and cannot be called.");
   }
   const businesses = seed(db, { allowedNumbers, onSeeded: emitSeedEvents(db) });
   console.log(describeSeed(businesses));

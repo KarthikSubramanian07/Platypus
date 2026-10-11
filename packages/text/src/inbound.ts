@@ -146,7 +146,7 @@ export async function handleInbound(deps: TextDeps, input: InboundInput): Promis
   const from = toE164(input.from) ?? input.from;
   const business =
     getBusinessByNumber(deps.db, from) ??
-    (deps.ownerLine && from === deps.ownerLine && deps.textChannel === "dial" ? getBusinessBySlug(deps.db, DEMO_SHOP_SLUG) : undefined) ??
+    (deps.ownerLine && from === deps.ownerLine ? getBusinessBySlug(deps.db, DEMO_SHOP_SLUG) : undefined) ??
     null;
   const booking = business ? resolveBooking(deps, business, input) : null;
   const at = now(deps);

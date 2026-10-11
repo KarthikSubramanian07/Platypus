@@ -14,8 +14,8 @@ fn later() -> Value {
 }
 fn good_turns() -> Value {
     json!([
-        { "speaker": "user", "text": "Sal's Auto?" },
-        { "speaker": "agent", "text": format!("{DISCLOSURE} Is this Sal's Auto?") },
+        { "speaker": "user", "text": "Eddy's Auto?" },
+        { "speaker": "agent", "text": format!("{DISCLOSURE} Is this Eddy's Auto?") },
         { "speaker": "user", "text": "Yep." },
     ])
 }

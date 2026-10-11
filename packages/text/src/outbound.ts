@@ -115,9 +115,9 @@ export async function routeNumber(deps: TextDeps, business: Business, number: st
   return { ok: true, to: number, rail, channel: rail };
 }
 
-/** The texting cell from the call first, then the listed line, then (Dial-to-Dial demo only) the owner line. */
-export function candidateNumbers(business: Business, deps?: Pick<TextDeps, "textChannel" | "ownerLine">): string[] {
-  const ownerLine = deps?.textChannel === "dial" && business.slug === DEMO_SHOP_SLUG ? deps.ownerLine : undefined;
+/** The texting cell from the call first, then the listed line, then (demo shop only) the owner line. */
+export function candidateNumbers(business: Business, deps?: Pick<TextDeps, "ownerLine">): string[] {
+  const ownerLine = business.slug === DEMO_SHOP_SLUG ? deps?.ownerLine : undefined;
   return [...new Set([business.text_number_e164, business.phone_e164, ownerLine].filter((n): n is string => Boolean(n)))];
 }
 

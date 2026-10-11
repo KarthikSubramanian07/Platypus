@@ -50,6 +50,10 @@ else fail(`TEXT_CHANNEL = ${channel}: must be one of ${TEXT_CHANNELS.join(", ")}
 if (channel === "dial" && !(process.env.DIAL_OWNER_LINE && process.env.DIAL_OWNER_LINE_ID)) {
   fail("TEXT_CHANNEL=dial texts only Dial numbers: set DIAL_OWNER_LINE and DIAL_OWNER_LINE_ID, or every text request falls back to a call");
 }
+const ownerLine = process.env.DIAL_OWNER_LINE?.trim();
+if (ownerLine && !parseAllowedNumbers(process.env.ALLOWED_NUMBERS).includes(ownerLine)) {
+  fail(`DIAL_OWNER_LINE ${maskNumber(ownerLine)} is not in ALLOWED_NUMBERS, so every text to it is refused`);
+}
 
 console.log("\nDarwin");
 const darwinImpl = process.env.DARWIN_IMPL ?? (mode === "live" ? "real" : "fake");

@@ -31,7 +31,7 @@ export interface GoldenPathResult {
 
 /**
  * The whole demo, end to end, against the fakes: an agent asks, Darwin is
- * consulted, Sal's Auto is called, books through the mid-call tools and says
+ * consulted, Eddy's Auto is called, books through the mid-call tools and says
  * yes to texts; the second request goes by text and the owner's Y confirms it.
  *
  * The gateway and text steps here are stand-ins written for the fixture, not

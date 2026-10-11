@@ -22,7 +22,7 @@ export interface DisclosureCheck {
  * first sentence, so we check the transcript. The agent's opening (its first
  * turn, joined with any agent turns before the owner speaks again) must start
  * with DISCLOSURE, ignoring case and punctuation. The owner may speak first
- * ("Sal's Auto?"); that is expected and allowed.
+ * ("Eddy's Auto?"); that is expected and allowed.
  */
 export function checkDisclosure(turns: readonly TimedTurn[]): DisclosureCheck {
   const expectedWords = words(DISCLOSURE);

@@ -31,7 +31,7 @@ describe("live dashboard formatters", () => {
     expect(formatRail("whatsapp")).toBe("WhatsApp");
     expect(formatRail("dial")).toBe("Dial");
     expect(formatTrade("dog_groomer")).toBe("Dog groomer");
-    expect(initials("Sal's Auto")).toBe("SA");
+    expect(initials("Eddy's Auto")).toBe("EA");
     expect(initials("")).toBe("?");
   });
 });

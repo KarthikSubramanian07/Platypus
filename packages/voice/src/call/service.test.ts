@@ -99,7 +99,7 @@ describe("startOnboardingCall on the golden call", () => {
     expect(place).toHaveBeenCalledTimes(1);
     const [input, opts] = place.mock.calls[0]!;
     expect(input).toMatchObject({ to: s.phone, fromNumberId: "num_fake", language: "en-US", voiceGender: "female", maxCallDurationSeconds: 120 });
-    expect(input.outboundInstruction).toContain(`"${DISCLOSURE} Is this Sal's Auto?"`);
+    expect(input.outboundInstruction).toContain(`"${DISCLOSURE} Is this Eddy's Auto?"`);
     expect(input.outboundInstruction).toContain(`business_id "${s.businessId}"`);
     expect(opts.idempotencyKey).toBe(`onboard-${s.bookingId}`);
     expect(getRow(s.db, "calls", callId)?.script_version).toMatch(/^onboard-v3@[0-9a-f]{16}$/);
@@ -112,7 +112,7 @@ describe("startOnboardingCall on the golden call", () => {
     expect(row.status).toBe("Terminated");
     expect(row.end_reason).toBe("completed");
     expect(row.transcript).toContain("Yeah, text me.");
-    expect(row.transcript_turns?.[0]?.text).toBe(`${DISCLOSURE} Is this Sal's Auto?`);
+    expect(row.transcript_turns?.[0]?.text).toBe(`${DISCLOSURE} Is this Eddy's Auto?`);
     expect(row.friction_score).toEqual(expect.any(Number));
 
     const types = callEvents(s.db, callId).map((e) => e.type);
@@ -344,8 +344,8 @@ describe("post-call checks", () => {
     const s = setup({
       tools: false,
       script: (steps) => [
-        { kind: "turn", atMs: 500, speaker: "user", text: "Sal's Auto.", durationMs: 600 },
-        { kind: "turn", atMs: 1_200, speaker: "agent", text: DISCLOSURE.toLowerCase().replace(/[.,']/g, "") + " Is this Sal's Auto?", durationMs: 5_200 },
+        { kind: "turn", atMs: 500, speaker: "user", text: "Eddy's Auto.", durationMs: 600 },
+        { kind: "turn", atMs: 1_200, speaker: "agent", text: DISCLOSURE.toLowerCase().replace(/[.,']/g, "") + " Is this Eddy's Auto?", durationMs: 5_200 },
         ...steps.slice(1),
       ],
     });

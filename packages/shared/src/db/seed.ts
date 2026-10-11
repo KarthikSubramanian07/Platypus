@@ -13,7 +13,7 @@ import type { Business } from "./types";
 export const SEED_BUSINESSES = [
   {
     slug: "sals-auto",
-    display_name: "Sal's Auto",
+    display_name: "Eddy's Auto",
     trade: "auto_repair",
     short_code_prefix: "SAL",
     fictional_phone: "+14155550101",

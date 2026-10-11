@@ -151,8 +151,10 @@ export function createTextService(deps: TextServiceDeps): TextService {
  */
 export function createTextServiceFromEnv(side: SideDeps, env: NodeJS.ProcessEnv = process.env, overrides: Partial<TextServiceDeps> = {}): TextService {
   const config = loadConfig(env);
-  // The owner line is itself a Dial number, so it may receive "sms" on the Dial-to-Dial rail.
-  const dialNumbers = [...new Set([...parseAllowedNumbers(env.DIAL_OWNER_NUMBERS), ...parseAllowedNumbers(env.DIAL_OWNER_LINE)])];
+  // On the Dial-to-Dial rail the owner line is itself a Dial number, so it may receive "sms".
+  // On iMessage it is a real phone and must never be treated as one.
+  const ownerLineIsDial = config.textChannel === "dial" ? parseAllowedNumbers(env.DIAL_OWNER_LINE) : [];
+  const dialNumbers = [...new Set([...parseAllowedNumbers(env.DIAL_OWNER_NUMBERS), ...ownerLineIsDial])];
   let messaging: DialMessaging | undefined = overrides.messaging;
   if (!messaging) {
     if (!env.DIAL_API_KEY || !env.DIAL_FROM_NUMBER_ID) throw new Error("DIAL_API_KEY and DIAL_FROM_NUMBER_ID are required to text owners");
