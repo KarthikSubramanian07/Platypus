@@ -46,6 +46,9 @@ try {
 }
 const channel = process.env.TEXT_CHANNEL ?? "imessage";
 if ((TEXT_CHANNELS as readonly string[]).includes(channel)) ok(`TEXT_CHANNEL = ${channel}`);
+if (channel === "dial" && !(process.env.DIAL_OWNER_LINE && process.env.DIAL_OWNER_LINE_ID)) {
+  fail("TEXT_CHANNEL=dial texts only Dial numbers: set DIAL_OWNER_LINE and DIAL_OWNER_LINE_ID, or every text request falls back to a call");
+}
 else fail(`TEXT_CHANNEL = ${channel}: must be one of ${TEXT_CHANNELS.join(", ")} (never sms before 10DLC)`);
 
 console.log("\nDarwin");
