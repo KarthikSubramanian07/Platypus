@@ -138,6 +138,8 @@ function median(values: number[]): number | null {
 const inc = (m: Record<string, number>, k: string) => {
   m[k] = (m[k] ?? 0) + 1;
 };
+/** A counter keyed by log data, with no prototype: "toString" or "__proto__" is a key like any other. */
+const counts = (): Record<string, number> => Object.create(null) as Record<string, number>;
 
 // ---- Replay state ------------------------------------------------------------------
 
@@ -211,12 +213,12 @@ export function auditEventLog(events: readonly PlatypusEvent[], opts: AuditOptio
     events: events.length,
     first_at: null,
     last_at: null,
-    events_by_actor: {},
-    bookings: { total: 0, by_route: {}, by_status: {}, confirmed_by: {} },
+    events_by_actor: counts(),
+    bookings: { total: 0, by_route: counts(), by_status: counts(), confirmed_by: counts() },
     calls: { placed: 0, ended: 0, transcribed: 0, disclosure_verified: 0, disclosure_missing: 0, live_at_end: 0, tool_calls: 0 },
     holds: { placed: 0, converted: 0, released: 0, expired: 0, active_at_end: 0 },
     consents: { recorded: 0, revoked: 0, active_at_end: 0 },
-    messages: { sent: 0, received: 0, not_sent: 0, by_channel: {} },
+    messages: { sent: 0, received: 0, not_sent: 0, by_channel: counts() },
     owner_reply_seconds: { median: null, samples: 0 },
   };
   const lastSentAt = new Map<string, number>();

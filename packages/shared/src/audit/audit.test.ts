@@ -108,6 +108,18 @@ describe("auditEventLog on good logs", () => {
   });
 });
 
+describe("stats counters", () => {
+  it("count keys named after Object.prototype properties like any other key", () => {
+    const log = ["toString", "constructor", "__proto__"].map(
+      (channel, i) =>
+        ({ id: `evt_${i}`, type: "message.sent", actor: "system", refs: { business_id: "b_A" }, payload: { channel }, confidence: 1, created_at: `2026-10-12T02:00:0${i}Z` }) as unknown as PlatypusEvent,
+    );
+    const byChannel = auditEventLog(log).stats.messages.by_channel;
+    // Compared as JSON text: in an object literal, `__proto__: 1` would set the prototype, not a key.
+    expect(JSON.stringify(byChannel)).toBe('{"toString":1,"constructor":1,"__proto__":1}');
+  });
+});
+
 describe("R1: confirmed only by the owner's yes", () => {
   it("flags a confirmation with no evidence", () => {
     const L = logBuilder();
