@@ -4,15 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Platypus live demo · one call, then every job by text</title>
-    <meta name="description" content="Watch the whole Platypus demo on the shop owner's phone: an AI call that discloses itself, books the job mid-call and asks to text next time, then the next job arriving as one iMessage the owner answers with Y." />
+    <meta name="description" content="Watch the whole Platypus demo on the shop's line: an AI call that discloses itself, books the job mid-call and asks to text next time, then the next job arriving as one iMessage the owner answers with Y." />
     <link rel="canonical" href="https://tryplatypus.pages.dev/live" />
     <meta property="og:title" content="Platypus live demo" />
-    <meta property="og:description" content="One honest AI call makes a phone-only shop bookable by text. Watch the call, the consent and the Y on the owner's phone." />
+    <meta property="og:description" content="One honest AI call makes a phone-only shop bookable by text. Watch the call, the consent and the Y." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://tryplatypus.pages.dev/live" />
     <meta property="og:image" content="https://tryplatypus.pages.dev/og.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#FFFFFF" />
+    <meta name="theme-color" content="#F4F1EA" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   </head>
   <body class="live" data-hydrating="true">
@@ -21,29 +21,20 @@
         <span class="brand-mark" aria-hidden="true"></span>
         <span class="brand-word">platypus</span>
       </a>
-      <h1 class="top-page">Live demo</h1>
+      <h1 class="sr-only">Platypus live demo</h1>
       <div class="top-right">
-        <span id="replayed" class="tag" hidden title="These events are the golden-path fixture, re-emitted by the server. Nothing here is a new call.">fixture replay</span>
+        <span id="replayed" class="tag" hidden title="These events are the golden-path fixture, re-emitted by the server. Nothing here is a new call.">Fixture replay</span>
         <span id="conn" class="conn" data-state="connecting" role="status">Connecting</span>
         <button id="kill" class="pill pill-danger" type="button" hidden title="Ends the live call through POST /demo/kill-call">Kill call</button>
         <button id="replay" class="pill" type="button">Replay</button>
       </div>
     </header>
 
-    <section class="progress" aria-label="Golden path progress">
-      <ol id="beats" class="beats"></ol>
-      <div class="progress-text">
-        <p id="beat-label" class="beat-label"></p>
-        <p id="beat-caption" class="beat-caption" aria-live="polite"></p>
-      </div>
-      <button id="replay-final" class="pill pill-dark" type="button" hidden>Replay</button>
-    </section>
-
     <main class="stage">
-      <div class="phone-col">
+      <figure class="phone-col">
         <div id="phone-fit" class="phone-fit">
           <div class="phone-shadow" aria-hidden="true"></div>
-          <div id="phone" class="iphone" data-screen="lock" role="img" aria-label="The shop owner's phone">
+          <div id="phone" class="iphone" data-screen="lock" role="img" aria-label="The shop's line">
             <div class="iphone-edge" aria-hidden="true"><i style="--k: 1"></i><i style="--k: 2"></i><i style="--k: 3"></i><i style="--k: 4"></i><i style="--k: 5"></i><i style="--k: 6"></i><i style="--k: 7"></i><i style="--k: 8"></i><i style="--k: 9"></i><i style="--k: 10"></i><i style="--k: 11"></i><i style="--k: 12"></i></div>
             <span class="key key-action" aria-hidden="true"></span>
             <span class="key key-up" aria-hidden="true"></span>
@@ -62,7 +53,6 @@
               <section class="scr scr-lock" aria-hidden="true">
                 <p class="lock-date" id="lock-date">Monday, October 12</p>
                 <p class="lock-time">9:41</p>
-                <p class="lock-hint">Sal's Auto · the owner's phone</p>
                 <div class="lock-foot"><i></i><i></i></div>
               </section>
 
@@ -124,38 +114,38 @@
             <div class="glare" aria-hidden="true"></div>
           </div>
         </div>
+        <figcaption id="phone-note" class="phone-note">The shop's line · Dial-to-Dial</figcaption>
+      </figure>
+
+      <div class="story-head">
+        <div id="beats" class="beats" role="img" aria-label="Waiting for the first step"></div>
+        <p id="headline" class="headline" aria-live="polite">Waiting for an agent.</p>
       </div>
 
-      <div class="story">
-        <article class="card" id="card-ask" data-state="todo" aria-labelledby="ask-title">
-          <header class="card-head"><span class="card-num">1</span><h2 id="ask-title">The agent asks</h2><span id="ask-who" class="card-meta"></span></header>
-          <p id="ask-quote" class="card-quote"></p>
-          <p id="ask-facts" class="card-facts"></p>
-          <p class="card-line"><span id="ask-darwin" class="darwin-line"></span><span id="ask-route" class="chip" hidden></span></p>
-        </article>
-
-        <article class="card" id="card-call" data-state="todo" aria-labelledby="call-title">
-          <header class="card-head"><span class="card-num">2</span><h2 id="call-title">One honest call</h2><span id="call-who" class="card-meta"></span></header>
-          <p id="call-lede" class="card-lede"></p>
-          <ol id="checks" class="checks" aria-label="The five booking tools the voice agent called mid-call"></ol>
-          <div id="call-booking" class="booked" hidden></div>
-          <div id="consent" class="consent" hidden>
-            <p id="consent-quote" class="consent-quote"></p>
-            <p class="flip"><span class="flip-from">Phone-only</span><span class="flip-arrow" aria-hidden="true">→</span><span class="flip-to" id="flip-to">Text-enabled</span></p>
-          </div>
-        </article>
-
-        <article class="card" id="card-text" data-state="todo" aria-labelledby="text-title">
-          <header class="card-head"><span class="card-num">3</span><h2 id="text-title">Every request after is a text</h2></header>
-          <p id="text-lede" class="card-lede"></p>
-          <div id="text-booking" class="booked" hidden></div>
-          <p id="text-stat" class="stat" hidden></p>
-        </article>
+      <div class="acts">
+        <section class="act" id="act-ask" data-on="true" aria-label="The request">
+          <p id="ask-what" class="ask-what"></p>
+          <p id="ask-facts" class="ask-facts"></p>
+          <p class="ask-line"><span id="ask-who" class="meta"></span><span id="ask-darwin" class="chip" hidden></span><span id="ask-route" class="chip chip-ink" hidden></span></p>
+        </section>
+        <section class="act" id="act-call" data-on="false" aria-label="The call">
+          <ol id="checks" class="checks" aria-label="Booking tools the voice agent called mid-call"></ol>
+          <p id="consent" class="consent" data-flipped="false" hidden>
+            <span class="switch" aria-hidden="true"><i></i></span>
+            <span class="flip"><span class="flip-from">Phone-only</span><span id="flip-to" class="flip-to">Text-enabled</span></span>
+          </p>
+        </section>
+        <section class="act" id="act-text" data-on="false" aria-label="The text">
+          <p id="stat" class="stat"><b id="stat-num"></b><span id="stat-unit"></span></p>
+          <p id="text-line" class="text-line"></p>
+        </section>
       </div>
+
+      <ol id="ledger" class="ledger" aria-label="Bookings"></ol>
     </main>
 
     <details class="more" id="more">
-      <summary><span>Show the full event log and supply table</span><span class="more-meta" id="more-meta"></span></summary>
+      <summary><span>Event log and supply</span><span class="more-meta" id="more-meta"></span></summary>
       <div class="more-grid">
         <section class="panel" aria-labelledby="darwin-title">
           <h3 id="darwin-title" class="panel-title">Darwin · Search v3</h3>
