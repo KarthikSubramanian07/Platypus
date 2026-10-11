@@ -13,6 +13,7 @@
   --im-grey: #e9e9eb;
   --ios-grey: #8e8e93;
   --page: 1240px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 body.live { min-height: 100vh; background: var(--bg); font-size: 15px; }
@@ -30,7 +31,7 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 .pill {
   font: 500 13.5px/1 var(--sans); color: var(--ink-2);
   padding: 9px 15px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg);
-  cursor: pointer; white-space: nowrap; transition: background 160ms, border-color 160ms;
+  cursor: pointer; white-space: nowrap; transition: background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), transform 120ms var(--ease-out);
 }
 .pill:hover { background: var(--panel); }
 .pill:focus-visible { outline: 2px solid var(--olive); outline-offset: 2px; }
@@ -64,46 +65,104 @@ body[data-final="true"] .beat-caption { font-size: clamp(22px, 2.4vw, 30px); }
 .phone-col { display: flex; flex-direction: column; align-items: center; }
 
 /* ---- The iPhone ------------------------------------------------------------------------ */
-/* Drawn at 402 x 860 and scaled by --s (set from the viewport), so it is never cropped. */
-.phone-fit { --s: 0.8; position: relative; width: calc(402px * var(--s)); height: calc(860px * var(--s)); }
+/*
+ * An iPhone 16 Pro in Natural Titanium, drawn at its own proportions in points (408 x 854 with
+ * the frame, a 380 x 826 display) and scaled by --s (set from the viewport), so it is never
+ * cropped. It stands at a slight angle in real 3D: twelve titanium slices behind the glass give
+ * the side its 8 mm of depth, the keys sit on that side, and it leans toward the pointer.
+ * On the Messages screen it turns nearly flat so the thread reads on a projector.
+ */
+.phone-fit {
+  --s: 0.8; --ry: 13deg; --rx: 3deg;
+  position: relative; width: calc(408px * var(--s)); height: calc(854px * var(--s));
+  perspective: 1900px;
+}
+.phone-fit:has(.iphone[data-screen="messages"]) { --ry: 6deg; --rx: 0.5deg; }
+/* As on iOS, the lock screen shows the big clock only. */
+.iphone[data-screen="lock"] .sb-time { visibility: hidden; }
 .iphone {
-  position: absolute; top: 0; left: 0; width: 402px; height: 860px;
-  transform: scale(var(--s)); transform-origin: 0 0;
-  padding: 11px; border-radius: 68px; background: #111113;
-  box-shadow: 0 0 0 1.5px #c8c8c2, 0 0 0 5px #e9e9e4, 0 50px 90px -40px rgba(14, 15, 12, 0.45), 0 20px 40px -24px rgba(14, 15, 12, 0.3);
+  --frame: 68px;
+  position: absolute; left: 50%; top: 50%; width: 408px; height: 854px; margin: -427px 0 0 -204px;
+  transform: scale3d(var(--s), var(--s), var(--s)) rotateY(calc(var(--ry) + var(--tx, 0) * 5deg)) rotateX(calc(var(--rx) - var(--ty, 0) * 4deg));
+  transform-style: preserve-3d;
+  transition: transform 1100ms var(--ease-out);
+  padding: 11.5px; border: 2.5px solid transparent; border-radius: var(--frame);
+  background:
+    linear-gradient(#050506, #050506) padding-box,
+    linear-gradient(140deg, #f3f0ea 0%, #b8b2a7 22%, #e9e5de 46%, #9c968b 70%, #d8d3ca 100%) border-box;
   font-family: var(--ios-font); -webkit-font-smoothing: antialiased;
 }
-.iphone::before, .iphone::after { content: ""; position: absolute; width: 4px; border-radius: 2px; background: #d6d6d0; }
-.iphone::before { left: -7px; top: 190px; height: 96px; box-shadow: 0 -64px 0 -0.5px #d6d6d0; }
-.iphone::after { right: -7px; top: 230px; height: 120px; }
-.screen { position: relative; width: 380px; height: 838px; border-radius: 57px; overflow: hidden; background: #000; isolation: isolate; color: #fff; }
+/* The titanium side: slices stepping back 4 pt each, bright at the glass and darker toward the back. */
+.iphone-edge { position: absolute; inset: -2.5px; transform-style: preserve-3d; }
+.iphone-edge i {
+  position: absolute; inset: 0; border-radius: var(--frame);
+  transform: translateZ(calc(var(--k) * -4px));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 30%, transparent 70%, rgba(40, 36, 30, 0.18)),
+    color-mix(in oklab, #8d877c calc(var(--k) * 7%), #ece8e1);
+}
+.iphone-edge i:last-child { box-shadow: 0 46px 70px -34px rgba(20, 28, 24, 0.5), 0 18px 36px -20px rgba(20, 28, 24, 0.32); }
+/* Action button and volume keys on the left side, standing proud of the frame. */
+.key {
+  position: absolute; left: -4.5px; width: 22px; border-radius: 3px;
+  transform-origin: 0 50%; transform: translateZ(-13px) rotateY(90deg);
+  background: linear-gradient(90deg, #d9d4cb, #a7a196 55%, #c9c4ba);
+}
+.key-action { top: 166px; height: 34px; }
+.key-up { top: 234px; height: 62px; }
+.key-down { top: 310px; height: 62px; }
+.screen {
+  position: relative; width: 380px; height: 826px; border-radius: 54px; overflow: hidden; background: #000; isolation: isolate; color: #fff;
+  transform: translateZ(0.5px);
+}
+/* The cover glass: a soft reflection that drifts as the phone leans. */
+.glare {
+  position: absolute; inset: -2.5px; border-radius: var(--frame); pointer-events: none;
+  transform: translateZ(1px);
+  background: linear-gradient(118deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 24%, transparent 40%, transparent 78%, rgba(255, 255, 255, 0.05) 100%);
+  background-size: 140% 100%; background-position: calc(30% - var(--tx, 0) * 25%) 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: background-position 1100ms var(--ease-out);
+}
+/* The phone's shadow on the table, flat under the device. */
+.phone-shadow {
+  position: absolute; left: 4%; right: 10%; bottom: -26px; height: 56px; pointer-events: none;
+  background:
+    radial-gradient(closest-side, rgba(21, 40, 34, 0.3), rgba(21, 40, 34, 0.1) 60%, transparent),
+    radial-gradient(50% 30% at 50% 50%, rgba(21, 40, 34, 0.22), transparent);
+}
 .statusbar {
   position: absolute; top: 0; left: 0; right: 0; z-index: 6; height: 54px;
-  display: flex; align-items: center; justify-content: space-between; padding: 4px 30px 0 52px;
-  font: 600 17px/1 var(--ios-font); color: #fff; transition: color 400ms;
+  display: flex; align-items: center; justify-content: space-between; padding: 4px 30px 0 50px;
+  font: 600 17px/1 var(--ios-font); letter-spacing: -0.3px; color: #fff; transition: color 400ms var(--ease-out);
 }
+.sb-time { font-variant-numeric: tabular-nums; }
 .sb-icons { display: inline-flex; align-items: center; gap: 6px; }
 .sb-icons svg { fill: currentColor; }
-.sb-battery { position: relative; width: 26px; height: 12.5px; border: 1.2px solid currentColor; border-radius: 4px; opacity: 0.95; }
-.sb-battery::after { content: ""; position: absolute; right: -4px; top: 3.5px; width: 2px; height: 4px; border-radius: 0 1px 1px 0; background: currentColor; opacity: 0.5; }
-.sb-battery i { position: absolute; inset: 1.5px 5px 1.5px 1.5px; border-radius: 2px; background: currentColor; }
-.island { position: absolute; top: 11px; left: 50%; z-index: 7; width: 124px; height: 36px; margin-left: -62px; border-radius: 20px; background: #000; }
-.home-bar { position: absolute; bottom: 8px; left: 50%; z-index: 6; width: 138px; height: 5px; margin-left: -69px; border-radius: 3px; background: #fff; transition: background 400ms; }
+.sb-battery { position: relative; width: 27px; height: 13px; border-radius: 4.3px; box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 40%, transparent); }
+.sb-battery::after { content: ""; position: absolute; right: -3.5px; top: 4.5px; width: 1.5px; height: 4px; border-radius: 0 1px 1px 0; background: currentColor; opacity: 0.4; }
+.sb-battery i { position: absolute; inset: 2px 5px 2px 2px; border-radius: 2.5px; background: currentColor; }
+/* Dynamic Island, with the front camera's lens just visible in its right end. */
+.island {
+  position: absolute; top: 11px; left: 50%; z-index: 7; width: 122px; height: 36px; margin-left: -61px; border-radius: 20px;
+  background: radial-gradient(circle at calc(100% - 22px) 50%, #1d2636 0, #0e121a 3px, #050608 5px, #000 6.5px);
+}
+.home-bar { position: absolute; bottom: 8px; left: 50%; z-index: 6; width: 134px; height: 5px; margin-left: -67px; border-radius: 3px; background: #fff; transition: background 400ms var(--ease-out); }
 .iphone[data-screen="messages"] .statusbar { color: #000; }
 .iphone[data-screen="messages"] .home-bar { background: #000; }
 
-.scr { position: absolute; inset: 0; opacity: 0; visibility: hidden; transform: scale(1.03); transition: opacity 500ms ease, transform 600ms cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s 600ms; }
+.scr { position: absolute; inset: 0; opacity: 0; visibility: hidden; transform: scale(1.025); filter: blur(6px); transition: opacity 420ms var(--ease-out), transform 640ms var(--ease-out), filter 420ms var(--ease-out), visibility 0s 640ms; }
 .iphone[data-screen="lock"] .scr-lock,
 .iphone[data-screen="incoming"] .scr-incoming,
 .iphone[data-screen="call"] .scr-call,
 .iphone[data-screen="ended"] .scr-call,
-.iphone[data-screen="messages"] .scr-messages { opacity: 1; visibility: visible; transform: none; transition: opacity 500ms ease, transform 600ms cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s; }
+.iphone[data-screen="messages"] .scr-messages { opacity: 1; visibility: visible; transform: none; filter: none; transition: opacity 420ms var(--ease-out), transform 640ms var(--ease-out), filter 420ms var(--ease-out), visibility 0s; }
 
 .round { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; }
 .round svg { width: 34px; height: 34px; fill: #fff; }
 .round-green { background: #30d158; }
 .round-red { background: #ff3b30; }
-.round-glass { width: 70px; height: 70px; background: rgba(255, 255, 255, 0.16); }
+.round-glass { width: 70px; height: 70px; background: rgba(255, 255, 255, 0.16); -webkit-backdrop-filter: blur(24px) saturate(1.6); backdrop-filter: blur(24px) saturate(1.6); }
 .round-glass svg { width: 28px; height: 28px; }
 .ico-hang { transform: rotate(135deg); }
 
@@ -161,7 +220,7 @@ body[data-final="true"] .beat-caption { font-size: clamp(22px, 2.4vw, 30px); }
   display: flex; flex-direction: column; justify-content: flex-end; gap: 14px; overflow: hidden;
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 26%); mask-image: linear-gradient(to bottom, transparent 0, #000 26%);
 }
-.cap { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; animation: cap-in 450ms ease both; transition: opacity 400ms; }
+.cap { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; transition: opacity 400ms var(--ease-out); }
 .cap:not(:nth-last-child(-n + 2)) { opacity: 0.5; }
 .cap-who { font: 600 12.5px var(--ios-font); color: rgba(255, 255, 255, 0.5); }
 .cap[data-speaker="agent"] .cap-who { color: var(--mint); }
@@ -188,7 +247,7 @@ body[data-final="true"] .beat-caption { font-size: clamp(22px, 2.4vw, 30px); }
 .im-contact { display: flex; flex-direction: column; align-items: center; gap: 5px; }
 .im-avatar { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(180deg, #a8adb9, #868a95); color: #fff; font: 500 24px var(--ios-font); }
 .im-name { font: 400 12px var(--ios-font); color: #000; }
-.im-name i { font-style: normal; color: #b4b4b9; }
+.im-chev { margin-left: 1px; color: #b4b4b9; vertical-align: 0; }
 .im-thread { position: absolute; top: 138px; bottom: 92px; left: 0; right: 0; overflow-y: auto; padding: 10px 16px 14px; scrollbar-width: none; }
 .im-thread::-webkit-scrollbar { display: none; }
 .im-stamp { margin: 4px 0 12px; text-align: center; font: 500 11px/1.35 var(--ios-font); color: var(--ios-grey); }
@@ -197,7 +256,7 @@ body[data-final="true"] .beat-caption { font-size: clamp(22px, 2.4vw, 30px); }
 .bubble {
   position: relative; max-width: 76%; padding: 8px 14px 9px; border-radius: 19px;
   font: 400 17px/1.3 var(--ios-font); letter-spacing: -0.2px; overflow-wrap: anywhere;
-  animation: pop 380ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  animation: pop 420ms var(--ease-out) both; transform-origin: 0 100%;
 }
 .bubble.tail { margin-bottom: 8px; }
 .b-them { align-self: flex-start; background: var(--im-grey); color: #000; }
@@ -226,11 +285,11 @@ body[data-final="true"] .beat-caption { font-size: clamp(22px, 2.4vw, 30px); }
 .im-reply:disabled { opacity: 0.5; cursor: default; }
 .im-reply:focus-visible { outline: 3px solid rgba(11, 132, 254, 0.4); outline-offset: 2px; }
 .im-compose { position: absolute; left: 0; right: 0; bottom: 0; height: 92px; display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px 0; background: #fff; }
-.im-plus { flex-shrink: 0; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #ededf0; color: #7c7c82; font: 300 26px/1 var(--ios-font); }
+.im-plus { flex-shrink: 0; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #ededf0; color: #7c7c82; }
 .im-field { flex: 1; display: flex; align-items: center; justify-content: space-between; height: 36px; padding: 0 4px 0 14px; border: 1px solid #c9c9ce; border-radius: 18px; font: 400 17px var(--ios-font); }
 .im-placeholder { color: #c4c4c8; }
 .im-field[data-composing="true"] .im-placeholder { color: #000; }
-.im-send { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--im-blue); transform: scale(0); transition: transform 200ms; }
+.im-send { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--im-blue); transform: scale(0); transition: transform 260ms var(--ease-out); }
 .im-send svg { width: 15px; height: 15px; }
 .im-field[data-composing="true"] .im-send { transform: scale(1); }
 
@@ -247,7 +306,7 @@ body[data-final="true"] .beat-caption { font-size: clamp(22px, 2.4vw, 30px); }
 .card-head { display: flex; align-items: center; gap: 12px; }
 .card-num {
   display: grid; place-items: center; flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
-  font: 600 12px var(--mono); color: var(--muted); border: 1px solid var(--line); background: var(--bg); transition: all 400ms;
+  font: 600 12px var(--mono); color: var(--muted); border: 1px solid var(--line); background: var(--bg); transition: background-color 400ms var(--ease-out), border-color 400ms var(--ease-out), color 400ms var(--ease-out);
 }
 .card[data-state="active"] .card-num { background: var(--ink-2); border-color: var(--ink-2); color: var(--lime); }
 .card[data-state="done"] .card-num { background: var(--lime); border-color: var(--lime); color: var(--ink); }
@@ -272,9 +331,9 @@ body[data-final="true"] .beat-caption { font-size: clamp(22px, 2.4vw, 30px); }
 .checks { list-style: none; margin: 0 0 4px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .check {
   display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px 6px 7px; border-radius: 999px;
-  font-size: 13.5px; color: var(--faint); border: 1px solid var(--line); background: var(--bg); transition: all 400ms;
+  font-size: 13.5px; color: var(--faint); border: 1px solid var(--line); background: var(--bg); transition: background-color 400ms var(--ease-out), border-color 400ms var(--ease-out), color 400ms var(--ease-out);
 }
-.check-mark { position: relative; width: 17px; height: 17px; border-radius: 50%; border: 1.5px solid #d4d4ce; transition: all 400ms; }
+.check-mark { position: relative; width: 17px; height: 17px; border-radius: 50%; border: 1.5px solid #d4d4ce; transition: background-color 300ms var(--ease-out), border-color 300ms var(--ease-out); }
 .check[data-state="ok"] { color: var(--ink-2); background: var(--lime-wash); border-color: transparent; }
 .check[data-state="ok"] .check-mark { background: var(--olive); border-color: var(--olive); }
 .check[data-state="ok"] .check-mark::after { content: ""; position: absolute; left: 4.5px; top: 1.5px; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
@@ -298,9 +357,9 @@ body[data-final="true"] .beat-caption { font-size: clamp(22px, 2.4vw, 30px); }
 .consent { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
 .consent-quote { margin: 0; font: 400 24px/1.2 var(--serif); color: var(--ink); }
 .flip { display: flex; align-items: center; gap: 8px; margin: 0; font: 600 10.5px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
-.flip-from { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line); color: var(--muted); transition: all 500ms; }
+.flip-from { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line); color: var(--muted); transition: color 500ms var(--ease-out), border-color 500ms var(--ease-out); }
 .flip-arrow { color: var(--faint); }
-.flip-to { padding: 6px 8px; border-radius: 6px; background: var(--panel); color: var(--faint); transition: all 500ms 200ms; }
+.flip-to { padding: 6px 8px; border-radius: 6px; background: var(--panel); color: var(--faint); transition: background-color 500ms var(--ease-out) 200ms, color 500ms var(--ease-out) 200ms; }
 .consent[data-flipped="true"] .flip-from { text-decoration: line-through; color: var(--faint); }
 .consent[data-flipped="true"] .flip-to { background: var(--lime); color: var(--ink); }
 
@@ -403,3 +462,29 @@ body[data-final="true"] .top #replay { display: none; }
   .ev { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .ev-time { display: none; }
 }
+
+/* ---- Finish: motion and type ------------------------------------------------------------- */
+/* Each moment moves once, when its event lands: the newest caption, a tool's tick, the flip, the Y. */
+.cap:last-child { animation: cap-in 420ms var(--ease-out) both; }
+.b-me { transform-origin: 100% 100%; }
+.im-field { position: relative; }
+.im-mic { position: absolute; right: 11px; top: 50%; margin-top: -8.5px; color: #8e8e93; transition: opacity 160ms var(--ease-out); }
+.im-field[data-composing="true"] .im-mic { opacity: 0; }
+.pill:active:not(:disabled) { transform: scale(0.97); }
+.check[data-state="ok"] .check-mark::after { animation: tick 380ms var(--ease-out) both; }
+@keyframes tick { from { opacity: 0; transform: rotate(45deg) scale(0.4); } }
+.consent[data-flipped="true"] .flip-to { animation: flip-in 620ms var(--ease-out) 120ms both; }
+@keyframes flip-in { from { transform: perspective(240px) rotateX(-90deg); opacity: 0.4; } }
+.booked { position: relative; }
+.booked[data-status="confirmed"]::after {
+  content: ""; position: absolute; inset: -6px -10px -8px; border-radius: 12px; pointer-events: none;
+  background: var(--lime-wash); opacity: 0; animation: confirm 1400ms var(--ease-out);
+}
+@keyframes confirm { 12% { opacity: 1; } }
+.card { transition-timing-function: var(--ease-out); }
+.card-num { font-variant-numeric: tabular-nums; }
+.beat { transition: background-color 400ms var(--ease-out); }
+.beat-caption, .card h2, .consent-quote, .inc-name { text-wrap: balance; }
+.card-lede, .card-quote, .card-facts, .booked-evidence, .cap-text, .bubble { text-wrap: pretty; }
+.stat b, .booked-code, .card-meta, .more-meta { font-variant-numeric: tabular-nums; }
+::selection { background: var(--lime); color: var(--ink); }

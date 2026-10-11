@@ -477,7 +477,7 @@ function failure(what: string, result: DemoResult): string {
 }
 
 /**
- * The phone is drawn at a real iPhone's size (402 × 860 points with its frame) and
+ * The phone is drawn at a real iPhone 16 Pro's size (408 × 854 points with its frame) and
  * scaled to fit: the whole device is always visible, on a projector or a phone.
  */
 const fit = $("#phone-fit");
@@ -487,10 +487,25 @@ function fitPhone(): void {
   // Stacked on a phone, the device fits below the header and progress, with a floor so it stays legible.
   const availH = Math.max(stacked ? 520 : 0, innerHeight - top - (stacked ? 16 : 28));
   const availW = stacked ? innerWidth - 40 : innerWidth * 0.44;
-  const scale = Math.max(0.4, Math.min(0.94, availH / 860, availW / 402));
+  const scale = Math.max(0.4, Math.min(0.94, availH / 854, availW / 408));
   fit.style.setProperty("--s", scale.toFixed(4));
 }
 addEventListener("resize", fitPhone);
+
+// The phone leans a few degrees toward the pointer. With reduced motion it holds still.
+const stillMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const phoneCol = $(".phone-col");
+phoneCol.addEventListener("pointermove", (e) => {
+  if (stillMotion.matches || e.pointerType !== "mouse") return;
+  const r = fit.getBoundingClientRect();
+  const clamp = (v: number) => Math.max(-1, Math.min(1, v)).toFixed(3);
+  fit.style.setProperty("--tx", clamp(((e.clientX - r.left) / r.width) * 2 - 1));
+  fit.style.setProperty("--ty", clamp(((e.clientY - r.top) / r.height) * 2 - 1));
+});
+phoneCol.addEventListener("pointerleave", () => {
+  fit.style.removeProperty("--tx");
+  fit.style.removeProperty("--ty");
+});
 
 // ---- Details: Darwin, transcript, businesses, supply, stream ---------------------------------------
 

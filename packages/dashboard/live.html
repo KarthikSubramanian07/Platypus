@@ -42,7 +42,12 @@
     <main class="stage">
       <div class="phone-col">
         <div id="phone-fit" class="phone-fit">
+          <div class="phone-shadow" aria-hidden="true"></div>
           <div id="phone" class="iphone" data-screen="lock" role="img" aria-label="The shop owner's phone">
+            <div class="iphone-edge" aria-hidden="true"><i style="--k: 1"></i><i style="--k: 2"></i><i style="--k: 3"></i><i style="--k: 4"></i><i style="--k: 5"></i><i style="--k: 6"></i><i style="--k: 7"></i><i style="--k: 8"></i><i style="--k: 9"></i><i style="--k: 10"></i><i style="--k: 11"></i><i style="--k: 12"></i></div>
+            <span class="key key-action" aria-hidden="true"></span>
+            <span class="key key-up" aria-hidden="true"></span>
+            <span class="key key-down" aria-hidden="true"></span>
             <div class="screen">
               <div class="statusbar" aria-hidden="true">
                 <span class="sb-time">9:41</span>
@@ -96,7 +101,7 @@
                   <span class="im-back" aria-hidden="true"><svg viewBox="0 0 12 20" width="12" height="20"><path d="M10 2 2 10l8 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
                   <span class="im-contact">
                     <span class="im-avatar" aria-hidden="true">P</span>
-                    <span class="im-name">Platypus <i aria-hidden="true">›</i></span>
+                    <span class="im-name">Platypus <svg class="im-chev" viewBox="0 0 6 10" width="6" height="10" aria-hidden="true"><path d="M1.2 1.2 4.8 5l-3.6 3.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
                   </span>
                 </header>
                 <div class="im-thread" id="thread">
@@ -109,13 +114,14 @@
                   <button type="button" class="im-reply im-reply-n" data-reply="N">N</button>
                 </div>
                 <footer class="im-compose">
-                  <span class="im-plus" aria-hidden="true">+</span>
-                  <span class="im-field" id="compose"><span class="im-placeholder" id="compose-text">iMessage</span><b class="im-send" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg></b></span>
+                  <span class="im-plus" aria-hidden="true"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M8 2.5v11M2.5 8h11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" /></svg></span>
+                  <span class="im-field" id="compose"><span class="im-placeholder" id="compose-text">iMessage</span><svg class="im-mic" viewBox="0 0 16 16" width="17" height="17" aria-hidden="true"><path d="M3 7v2M6 4.5v7M9 2.5v11M12 5.5v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg><b class="im-send" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg></b></span>
                 </footer>
               </section>
 
               <div class="home-bar" aria-hidden="true"></div>
             </div>
+            <div class="glare" aria-hidden="true"></div>
           </div>
         </div>
       </div>
