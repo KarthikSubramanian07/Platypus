@@ -157,9 +157,12 @@ describe("FakeDarwin", () => {
     expect(res.status).toBe(500);
   });
 
-  it("labels the no_match double as synthetic", async () => {
+  it("serves the real recorded no_match, with its search token redacted", async () => {
     const body = await (await createFakeDarwinFetch("no_match", {})("https://api.darwin.so/api/v3/search", { method: "POST" })).json();
-    expect(DarwinSearchResponse.parse(body).response.noMatchReason).toMatch(/SYNTHETIC/);
+    const parsed = DarwinSearchResponse.parse(body);
+    expect(parsed.status).toBe("no_match");
+    expect(parsed.searchId).toMatch(/^srch_[0-9a-f-]{36}$/);
+    expect((body as { searchToken: string }).searchToken).toBe("redacted");
   });
 
   it("refuses to run in live mode", () => {

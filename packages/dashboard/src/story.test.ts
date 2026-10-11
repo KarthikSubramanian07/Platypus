@@ -71,7 +71,7 @@ describe("captions", () => {
 
 describe("darwinSummary", () => {
   it("says what Darwin said, in one line, and never more", () => {
-    expect(darwinSummary(reduceAll(GOLDEN_PATH).darwin)).toBe("Darwin unavailable (HTTP 500), recorded");
+    expect(darwinSummary(reduceAll(GOLDEN_PATH).darwin)).toBe("Darwin: no agent covers this, recorded");
     expect(darwinSummary(darwin({ status: "no_match" }))).toBe("Darwin: no agent covers this");
     expect(darwinSummary(darwin({ status: "needs_input", question: "Which city?" }))).toBe("Darwin asked: “Which city?”");
     expect(darwinSummary(darwin({ status: "needs_input" }))).toBe("Darwin needs more detail");

@@ -1,0 +1,45 @@
+{
+  "_provenance": {
+    "source": "api.darwin.so POST /api/v3/search, anonymous",
+    "recorded_at": "2026-10-11T21:33:00Z",
+    "latency_ms": 1235,
+    "x_request_id": "1cad7876-43e7-4b2d-9d30-a14b9cf86df6",
+    "note": "Real response to the demo's oil-change query, recorded verbatim except the searchToken, which is redacted."
+  },
+  "request": {
+    "query": "Book an oil change for my 2019 Honda Civic tomorrow afternoon at an independent auto repair shop near 1025 Sansome St, San Francisco",
+    "context": [
+      {
+        "type": "budget",
+        "amountMinor": 12000,
+        "currency": "USD"
+      },
+      {
+        "type": "deadline",
+        "at": "2026-10-13T00:00:00Z"
+      }
+    ],
+    "maxResults": 5
+  },
+  "status": 200,
+  "body": {
+    "searchId": "srch_24d57e81-24fb-4842-80fb-9b1a2dd095fb",
+    "responseId": "sresp_7369f8c4-52d2-405e-b520-0c8fb3ea7827",
+    "previousResponseId": null,
+    "contractVersion": "search-v3.0",
+    "status": "no_match",
+    "response": {
+      "agents": [],
+      "assessment": {
+        "outcome": "unverified",
+        "explanation": "I did not find an indexed capability for this request. Try a broader description of the task."
+      },
+      "relatedSearches": [],
+      "plan": null,
+      "question": null,
+      "noMatchReason": "I did not find an indexed capability for this request. Try a broader description of the task.",
+      "overview": "I did not find an indexed capability for this request. Try a broader description of the task."
+    },
+    "searchToken": "redacted"
+  }
+}
