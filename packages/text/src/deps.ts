@@ -64,8 +64,9 @@ export function bookingCtx(deps: TextDeps): BookingContext {
 }
 
 /**
- * A stable, non-reversible reference to a phone number for the event log, which
- * is public (dashboard, fixtures) and must never hold a real number.
+ * A stable pseudonym for a phone number in the event log, which must never hold a real
+ * number. It hides the number from a reader, not from a determined one: phone numbers are
+ * few enough to hash them all, so the live log stays operator-only (DASHBOARD_TOKEN).
  */
 export function numberRef(e164: string): string {
   return createHash("sha256").update(`platypus:${e164}`).digest("hex").slice(0, 16);
