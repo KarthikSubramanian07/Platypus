@@ -235,10 +235,15 @@ export function createGatewayTools(deps: GatewayDeps): GatewayTools {
   const recentByBusiness = new Map<string, { at: number; lookup: DarwinLookup }>();
   const RECENT_MS = 10 * 60_000;
 
+  /**
+   * `refine` (search_providers only): when Darwin asked a question for this trade and area and this
+   * search adds detail, send it as a refinement of that search. request_booking never refines, so it
+   * never waits on an extra Darwin round trip.
+   */
   async function consultDarwin(
     input: DarwinLookupInput,
     businessId?: string,
-    options: { reuseRecent?: boolean } = {},
+    options: { reuseRecent?: boolean; refine?: boolean } = {},
   ): Promise<DarwinLookup | null> {
     if (!deps.darwin) return null;
     const now = clock.now().getTime();
@@ -246,7 +251,7 @@ export function createGatewayTools(deps: GatewayDeps): GatewayTools {
     const lookup =
       recent && now - recent.at < RECENT_MS
         ? { ...recent.lookup, cached: true }
-        : await lookupDarwin(deps.darwin, input, { cache: darwinCache });
+        : await lookupDarwin(deps.darwin, input, { cache: darwinCache, refine: options.refine });
     if (businessId && lookup.outcome !== "unavailable" && !recent) recentByBusiness.set(businessId, { at: now, lookup });
     record({
       type: "darwin.searched",
@@ -404,7 +409,7 @@ export function createGatewayTools(deps: GatewayDeps): GatewayTools {
       for (const business of candidates) {
         if (!lookups.has(business.trade)) {
           const area = business.service_area ?? undefined;
-          lookups.set(business.trade, await consultDarwin({ trade: business.trade, service, area, budgetCents: input.budget_cents, deadline }, business.id));
+          lookups.set(business.trade, await consultDarwin({ trade: business.trade, service, area, budgetCents: input.budget_cents, deadline }, business.id, { refine: true }));
         }
         const { route } = decideBookingRoute({ business, darwin: lookups.get(business.trade) ?? null, canAct });
         if (route) providers.push(summarize(business, route));

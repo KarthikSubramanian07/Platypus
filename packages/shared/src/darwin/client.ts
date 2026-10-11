@@ -16,7 +16,7 @@ export const DARWIN_MCP_URL = "https://mcp.darwin.so/mcp";
  * in @platypus/shared/testing scripts multi-step sequences for tests.
  */
 export interface Darwin {
-  search(request: SearchRequest): Promise<DarwinSearchResult>;
+  search(request: SearchRequest, options?: SearchOptions): Promise<DarwinSearchResult>;
   /** True only when an Act pilot credential is configured. Search never needs one. */
   readonly canAct: boolean;
   /** True when answers are replayed recordings, not api.darwin.so (DEMO_MODE=fakes). */
@@ -29,6 +29,11 @@ export interface DarwinSearchResult {
   /** Darwin's correlation id, for support tickets and the event log. */
   requestId: string | null;
   latencyMs: number;
+}
+
+export interface SearchOptions {
+  /** The anonymous search's searchToken, sent as X-Search-Token when refining that search. Never logged. */
+  searchToken?: string;
 }
 
 export interface ActOptions {
@@ -127,10 +132,12 @@ export class HttpDarwin implements Darwin {
     return this.actToken !== undefined;
   }
 
-  async search(request: SearchRequest): Promise<DarwinSearchResult> {
+  async search(request: SearchRequest, options: SearchOptions = {}): Promise<DarwinSearchResult> {
     const body = SearchRequest.parse(request);
     const headers: Record<string, string> = {};
     if (this.apiKey) headers.authorization = `Bearer ${this.apiKey}`;
+    // A keyed search belongs to the key's owner; only an anonymous one needs its token to continue.
+    else if (options.searchToken) headers["x-search-token"] = options.searchToken;
     const started = Date.now();
     const { json, requestId } = await this.send("search", "/v3/search", body, headers);
     return { search: parseOrThrow(SearchResponse, json, "search", requestId), requestId, latencyMs: Date.now() - started };

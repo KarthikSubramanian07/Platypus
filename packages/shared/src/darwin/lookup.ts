@@ -58,10 +58,11 @@ export function searchLadder(input: DarwinLookupInput): SearchRequest[] {
 }
 
 export type DarwinOutcome =
-  /** A result Darwin says can start a thread right now. */
+  /** A result Darwin says is usable right now (see isStartable). */
   | "startable"
-  /** Darwin lists matching agents, but none can start a thread. */
+  /** Darwin lists matching agents, but none is usable. */
   | "listed_only"
+  /** Darwin asked a question. A later search_providers with more detail refines the same search. */
   | "needs_input"
   | "no_match"
   /** Every rung failed. Platypus routes on its own; Darwin is never on the critical path. */
@@ -70,6 +71,8 @@ export type DarwinOutcome =
 export interface DarwinAttempt {
   query: string;
   withContext: boolean;
+  /** Set when this attempt refined an earlier search of the same trade and area. */
+  previousResponseId?: string;
   ok: boolean;
   status: number | null;
   errorKind: DarwinErrorKind | null;
@@ -89,12 +92,24 @@ export interface DarwinLookup {
   cached?: boolean;
   /** "recorded" when the client replays recordings (DEMO_MODE=fakes). Absent means live. */
   provenance?: "live" | "recorded";
+  /** The most specific request behind this answer, so a later search can tell whether it adds detail. */
+  asked?: string;
 }
 
 const CONFIG_ERRORS: ReadonlySet<DarwinErrorKind> = new Set(["unauthorized", "forbidden"]);
 
+/** Darwin: missing setup metadata means unknown, not unnecessary. */
+export function setupKnown(agent: SearchAgent): boolean {
+  return agent.requiredSetup !== null && agent.requiredSetup !== undefined;
+}
+
+/**
+ * Darwin's guide: read readiness, canStartThread and requiredSetup before saying an agent can be
+ * used. Act checks the route and authority again when a thread starts, so this makes Act eligible,
+ * not certain.
+ */
 export function isStartable(agent: SearchAgent): boolean {
-  return agent.canStartThread && agent.readiness === "ready";
+  return agent.canStartThread && agent.readiness === "ready" && setupKnown(agent);
 }
 
 /**
@@ -141,19 +156,77 @@ export function darwinCacheKey(input: Pick<DarwinLookupInput, "trade" | "area">)
  * Asks Darwin whether an agent-native route already exists for this request.
  * Never throws for Darwin-side failures: the booking always has a fallback.
  * Emits no event: callers that answer an agent (consultDarwin) log darwin.searched themselves.
+ *
+ * With `refine`, a cached needs_input answer for the same trade and area is not replayed when
+ * this search adds detail: the detail goes to Darwin as a refinement of that search instead.
+ * Only search_providers refines; request_booking never waits on a new Darwin round trip for it.
  */
 export async function lookupDarwin(
   darwin: Darwin,
   input: DarwinLookupInput,
-  options: { cache?: DarwinLookupCache } = {},
+  options: { cache?: DarwinLookupCache; refine?: boolean } = {},
 ): Promise<DarwinLookup> {
   const key = darwinCacheKey(input);
+  const ladder = searchLadder(input);
+  const asked = JSON.stringify(ladder[0]);
   const cached = options.cache?.get(key);
-  if (cached) return { ...cached, cached: true };
-  const lookup: DarwinLookup = { ...(await runLadder(darwin, searchLadder(input))), provenance: darwin.recorded ? "recorded" : "live" };
-  options.cache?.set(key, lookup);
+  // The service is the free text that can answer Darwin's question; a search without one adds nothing.
+  const refinable = Boolean(input.service?.trim()) && cached?.outcome === "needs_input" && cached.search && cached.asked !== asked;
+  if (cached && !(options.refine && refinable)) return { ...cached, cached: true };
+  const lookup: DarwinLookup = cached
+    ? await refine(darwin, cached, ladder[0]!, asked)
+    : { ...(await runLadder(darwin, ladder)), asked, provenance: darwin.recorded ? ("recorded" as const) : ("live" as const) };
+  // A failed refinement keeps Darwin's earlier answer, now marked as asked with this detail, so
+  // repeating the same search replays it instead of paying for another failing round trip.
+  options.cache?.set(key, lookup.cached ? { ...cached!, asked } : lookup);
   return lookup;
 }
+
+/**
+ * Darwin asked a question; this search's detail answers it as a refinement of the same search
+ * (previousResponseId, plus X-Search-Token when the search was anonymous). If Darwin refuses or
+ * fails (an expired continuation, a 500), its earlier answer still stands and is returned as cached.
+ */
+async function refine(darwin: Darwin, previous: DarwinLookup, request: SearchRequest, asked: string): Promise<DarwinLookup> {
+  const prior = previous.search!;
+  const refinement: SearchRequest = { ...request, previousResponseId: prior.responseId };
+  const token = prior.searchToken;
+  const started = Date.now();
+  try {
+    const result = await darwin.search(refinement, token ? { searchToken: token } : {});
+    // Keep the token that authorizes this search when Darwin does not repeat it: Act needs it too.
+    const search = result.search.searchToken || !token ? result.search : { ...result.search, searchToken: token };
+    const attempts = [succeeded(refinement, result.requestId, result.latencyMs)];
+    return { ...classify(search), search, attempts, configError: null, asked, provenance: previous.provenance };
+  } catch (error) {
+    if (!(error instanceof DarwinError)) throw error;
+    return { ...previous, asked, cached: true, attempts: [failed(refinement, error, started)] };
+  }
+}
+
+const tried = (request: SearchRequest) => ({
+  query: request.query,
+  withContext: Boolean(request.context),
+  ...(request.previousResponseId ? { previousResponseId: request.previousResponseId } : {}),
+});
+
+const succeeded = (request: SearchRequest, requestId: string | null, latencyMs: number): DarwinAttempt => ({
+  ...tried(request),
+  ok: true,
+  status: 200,
+  errorKind: null,
+  requestId,
+  latencyMs,
+});
+
+const failed = (request: SearchRequest, error: DarwinError, started: number): DarwinAttempt => ({
+  ...tried(request),
+  ok: false,
+  status: error.details.status ?? null,
+  errorKind: error.kind,
+  requestId: error.details.requestId ?? null,
+  latencyMs: Date.now() - started,
+});
 
 async function runLadder(darwin: Darwin, ladder: SearchRequest[]): Promise<DarwinLookup> {
   const attempts: DarwinAttempt[] = [];
@@ -165,19 +238,11 @@ async function runLadder(darwin: Darwin, ladder: SearchRequest[]): Promise<Darwi
     const started = Date.now();
     try {
       const { search, requestId, latencyMs } = await darwin.search(request);
-      attempts.push({ query: request.query, withContext: Boolean(request.context), ok: true, status: 200, errorKind: null, requestId, latencyMs });
+      attempts.push(succeeded(request, requestId, latencyMs));
       return { ...classify(search), search, attempts, configError: null };
     } catch (error) {
       if (!(error instanceof DarwinError)) throw error;
-      attempts.push({
-        query: request.query,
-        withContext: Boolean(request.context),
-        ok: false,
-        status: error.details.status ?? null,
-        errorKind: error.kind,
-        requestId: error.details.requestId ?? null,
-        latencyMs: Date.now() - started,
-      });
+      attempts.push(failed(request, error, started));
       // A rejected key will not improve with a different phrasing; anything else
       // (a 500, or a 400 caused by the context item) gets the next, simpler rung.
       if (CONFIG_ERRORS.has(error.kind)) {
@@ -190,46 +255,82 @@ async function runLadder(darwin: Darwin, ladder: SearchRequest[]): Promise<Darwi
 }
 
 function classify(search: SearchResponse): Pick<DarwinLookup, "outcome" | "candidate"> {
+  // Darwin's guide: check status first. A question or a no_match means the list is no recommendation.
+  if (search.status !== "completed") return { outcome: search.status, candidate: null };
   const candidate = search.response.agents.find(isStartable) ?? null;
   if (candidate) return { outcome: "startable", candidate };
   if (search.response.agents.length > 0) return { outcome: "listed_only", candidate: null };
-  if (search.status === "needs_input") return { outcome: "needs_input", candidate: null };
   return { outcome: "no_match", candidate: null };
 }
 
 /**
  * What search_providers returns to the calling agent (the DarwinSummary contract).
  * "error" covers every rung failing; "disabled" (a null lookup) means DARWIN_ENABLED=false.
- * Reasons and uncertainties are Darwin's text about third parties, so they are sanitized.
+ * Agents keep Darwin's order. Each says why Darwin listed it (top reasons and uncertainties,
+ * sanitized because they are Darwin's text about third parties) and whether it is usable;
+ * one that is not is labeled "listed, not ready" and is never a recommendation.
  */
 export function toDarwinSummary(lookup: DarwinLookup | null): DarwinSummary {
   if (!lookup) return { status: "disabled", agents: [], cached: false };
   const latency_ms = lookup.attempts.reduce((sum, a) => sum + a.latencyMs, 0);
   const search = lookup.search;
   if (!search) return { status: "error", agents: [], cached: lookup.cached ?? false, latency_ms };
-  const clean = (items: string[]) => items.slice(0, 5).map((t) => sanitizeUntrustedText(t, 300));
-  return {
-    status: search.status,
-    search_id: search.searchId,
-    ...(search.response.noMatchReason ? { no_match_reason: sanitizeUntrustedText(search.response.noMatchReason) } : {}),
-    ...(search.response.question ? { question: sanitizeUntrustedText(search.response.question) } : {}),
-    agents: search.response.agents.map((a) => ({
+  const clean = (items: string[]) => items.slice(0, 3).map((t) => sanitizeUntrustedText(t, 200));
+  const agents = search.response.agents.map((a) => {
+    const usable = isStartable(a);
+    return {
       agent_id: a.agentId,
       name: sanitizeUntrustedText(a.name, 120),
       readiness: a.readiness,
       can_start_thread: a.canStartThread,
       reasons: clean(a.reasons),
       uncertainties: clean(a.uncertainties),
-    })),
+      capability_id: a.capabilityId,
+      capability_revision: a.capabilityRevision,
+      usable,
+      label: usable ? ("usable" as const) : ("listed, not ready" as const),
+      setup: describeSetup(a),
+      connection_methods: a.connectionMethods.length,
+      verified_connection: a.connectionMethods.some((m) => m.endpointStatus === "verified"),
+    };
+  });
+  const note = noteFor(search, agents.some((a) => a.usable));
+  return {
+    status: search.status,
+    search_id: search.searchId,
+    ...(search.response.noMatchReason ? { no_match_reason: sanitizeUntrustedText(search.response.noMatchReason) } : {}),
+    ...(search.response.question ? { question: sanitizeUntrustedText(search.response.question) } : {}),
+    agents,
+    ...(note ? { note } : {}),
     cached: lookup.cached ?? false,
     latency_ms,
   };
 }
 
+/** "unknown" when Darwin declared nothing: that is not a promise that no setup or payment is needed. */
+function describeSetup(agent: SearchAgent): string {
+  const setup = agent.requiredSetup;
+  if (!setup) return "unknown";
+  const field = (key: string) => (typeof setup[key] === "string" ? sanitizeUntrustedText(setup[key], 160) : "");
+  const by = field("suppliedBy");
+  const description = field("description");
+  return `${field("kind") || "declared"}${by ? ` supplied by ${by}` : ""}${description ? `: ${description}` : ""}`;
+}
+
+function noteFor(search: SearchResponse, anyUsable: boolean): string | undefined {
+  if (search.status === "needs_input") {
+    return "Darwin needs more detail before it recommends any agent. Answer its question by calling search_providers again with a more specific service; Platypus sends that to Darwin as a refinement of this search.";
+  }
+  if (search.response.agents.length && !anyUsable) {
+    return 'Darwin lists these agents, but none is usable now. An agent is usable only when its readiness is ready, it can start a thread, and Darwin declared its setup; setup "unknown" means Darwin does not know what it needs.';
+  }
+  return undefined;
+}
+
 /**
  * The payload for the `darwin.searched` event, in the golden path's shape plus
- * the ladder trail. Ids and short labels only: no connectionPrompt, no provider
- * descriptions (untrusted), no searchToken (a credential).
+ * the ladder trail. Ids, labels and Darwin's sanitized reasons only: no
+ * connectionPrompt, no provider descriptions (untrusted), no searchToken (a credential).
  */
 export function darwinEventPayload(lookup: DarwinLookup): Record<string, unknown> {
   const last = lookup.attempts.at(-1);
@@ -241,9 +342,20 @@ export function darwinEventPayload(lookup: DarwinLookup): Record<string, unknown
     latency_ms: summary.latency_ms,
     query: last?.query ?? null,
     search_id: summary.search_id ?? null,
+    response_id: lookup.search?.responseId ?? null,
+    previous_response_id: lookup.search?.previousResponseId ?? null,
     outcome: lookup.outcome,
     candidate_agent_id: lookup.candidate?.agentId ?? null,
-    agents: summary.agents.map(({ agent_id, name, readiness, can_start_thread }) => ({ agent_id, name, readiness, can_start_thread })),
+    ...(summary.question ? { question: summary.question } : {}),
+    agents: summary.agents.map(({ agent_id, name, readiness, can_start_thread, label, reasons, uncertainties }) => ({
+      agent_id,
+      name,
+      readiness,
+      can_start_thread,
+      label,
+      reasons,
+      uncertainties,
+    })),
     attempts: lookup.attempts,
     config_error: lookup.configError,
   };

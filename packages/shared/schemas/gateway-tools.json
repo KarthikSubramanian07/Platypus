@@ -193,10 +193,12 @@
               "type": "string"
             },
             "question": {
+              "description": "Darwin's clarifying question when status is needs_input. Answer it by calling search_providers again with a more specific service; Platypus sends that to Darwin as a refinement of the same search.",
               "type": "string"
             },
             "agents": {
               "default": [],
+              "description": "Darwin's results in Darwin's order, never re-ranked",
               "type": "array",
               "items": {
                 "type": "object",
@@ -224,6 +226,40 @@
                     "items": {
                       "type": "string"
                     }
+                  },
+                  "capability_id": {
+                    "description": "With agent_id and capability_revision, identifies the capability for a Darwin Act handoff",
+                    "type": "string"
+                  },
+                  "capability_revision": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "usable": {
+                    "description": "True only when readiness is ready, can_start_thread is true and Darwin declared the agent's setup. Never recommend an agent that is not usable.",
+                    "type": "boolean"
+                  },
+                  "label": {
+                    "type": "string",
+                    "enum": [
+                      "usable",
+                      "listed, not ready"
+                    ]
+                  },
+                  "setup": {
+                    "description": "\"unknown\" when Darwin declared no setup requirement, which means unknown, not \"none needed\". Otherwise what the setup is and who supplies it.",
+                    "type": "string"
+                  },
+                  "connection_methods": {
+                    "description": "How many connection methods Darwin lists for this agent",
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "verified_connection": {
+                    "description": "True when at least one listed connection method has a verified endpoint",
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -235,6 +271,10 @@
                 ],
                 "additionalProperties": false
               }
+            },
+            "note": {
+              "description": "Plain-language guidance on what Darwin's answer means for this request",
+              "type": "string"
             },
             "cached": {
               "default": false,
