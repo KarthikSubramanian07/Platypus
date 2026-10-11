@@ -25,6 +25,10 @@ export interface DarwinLookupInput {
   service?: string;
   /** City or service area. Never a street address, name or phone number. */
   area?: string;
+  /** Sent as a budget context item, in USD cents. */
+  budgetCents?: number;
+  /** Sent as a deadline context item. Darwin rejects offsets, so it is normalized to UTC with a Z suffix. */
+  deadline?: string | Date;
   maxResults?: number;
 }
 
@@ -38,9 +42,15 @@ export function searchLadder(input: DarwinLookupInput): SearchRequest[] {
   const service = input.service ? sanitizeUntrustedText(input.service, 120) : "";
   const area = input.area ? sanitizeUntrustedText(input.area, 120) : "";
   const maxResults = input.maxResults ?? 5;
-  const context: SearchContextItem[] = area ? [{ type: "text", text: area }] : [];
+  const context: SearchContextItem[] = [];
+  if (area) context.push({ type: "text", text: area });
+  if (input.budgetCents !== undefined && Number.isInteger(input.budgetCents) && input.budgetCents >= 0) {
+    context.push({ type: "budget", amountMinor: input.budgetCents, currency: "USD" });
+  }
+  const deadline = input.deadline === undefined ? undefined : new Date(input.deadline);
+  if (deadline && !Number.isNaN(deadline.getTime())) context.push({ type: "deadline", at: deadline.toISOString() });
   const rungs: SearchRequest[] = [];
-  if (service || area) {
+  if (service || context.length) {
     rungs.push({ query: service ? `${trade}: ${service}` : trade, maxResults, ...(context.length ? { context } : {}) });
   }
   rungs.push({ query: trade, maxResults });
@@ -174,10 +184,11 @@ function classify(search: SearchResponse): Pick<DarwinLookup, "outcome" | "candi
 
 /**
  * What search_providers returns to the calling agent (the DarwinSummary contract).
- * "error" covers every rung failing; "disabled" is for callers that skip Darwin.
+ * "error" covers every rung failing; "disabled" (a null lookup) means DARWIN_ENABLED=false.
  * Reasons and uncertainties are Darwin's text about third parties, so they are sanitized.
  */
-export function toDarwinSummary(lookup: DarwinLookup, options: { cached?: boolean } = {}): DarwinSummary {
+export function toDarwinSummary(lookup: DarwinLookup | null, options: { cached?: boolean } = {}): DarwinSummary {
+  if (!lookup) return { status: "disabled", agents: [], cached: false };
   const latency_ms = lookup.attempts.reduce((sum, a) => sum + a.latencyMs, 0);
   const search = lookup.search;
   if (!search) return { status: "error", agents: [], cached: options.cached ?? false, latency_ms };

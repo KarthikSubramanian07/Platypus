@@ -2,6 +2,14 @@ import { createFakeDarwinFetch, type FakeDarwinMode } from "../testing/fake-darw
 import { HttpDarwin, type Darwin } from "./client";
 
 /**
+ * DARWIN_ENABLED=false skips Darwin entirely: search_providers reports status
+ * "disabled" and routing proceeds without it. Anything else leaves it on.
+ */
+export function isDarwinEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  return !["false", "0", "no", "off"].includes((env.DARWIN_ENABLED ?? "").trim().toLowerCase());
+}
+
+/**
  * Picks the Darwin implementation from the environment. DARWIN_IMPL=fake|real
  * overrides DEMO_MODE, so a fakes demo can still hit live Search when wanted.
  * The fake is the real client over a recorded api.darwin.so, so fakes mode

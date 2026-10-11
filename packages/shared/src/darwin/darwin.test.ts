@@ -8,6 +8,7 @@ import {
   darwinEventPayload,
   DarwinError,
   HttpDarwin,
+  isDarwinEnabled,
   lookupDarwin,
   parseRetryAfter,
   probeDarwinMcp,
@@ -175,6 +176,15 @@ describe("searchLadder", () => {
     ]);
   });
 
+  it("sends budget and a UTC deadline as context, never an offset", () => {
+    const [first] = searchLadder({ trade: "auto_repair", service: "oil change", budgetCents: 12000, deadline: "2026-10-12T17:00:00-07:00" });
+    expect(first!.context).toEqual([
+      { type: "budget", amountMinor: 12000, currency: "USD" },
+      { type: "deadline", at: "2026-10-13T00:00:00.000Z" },
+    ]);
+    expect(searchLadder({ trade: "auto_repair", deadline: "not a date", budgetCents: -5 })).toEqual([{ query: "auto repair shop", maxResults: 5 }]);
+  });
+
   it("has one rung when there is nothing to add", () => {
     expect(searchLadder({ trade: "dog_groomer" })).toEqual([{ query: "dog groomer", maxResults: 5 }]);
   });
@@ -321,6 +331,10 @@ describe("toDarwinSummary", () => {
     expect(summary.agents[0]).toMatchObject({ readiness: "unavailable", can_start_thread: false });
   });
 
+  it("reports a skipped lookup as disabled", () => {
+    expect(DarwinSummary.parse(toDarwinSummary(null))).toMatchObject({ status: "disabled", agents: [] });
+  });
+
   it("reports every rung failing as error, never as no_match", async () => {
     const darwin = new ScriptedDarwin({ script: [darwinFailures.network(), darwinFailures.server500()] });
     const lookup = await lookupDarwin(darwin, { trade: "x" });
@@ -342,6 +356,12 @@ describe("createDarwin", () => {
   it("never serves recorded answers in live mode", () => {
     expect(() => createDarwin({ DEMO_MODE: "live", DARWIN_IMPL: "fake" })).toThrow(/test-only/);
     expect(() => createDarwin({ DARWIN_IMPL: "mock" })).toThrow(/fake or real/);
+  });
+
+  it("is on unless DARWIN_ENABLED says otherwise", () => {
+    expect(isDarwinEnabled({})).toBe(true);
+    expect(isDarwinEnabled({ DARWIN_ENABLED: "true" })).toBe(true);
+    for (const off of ["false", "0", "OFF", " no "]) expect(isDarwinEnabled({ DARWIN_ENABLED: off })).toBe(false);
   });
 
   it("enables Act only with a pilot token", () => {

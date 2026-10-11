@@ -12,6 +12,7 @@ export const ENV_VARS = [
   { name: "DARWIN_ACT_TOKEN", required: "optional", secret: true, purpose: "Darwin Act pilot OAuth token; without it the darwin_act route is never chosen" },
   { name: "DARWIN_API_BASE_URL", required: "optional", secret: false, purpose: "Darwin API origin (default https://api.darwin.so/api)" },
   { name: "DARWIN_IMPL", required: "optional", secret: false, purpose: "fake | real; overrides DEMO_MODE for Darwin only" },
+  { name: "DARWIN_ENABLED", required: "optional", secret: false, purpose: "false skips Darwin entirely (search_providers reports disabled)" },
   { name: "KEEWANO_API_KEY", required: "optional", secret: true, purpose: "Keewano ingress key" },
   { name: "KEEWANO_PAT", required: "optional", secret: true, purpose: "Keewano MCP personal access token" },
   { name: "ANTHROPIC_API_KEY", required: "live", secret: true, purpose: "Claude for reply understanding and transcript mining" },

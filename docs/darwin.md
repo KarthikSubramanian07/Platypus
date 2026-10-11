@@ -2,7 +2,7 @@
 
 [Darwin](https://darwin.so) is the search engine customer agents (Claude, Muse, Instinct, Cursor and others) use to find other agents. Platypus uses it in two ways:
 
-1. **Before a booking.** The gateway asks Darwin Search whether an agent-native route already exists for this trade and service. If Darwin reports one that can start a thread right now, and Platypus holds an Act pilot credential, the booking goes through Darwin Act (`route = darwin_act`). Otherwise Platypus texts the owner (`text`) or calls the business (`call`). Darwin is never on the critical path: when it fails, the booking still routes.
+1. **Before a booking.** The gateway asks Darwin Search, sending the trade, the service, the area, the budget and the deadline, whether an agent-native route already exists for this trade and service. If Darwin reports one that can start a thread right now, and Platypus holds an Act pilot credential, the booking goes through Darwin Act (`route = darwin_act`). Otherwise Platypus texts the owner (`text`) or calls the business (`call`). Darwin is never on the critical path: when it fails, the booking still routes.
 2. **While developing.** The repo's `.mcp.json` registers Darwin's remote MCP server, so a Claude Code session here sees the same `search` tool customer agents use.
 
 ```
@@ -40,6 +40,7 @@ Import it with `import { createDarwin, lookupDarwin, toDarwinSummary } from "@pl
 | `DARWIN_API_KEY` | No | Application Search key (`directory:read`). Raises the anonymous limit, which is 100 requests per minute after 2026-10-13 02:00 UTC. A rejected key fails loudly; Darwin never falls back to anonymous. It cannot authorize Act. |
 | `DARWIN_ACT_TOKEN` | No | OAuth token with `human:actions` whose credential is on Darwin's Act pilot allowlist. Without it, `darwin_act` is never chosen. |
 | `DARWIN_API_BASE_URL` | No | Defaults to `https://api.darwin.so/api`. |
+| `DARWIN_ENABLED` | No | `false` skips Darwin entirely. `search_providers` reports `disabled`, and routing proceeds without it. |
 | `DARWIN_IMPL` | No | `fake` or `real`. Defaults to `fake` under `DEMO_MODE=fakes` and `real` under `live`. `fake` refuses to start under `DEMO_MODE=live`. |
 
 ## Checking it
@@ -50,6 +51,7 @@ Import it with `import { createDarwin, lookupDarwin, toDarwinSummary } from "@pl
 ## Known Darwin behavior (2026-10-11)
 
 - **Many queries return HTTP 500.** Location-qualified phrasings fail consistently in about 2 to 17 seconds. Examples are "hair salon in San Francisco", "book an oil change" and "make a restaurant reservation". Bare trades such as "hair salon" and "auto repair shop" usually succeed but sometimes return 500 too: "auto repair shop" failed and then succeeded a minute later. The ladder therefore tries the specific phrasing once and the bare trade twice. In the 2026-10-11 live smoke runs, it answered all six seeded businesses, and Sal's Auto needed the third attempt. A lookup can take 30 seconds in the worst case, so the gateway should pass a `DarwinLookupCache` (ten-minute TTL) and should not block the agent on a lookup it has already made. Example request ids for a Darwin bug report are `69e7c845-e9b1-428e-882b-236d69784a54`, `1a3bb8dc-2879-4dd8-81f5-02b572e91b64` and `700bc579-f989-4e08-b318-766f57828057`.
+- **The demo request, live.** "auto repair shop: oil change" with the area, budget and deadline as context returned 500. "auto repair shop" then returned `completed` with one agent, "Find shops", which is `unavailable`. The route was `call`, with the reasons "Darwin returned no ready agent" and "no text consent on record". Darwin has not returned `no_match` for any seeded trade.
 - **No local-service result is startable.** Every result for the seeded trades has `readiness: "unavailable"` and `canStartThread: false`, so today every booking routes to `call` or `text`. That is the gap Platypus fills.
 - **Act is a pilot.** Without an allowlisted credential, `POST /api/v3/act` returns 401 (no credential) or 403 `ACT_PREVIEW_ACCESS_REQUIRED`.
 - **The npm SDK lags.** `@darwinso/sdk@0.4.0` is generated from the `/api/v2` contract. It returns `results[]`, uses `startAction`, and does not match the v3 Search used here, so Platypus calls v3 directly.

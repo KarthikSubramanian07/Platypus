@@ -6,7 +6,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { ENV_VARS, maskNumber, parseAllowedNumbers, TEXT_CHANNELS } from "../packages/shared/src/config";
-import { DarwinError, HttpDarwin, probeDarwinMcp } from "../packages/shared/src/darwin";
+import { DarwinError, HttpDarwin, isDarwinEnabled, probeDarwinMcp } from "../packages/shared/src/darwin";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 
@@ -50,7 +50,8 @@ else fail(`TEXT_CHANNEL = ${channel}: must be one of ${TEXT_CHANNELS.join(", ")}
 
 console.log("\nDarwin");
 const darwinImpl = process.env.DARWIN_IMPL ?? (mode === "live" ? "real" : "fake");
-const darwinNeeded = darwinImpl === "real";
+const darwinNeeded = darwinImpl === "real" && isDarwinEnabled();
+if (!isDarwinEnabled()) warn("DARWIN_ENABLED=false: search_providers reports Darwin as disabled");
 const darwinProblem = darwinNeeded ? fail : warn;
 // "hair salon" is a query Darwin answers reliably; doctor checks reachability and the key, not ranking.
 try {

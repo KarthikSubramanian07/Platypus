@@ -47,7 +47,7 @@ describe("decideBookingRoute", () => {
 
   it("works without consulting Darwin at all", () => {
     expect(decideBookingRoute({ business: texting, darwin: null, canAct: false }).reasons).toEqual([
-      "Darwin not consulted",
+      "Darwin not consulted (DARWIN_ENABLED=false)",
       "owner opted in to texts",
     ]);
   });
