@@ -1,4 +1,5 @@
 import { systemClock, type Clock } from "../clock";
+import type { DarwinSummary } from "../contracts/darwin";
 import { sanitizeUntrustedText } from "../safety";
 import { DarwinError, type Darwin, type DarwinErrorKind } from "./client";
 import type { SearchAgent, SearchContextItem, SearchRequest, SearchResponse } from "./schema";
@@ -28,9 +29,9 @@ export interface DarwinLookupInput {
 }
 
 /**
- * Ordered from most to least specific. Darwin returns a deterministic HTTP 500 for
- * some specific phrasings (for example "hair salon in San Francisco"), and the bare
- * trade succeeds for every seeded trade, so the last rung is always the bare trade.
+ * Ordered from most to least specific. Darwin consistently returns HTTP 500 for
+ * some specific phrasings (for example "hair salon in San Francisco"), while the
+ * bare trade usually succeeds, so the last rung is always the bare trade.
  */
 export function searchLadder(input: DarwinLookupInput): SearchRequest[] {
   const trade = tradeQuery(input.trade);
@@ -132,7 +133,10 @@ export async function lookupDarwin(
 async function runLadder(darwin: Darwin, ladder: SearchRequest[]): Promise<DarwinLookup> {
   const attempts: DarwinAttempt[] = [];
   let configError: DarwinErrorKind | null = null;
-  for (const request of ladder) {
+  // Specific phrasings fail consistently; the bare trade fails only now and then
+  // ("auto repair shop" returned 500, then 200 a minute later), so it gets a second try.
+  const plan = [...ladder, ladder[ladder.length - 1]!];
+  for (const request of plan) {
     const started = Date.now();
     try {
       const { search, requestId, latencyMs } = await darwin.search(request);
@@ -169,25 +173,51 @@ function classify(search: SearchResponse): Pick<DarwinLookup, "outcome" | "candi
 }
 
 /**
- * The payload for the `darwin.searched` event. Ids and counts only: no
- * connectionPrompt, no provider text (untrusted), no searchToken (a credential).
+ * What search_providers returns to the calling agent (the DarwinSummary contract).
+ * "error" covers every rung failing; "disabled" is for callers that skip Darwin.
+ * Reasons and uncertainties are Darwin's text about third parties, so they are sanitized.
+ */
+export function toDarwinSummary(lookup: DarwinLookup, options: { cached?: boolean } = {}): DarwinSummary {
+  const latency_ms = lookup.attempts.reduce((sum, a) => sum + a.latencyMs, 0);
+  const search = lookup.search;
+  if (!search) return { status: "error", agents: [], cached: options.cached ?? false, latency_ms };
+  const clean = (items: string[]) => items.slice(0, 5).map((t) => sanitizeUntrustedText(t, 300));
+  return {
+    status: search.status,
+    search_id: search.searchId,
+    ...(search.response.noMatchReason ? { no_match_reason: sanitizeUntrustedText(search.response.noMatchReason) } : {}),
+    ...(search.response.question ? { question: sanitizeUntrustedText(search.response.question) } : {}),
+    agents: search.response.agents.map((a) => ({
+      agent_id: a.agentId,
+      name: sanitizeUntrustedText(a.name, 120),
+      readiness: a.readiness,
+      can_start_thread: a.canStartThread,
+      reasons: clean(a.reasons),
+      uncertainties: clean(a.uncertainties),
+    })),
+    cached: options.cached ?? false,
+    latency_ms,
+  };
+}
+
+/**
+ * The payload for the `darwin.searched` event, in the golden path's shape plus
+ * the ladder trail. Ids and short labels only: no connectionPrompt, no provider
+ * descriptions (untrusted), no searchToken (a credential).
  */
 export function darwinEventPayload(lookup: DarwinLookup): Record<string, unknown> {
+  const last = lookup.attempts.at(-1);
+  const summary = toDarwinSummary(lookup);
   return {
+    status: summary.status,
+    http_status: last?.status ?? null,
+    provenance: "live",
+    latency_ms: summary.latency_ms,
+    query: last?.query ?? null,
+    search_id: summary.search_id ?? null,
     outcome: lookup.outcome,
-    search_id: lookup.search?.searchId ?? null,
-    response_id: lookup.search?.responseId ?? null,
-    status: lookup.search?.status ?? null,
-    assessment: lookup.search?.response.assessment?.outcome ?? null,
-    agent_count: lookup.search?.response.agents.length ?? 0,
-    candidate: lookup.candidate
-      ? {
-          agent_id: lookup.candidate.agentId,
-          capability_id: lookup.candidate.capabilityId,
-          capability_revision: lookup.candidate.capabilityRevision,
-          name: sanitizeUntrustedText(lookup.candidate.name, 120),
-        }
-      : null,
+    candidate_agent_id: lookup.candidate?.agentId ?? null,
+    agents: summary.agents.map(({ agent_id, name, readiness, can_start_thread }) => ({ agent_id, name, readiness, can_start_thread })),
     attempts: lookup.attempts,
     config_error: lookup.configError,
   };

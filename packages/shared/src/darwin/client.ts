@@ -11,8 +11,9 @@ export const DARWIN_API_BASE_URL = "https://api.darwin.so/api";
 export const DARWIN_MCP_URL = "https://mcp.darwin.so/mcp";
 
 /**
- * What the gateway needs from Darwin. HttpDarwin talks to the real API;
- * FakeDarwin (./fake) replays recorded responses for tests and DEMO_MODE=fakes.
+ * What the gateway needs from Darwin. HttpDarwin talks to the real API, or to
+ * the recorded fake (createFakeDarwinFetch) in DEMO_MODE=fakes; ScriptedDarwin
+ * in @platypus/shared/testing scripts multi-step sequences for tests.
  */
 export interface Darwin {
   search(request: SearchRequest): Promise<DarwinSearchResult>;
@@ -47,8 +48,8 @@ export type DarwinErrorKind =
   | "act_not_configured";
 
 /**
- * 502, 503 and 504 are transient. A 500 is not retried as-is: Darwin's 500s are
- * deterministic for a given query, so the caller rephrases instead (see ./lookup).
+ * 502, 503 and 504 are transient. A 500 is not retried as-is: Darwin's 500s mostly
+ * repeat for the same phrasing, so the caller rephrases first (see ./lookup).
  */
 const TRANSIENT_STATUSES: ReadonlySet<number> = new Set([502, 503, 504]);
 

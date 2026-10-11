@@ -1,20 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 import { manualClock } from "../clock";
+import { DarwinSummary } from "../contracts/darwin";
+import { DARWIN_FIXTURES, darwinFailures, ScriptedDarwin, searchWith, startableAgent } from "../testing";
 import {
   createDarwin,
-  DARWIN_FIXTURES,
   DarwinLookupCache,
   darwinEventPayload,
   DarwinError,
-  darwinFailures,
-  FakeDarwin,
   HttpDarwin,
   lookupDarwin,
   parseRetryAfter,
   probeDarwinMcp,
   searchLadder,
-  searchWith,
-  startableAgent,
+  toDarwinSummary,
   tradeQuery,
 } from "./index";
 
@@ -48,8 +46,12 @@ describe("recorded Darwin responses", () => {
     expect(DARWIN_FIXTURES.needsInput.response.question).toBeTruthy();
   });
 
+  it("include main's recorded invoice match, which the client also parses", () => {
+    expect(DARWIN_FIXTURES.invoiceMatch.response.agents.length).toBeGreaterThan(0);
+  });
+
   it("never carry a live search token", () => {
-    for (const fixture of Object.values(DARWIN_FIXTURES)) {
+    for (const fixture of [DARWIN_FIXTURES.hairSalon, DARWIN_FIXTURES.movingCompanyWithContext, DARWIN_FIXTURES.needsInput]) {
       expect(fixture.searchToken ?? "REDACTED_SEARCH_TOKEN").toBe("REDACTED_SEARCH_TOKEN");
     }
   });
@@ -73,7 +75,7 @@ describe("HttpDarwin.search", () => {
     expect(sentHeaders(fetch.mock.calls[0]![1]).authorization).toBe("Bearer dk_test");
   });
 
-  it("does not retry a 500, because Darwin's 500s repeat for the same query", async () => {
+  it("does not retry a 500, because Darwin's 500s mostly repeat for the same phrasing", async () => {
     const { darwin, fetch } = http([jsonResponse(500, { statusCode: 500, message: "Internal server error" })]);
     const error = await darwin.search({ query: "hair salon in San Francisco" }).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(DarwinError);
@@ -191,7 +193,7 @@ describe("lookupDarwin", () => {
   const input = { trade: "salon", service: "Haircut", area: "San Francisco" };
 
   it("falls back to the bare trade when the specific query returns 500", async () => {
-    const darwin = new FakeDarwin({ script: [darwinFailures.server500("r-1")] });
+    const darwin = new ScriptedDarwin({ script: [darwinFailures.server500("r-1")] });
     const lookup = await lookupDarwin(darwin, input);
     expect(lookup.outcome).toBe("listed_only");
     expect(lookup.candidate).toBeNull();
@@ -205,44 +207,51 @@ describe("lookupDarwin", () => {
   it("picks the first startable result in Darwin's order", async () => {
     const listed = DARWIN_FIXTURES.hairSalon.response.agents[0]!;
     const ready = startableAgent(DARWIN_FIXTURES.hairSalon.response.agents[1]);
-    const lookup = await lookupDarwin(new FakeDarwin({ script: [searchWith([listed, ready])] }), input);
+    const lookup = await lookupDarwin(new ScriptedDarwin({ script: [searchWith([listed, ready])] }), input);
     expect(lookup.outcome).toBe("startable");
     expect(lookup.candidate?.agentId).toBe(ready.agentId);
   });
 
   it("does not treat canStartThread without readiness as startable", async () => {
     const odd = { ...startableAgent(), readiness: "recheck_required" as const };
-    const lookup = await lookupDarwin(new FakeDarwin({ script: [searchWith([odd])] }), input);
+    const lookup = await lookupDarwin(new ScriptedDarwin({ script: [searchWith([odd])] }), input);
     expect(lookup.outcome).toBe("listed_only");
   });
 
   it("reports needs_input and no_match", async () => {
-    expect((await lookupDarwin(new FakeDarwin({ script: [DARWIN_FIXTURES.needsInput] }), { trade: "x" })).outcome).toBe(
+    expect((await lookupDarwin(new ScriptedDarwin({ script: [DARWIN_FIXTURES.needsInput] }), { trade: "x" })).outcome).toBe(
       "listed_only",
     );
     const asking = searchWith([], DARWIN_FIXTURES.needsInput);
-    expect((await lookupDarwin(new FakeDarwin({ script: [asking] }), { trade: "x" })).outcome).toBe("needs_input");
+    expect((await lookupDarwin(new ScriptedDarwin({ script: [asking] }), { trade: "x" })).outcome).toBe("needs_input");
     const empty = { ...searchWith([]), status: "no_match" as const };
-    expect((await lookupDarwin(new FakeDarwin({ script: [empty] }), { trade: "x" })).outcome).toBe("no_match");
+    expect((await lookupDarwin(new ScriptedDarwin({ script: [empty] }), { trade: "x" })).outcome).toBe("no_match");
+  });
+
+  it("gives the bare trade a second try, because its 500s are intermittent", async () => {
+    const darwin = new ScriptedDarwin({ script: [darwinFailures.server500(), darwinFailures.server500()] });
+    const lookup = await lookupDarwin(darwin, input);
+    expect(lookup.outcome).toBe("listed_only");
+    expect(darwin.searches.map((r) => r.query)).toEqual(["hair salon: Haircut", "hair salon", "hair salon"]);
   });
 
   it("returns unavailable instead of throwing when every rung fails", async () => {
-    const darwin = new FakeDarwin({ script: [darwinFailures.server500(), darwinFailures.network()] });
+    const darwin = new ScriptedDarwin({ script: [darwinFailures.server500(), darwinFailures.network(), darwinFailures.server500()] });
     const lookup = await lookupDarwin(darwin, input);
     expect(lookup.outcome).toBe("unavailable");
-    expect(lookup.attempts).toHaveLength(2);
+    expect(lookup.attempts).toHaveLength(3);
     expect(lookup.configError).toBeNull();
   });
 
   it("stops early and flags a rejected key", async () => {
-    const darwin = new FakeDarwin({ script: [darwinFailures.unauthorized()] });
+    const darwin = new ScriptedDarwin({ script: [darwinFailures.unauthorized()] });
     const lookup = await lookupDarwin(darwin, input);
     expect(lookup).toMatchObject({ outcome: "unavailable", configError: "unauthorized" });
     expect(darwin.searches).toHaveLength(1);
   });
 
   it("rethrows bugs that are not Darwin failures", async () => {
-    const darwin = new FakeDarwin({
+    const darwin = new ScriptedDarwin({
       script: [
         () => {
           throw new RangeError("bug");
@@ -259,7 +268,7 @@ describe("DarwinLookupCache", () => {
   it("answers a repeated lookup without calling Darwin, until the TTL passes", async () => {
     const clock = manualClock();
     const cache = new DarwinLookupCache(60_000, clock);
-    const darwin = new FakeDarwin();
+    const darwin = new ScriptedDarwin();
     const first = await lookupDarwin(darwin, input, { cache });
     expect(await lookupDarwin(darwin, input, { cache })).toBe(first);
     expect(darwin.searches).toHaveLength(1);
@@ -270,30 +279,68 @@ describe("DarwinLookupCache", () => {
 
   it("never caches an outage", async () => {
     const cache = new DarwinLookupCache();
-    const darwin = new FakeDarwin({ script: [darwinFailures.server500(), darwinFailures.server500()] });
+    const darwin = new ScriptedDarwin({ script: [darwinFailures.server500(), darwinFailures.server500(), darwinFailures.server500()] });
     expect((await lookupDarwin(darwin, input, { cache })).outcome).toBe("unavailable");
     expect((await lookupDarwin(darwin, input, { cache })).outcome).toBe("listed_only");
   });
 });
 
 describe("darwinEventPayload", () => {
-  it("keeps ids and counts, and drops provider text and the search token", async () => {
+  it("matches the golden path's darwin.searched shape and drops provider text and the search token", async () => {
     const search = { ...searchWith([startableAgent()]), searchToken: "secret-token" };
-    const lookup = await lookupDarwin(new FakeDarwin({ script: [search] }), { trade: "salon" });
+    const lookup = await lookupDarwin(new ScriptedDarwin({ script: [search] }), { trade: "salon" });
     const payload = darwinEventPayload(lookup);
+    expect(payload).toMatchObject({
+      status: "completed",
+      http_status: 200,
+      provenance: "live",
+      query: "hair salon",
+      search_id: search.searchId,
+      outcome: "startable",
+      candidate_agent_id: lookup.candidate!.agentId,
+    });
     const text = JSON.stringify(payload);
-    expect(payload).toMatchObject({ outcome: "startable", search_id: search.searchId, agent_count: 1 });
     expect(text).not.toContain("secret-token");
-    expect(text).not.toContain("connectionPrompt");
     expect(text).not.toContain(lookup.candidate!.connectionPrompt.slice(0, 40));
+    expect(text).not.toContain(lookup.candidate!.description!.slice(0, 40));
+  });
+
+  it("reports an outage as status error with the last HTTP status", async () => {
+    const darwin = new ScriptedDarwin({ script: [darwinFailures.server500(), darwinFailures.server500(), darwinFailures.server500()] });
+    const payload = darwinEventPayload(await lookupDarwin(darwin, { trade: "auto_repair", service: "oil change" }));
+    expect(payload).toMatchObject({ status: "error", http_status: 500, query: "auto repair shop", outcome: "unavailable", agents: [] });
+  });
+});
+
+describe("toDarwinSummary", () => {
+  it("satisfies the DarwinSummary contract search_providers returns", async () => {
+    const lookup = await lookupDarwin(new ScriptedDarwin({ script: [DARWIN_FIXTURES.needsInput] }), { trade: "x" });
+    const summary = DarwinSummary.parse(toDarwinSummary(lookup));
+    expect(summary).toMatchObject({ status: "needs_input", search_id: DARWIN_FIXTURES.needsInput.searchId, cached: false });
+    expect(summary.question).toBe(DARWIN_FIXTURES.needsInput.response.question);
+    expect(summary.agents[0]).toMatchObject({ readiness: "unavailable", can_start_thread: false });
+  });
+
+  it("reports every rung failing as error, never as no_match", async () => {
+    const darwin = new ScriptedDarwin({ script: [darwinFailures.network(), darwinFailures.server500()] });
+    const lookup = await lookupDarwin(darwin, { trade: "x" });
+    expect(DarwinSummary.parse(toDarwinSummary(lookup))).toMatchObject({ status: "error", agents: [] });
   });
 });
 
 describe("createDarwin", () => {
-  it("uses the fake in fakes mode and the real client in live mode", () => {
-    expect(createDarwin({ DEMO_MODE: "fakes" })).toBeInstanceOf(FakeDarwin);
-    expect(createDarwin({ DEMO_MODE: "live" })).toBeInstanceOf(HttpDarwin);
-    expect(createDarwin({ DEMO_MODE: "fakes", DARWIN_IMPL: "real" })).toBeInstanceOf(HttpDarwin);
+  it("runs the real client over the recorded api.darwin.so in fakes mode", async () => {
+    const darwin = createDarwin({ DEMO_MODE: "fakes" });
+    const lookup = await lookupDarwin(darwin, { trade: "salon", service: "haircut", area: "San Francisco" });
+    expect(lookup.outcome).toBe("listed_only");
+    expect(lookup.search?.searchId).toBe(DARWIN_FIXTURES.hairSalon.searchId);
+    const failing = await lookupDarwin(createDarwin({ DEMO_MODE: "fakes" }, { fakeMode: "error_500" }), { trade: "auto_repair", area: "SF" });
+    expect(failing.outcome).toBe("unavailable");
+    expect(failing.attempts.map((a) => a.status)).toEqual([500, 500, 500]);
+  });
+
+  it("never serves recorded answers in live mode", () => {
+    expect(() => createDarwin({ DEMO_MODE: "live", DARWIN_IMPL: "fake" })).toThrow(/test-only/);
     expect(() => createDarwin({ DARWIN_IMPL: "mock" })).toThrow(/fake or real/);
   });
 

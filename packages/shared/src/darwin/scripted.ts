@@ -1,17 +1,18 @@
-import hairSalon from "./fixtures/search-hair-salon.json" with { type: "json" };
-import movingCompany from "./fixtures/search-moving-company-context.json" with { type: "json" };
-import needsInput from "./fixtures/search-needs-input.json" with { type: "json" };
+import { loadDarwinRecording, type FakeDarwinMode } from "../testing/fake-darwin";
 import { DarwinError, type ActOptions, type Darwin, type DarwinSearchResult } from "./client";
 import { ActResponse, SearchResponse, type ActContinueRequest, type ActStartRequest, type SearchAgent, type SearchRequest } from "./schema";
 
+const recorded = (mode: FakeDarwinMode) => SearchResponse.parse(loadDarwinRecording(mode).body);
+
 /**
- * Real Darwin Search v3 responses recorded on 2026-10-11 (agents trimmed to two,
- * searchToken redacted). Parsing them here doubles as a contract test.
+ * Real Darwin Search v3 responses from testing/fixtures, recorded on 2026-10-11.
+ * Parsing them with the client's schema doubles as a contract test.
  */
 export const DARWIN_FIXTURES = {
-  hairSalon: SearchResponse.parse(hairSalon),
-  movingCompanyWithContext: SearchResponse.parse(movingCompany),
-  needsInput: SearchResponse.parse(needsInput),
+  hairSalon: recorded("listed"),
+  movingCompanyWithContext: recorded("listed_context"),
+  needsInput: recorded("needs_input"),
+  invoiceMatch: recorded("match"),
 } as const;
 
 /** A copy of a recorded result that Darwin says can start a thread. No live result does today. */
@@ -27,7 +28,7 @@ export function searchWith(agents: SearchAgent[], base: SearchResponse = DARWIN_
 
 export type FakeSearchStep = SearchResponse | DarwinError | ((request: SearchRequest) => SearchResponse | DarwinError);
 
-export interface FakeDarwinOptions {
+export interface ScriptedDarwinOptions {
   /** Consumed one per search() call. When empty, every search returns `fallback`. */
   script?: FakeSearchStep[];
   fallback?: SearchResponse;
@@ -35,17 +36,19 @@ export interface FakeDarwinOptions {
 }
 
 /**
- * Drop-in Darwin for tests and DEMO_MODE=fakes. Records every request so tests
- * can assert on the exact query that would have left Platypus.
+ * A Darwin whose answers a test scripts one search at a time, for sequences a
+ * single recording cannot express (a 500, then a success). Records every request
+ * so tests can assert on the exact query that would have left Platypus.
+ * For a fetch-level fake of api.darwin.so, use createFakeDarwinFetch from ../testing.
  */
-export class FakeDarwin implements Darwin {
+export class ScriptedDarwin implements Darwin {
   readonly searches: SearchRequest[] = [];
   readonly acts: Array<{ request: ActStartRequest | ActContinueRequest; options: ActOptions }> = [];
   readonly canAct: boolean;
   private readonly script: FakeSearchStep[];
   private readonly fallback: SearchResponse;
 
-  constructor(options: FakeDarwinOptions = {}) {
+  constructor(options: ScriptedDarwinOptions = {}) {
     this.script = [...(options.script ?? [])];
     this.fallback = options.fallback ?? DARWIN_FIXTURES.hairSalon;
     this.canAct = options.canAct ?? false;
@@ -60,7 +63,7 @@ export class FakeDarwin implements Darwin {
   }
 
   async act(request: ActStartRequest | ActContinueRequest, options: ActOptions): Promise<ActResponse> {
-    if (!this.canAct) throw new DarwinError("act_not_configured", "FakeDarwin was created without canAct", { operation: "act" });
+    if (!this.canAct) throw new DarwinError("act_not_configured", "ScriptedDarwin was created without canAct", { operation: "act" });
     this.acts.push({ request: structuredClone(request), options });
     const n = this.acts.length;
     const agentId = "agentIds" in request && request.agentIds?.[0] ? request.agentIds[0] : "fake-agent";

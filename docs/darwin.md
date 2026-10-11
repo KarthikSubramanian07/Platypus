@@ -9,7 +9,7 @@
 customer agent ──request_booking──▶ gateway
                                      │
                                      ├─ lookupDarwin()  ── POST /api/v3/search (rung 1: trade + service, area as context)
-                                     │                  └─ on 500, rung 2: bare trade
+                                     │                  └─ on 500, rung 2: bare trade (tried twice)
                                      │
                                      └─ decideBookingRoute()
                                           startable + DARWIN_ACT_TOKEN ─▶ darwin_act ── POST /api/v3/act
@@ -24,12 +24,14 @@ customer agent ──request_booking──▶ gateway
 | - | - |
 | `packages/shared/src/darwin/schema.ts` | Zod schemas for Search v3 and Act v3, strict on the fields Platypus reads and loose on everything else. |
 | `packages/shared/src/darwin/client.ts` | `HttpDarwin`: bounded retries (network errors, 429 with `Retry-After`, 502/503/504), typed `DarwinError`, and the `x-request-id` on every failure. |
-| `packages/shared/src/darwin/lookup.ts` | The search ladder, the choice of startable result (first in Darwin's order, `canStartThread && readiness === "ready"`), a TTL cache, and the `darwin.searched` event payload. |
-| `packages/shared/src/darwin/fake.ts` | `FakeDarwin`, plus real responses recorded on 2026-10-11 in `fixtures/`, for tests and `DEMO_MODE=fakes`. |
+| `packages/shared/src/darwin/lookup.ts` | The search ladder, the choice of startable result (first in Darwin's order, `canStartThread && readiness === "ready"`), a TTL cache, `toDarwinSummary` (the `DarwinSummary` that `search_providers` returns), and the `darwin.searched` event payload in the golden path's shape. |
+| `packages/shared/src/darwin/env.ts` | `createDarwin()`. In fakes mode it runs the real client over `createFakeDarwinFetch`, so fakes exercise the same parsing and ladder as live. |
+| `packages/shared/src/darwin/scripted.ts` | `ScriptedDarwin` and `DARWIN_FIXTURES`, exported from `@platypus/shared/testing`, for multi-step test sequences such as a 500 followed by a success. |
+| `packages/shared/src/testing/fixtures/darwin-*.recorded.json` | Real responses with provenance. The `listed`, `listed_context` and `needs_input` modes come from the ladder's own queries. |
 | `packages/shared/src/darwin/mcp.ts` | An anonymous MCP `initialize` and `tools/list` probe. |
-| `packages/gateway/src/route.ts` | `decideBookingRoute`, the `request_booking` route decision. |
+| `packages/gateway/src/route.ts` | `decideBookingRoute`, the `request_booking` route decision with its `reasons`. |
 
-Import it with `import { createDarwin, lookupDarwin } from "@platypus/shared/darwin"`.
+Import it with `import { createDarwin, lookupDarwin, toDarwinSummary } from "@platypus/shared/darwin"`.
 
 ## Configuration
 
@@ -38,7 +40,7 @@ Import it with `import { createDarwin, lookupDarwin } from "@platypus/shared/dar
 | `DARWIN_API_KEY` | No | Application Search key (`directory:read`). Raises the anonymous limit, which is 100 requests per minute after 2026-10-13 02:00 UTC. A rejected key fails loudly; Darwin never falls back to anonymous. It cannot authorize Act. |
 | `DARWIN_ACT_TOKEN` | No | OAuth token with `human:actions` whose credential is on Darwin's Act pilot allowlist. Without it, `darwin_act` is never chosen. |
 | `DARWIN_API_BASE_URL` | No | Defaults to `https://api.darwin.so/api`. |
-| `DARWIN_IMPL` | No | `fake` or `real`. Defaults to `fake` under `DEMO_MODE=fakes` and `real` under `live`. |
+| `DARWIN_IMPL` | No | `fake` or `real`. Defaults to `fake` under `DEMO_MODE=fakes` and `real` under `live`. `fake` refuses to start under `DEMO_MODE=live`. |
 
 ## Checking it
 
@@ -47,7 +49,7 @@ Import it with `import { createDarwin, lookupDarwin } from "@platypus/shared/dar
 
 ## Known Darwin behavior (2026-10-11)
 
-- **Location-qualified queries return HTTP 500.** "hair salon in San Francisco", "book an oil change" and "make a restaurant reservation" fail deterministically in about 2 to 17 seconds. Bare trades ("hair salon", "dog groomer") succeed. The failures move around: "oil change" once returned `needs_input` and later returned 500. The ladder covers this. The live smoke run on 2026-10-11 needed rung 2 for four of the six businesses and answered all six. Example request ids for a Darwin bug report are `69e7c845-e9b1-428e-882b-236d69784a54` and `1a3bb8dc-2879-4dd8-81f5-02b572e91b64`.
+- **Many queries return HTTP 500.** Location-qualified phrasings fail consistently in about 2 to 17 seconds. Examples are "hair salon in San Francisco", "book an oil change" and "make a restaurant reservation". Bare trades such as "hair salon" and "auto repair shop" usually succeed but sometimes return 500 too: "auto repair shop" failed and then succeeded a minute later. The ladder therefore tries the specific phrasing once and the bare trade twice. In the 2026-10-11 live smoke runs, it answered all six seeded businesses, and Sal's Auto needed the third attempt. A lookup can take 30 seconds in the worst case, so the gateway should pass a `DarwinLookupCache` (ten-minute TTL) and should not block the agent on a lookup it has already made. Example request ids for a Darwin bug report are `69e7c845-e9b1-428e-882b-236d69784a54`, `1a3bb8dc-2879-4dd8-81f5-02b572e91b64` and `700bc579-f989-4e08-b318-766f57828057`.
 - **No local-service result is startable.** Every result for the seeded trades has `readiness: "unavailable"` and `canStartThread: false`, so today every booking routes to `call` or `text`. That is the gap Platypus fills.
 - **Act is a pilot.** Without an allowlisted credential, `POST /api/v3/act` returns 401 (no credential) or 403 `ACT_PREVIEW_ACCESS_REQUIRED`.
 - **The npm SDK lags.** `@darwinso/sdk@0.4.0` is generated from the `/api/v2` contract. It returns `results[]`, uses `startAction`, and does not match the v3 Search used here, so Platypus calls v3 directly.

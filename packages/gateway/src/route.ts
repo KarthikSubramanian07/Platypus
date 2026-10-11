@@ -4,7 +4,8 @@ import type { BookingRoute, Business } from "@platypus/shared/db";
 export interface RouteDecision {
   /** null means Platypus must not contact this business at all. */
   route: BookingRoute | null;
-  reason: string;
+  /** request_booking's `reasons` and booking.pending's `routing_reasons`. */
+  reasons: string[];
 }
 
 /**
@@ -18,30 +19,27 @@ export function decideBookingRoute(input: {
   canAct: boolean;
 }): RouteDecision {
   const { business, darwin, canAct } = input;
-
-  if (darwin?.outcome === "startable" && darwin.candidate) {
-    if (canAct) return { route: "darwin_act", reason: `Darwin can start a thread with ${darwin.candidate.agentId}` };
-  }
+  const darwinReason = whyNotDarwin(darwin, canAct);
+  if (darwinReason === null) return { route: "darwin_act", reasons: [`Darwin can start a thread with ${darwin!.candidate!.agentId}`] };
 
   if (business.channel_state === "paused" || business.channel_state === "unlisted") {
-    return { route: null, reason: `business is ${business.channel_state}` };
+    return { route: null, reasons: [darwinReason, `business is ${business.channel_state}`] };
   }
-  if (business.channel_state === "text_enabled") {
-    return { route: "text", reason: `${whyNotDarwin(darwin, canAct)}; owner opted in to texts` };
-  }
-  if (business.do_not_call) return { route: null, reason: "business is phone-only and marked do-not-call" };
-  return { route: "call", reason: `${whyNotDarwin(darwin, canAct)}; business is phone-only` };
+  if (business.channel_state === "text_enabled") return { route: "text", reasons: [darwinReason, "owner opted in to texts"] };
+  if (business.do_not_call) return { route: null, reasons: [darwinReason, "no text consent on record", "business is marked do-not-call"] };
+  return { route: "call", reasons: [darwinReason, "no text consent on record"] };
 }
 
-function whyNotDarwin(darwin: DarwinLookup | null, canAct: boolean): string {
+/** null when Darwin Act should take the booking. */
+function whyNotDarwin(darwin: DarwinLookup | null, canAct: boolean): string | null {
   if (!darwin) return "Darwin not consulted";
   switch (darwin.outcome) {
     case "startable":
-      return canAct ? "Darwin route available" : "Darwin has a startable agent but DARWIN_ACT_TOKEN is not set";
+      return canAct && darwin.candidate ? null : "Darwin has a ready agent but DARWIN_ACT_TOKEN is not set";
     case "listed_only":
-      return "Darwin lists agents but none can start a thread";
+      return "Darwin returned no ready agent";
     case "needs_input":
-      return "Darwin needs more input";
+      return "Darwin asked for more input";
     case "no_match":
       return "Darwin has no match";
     case "unavailable":
