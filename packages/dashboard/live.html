@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Platypus live · the call, the consent, the Y</title>
+    <meta name="description" content="The Platypus operator dashboard: Darwin search, the AI call with its mid-call booking tools, businesses flipping from phone-only to text-enabled, and the owner's replies, all derived from the event log." />
+    <link rel="canonical" href="https://tryplatypus.pages.dev/live" />
+    <meta property="og:title" content="Platypus live" />
+    <meta property="og:description" content="Watch one AI call make a phone-only shop bookable by text: every tool call, consent and confirmation, straight from the event log." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://tryplatypus.pages.dev/live" />
+    <meta property="og:image" content="https://tryplatypus.pages.dev/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#FFFFFF" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body class="live" data-hydrating="true">
+    <div class="shell">
+      <div class="window app">
+        <header class="bar">
+          <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <a class="brand" href="/" aria-label="Platypus home">
+            <span class="brand-mark" aria-hidden="true"></span>
+            <span class="brand-word">platypus</span>
+          </a>
+          <span class="bar-page" aria-hidden="true">/ live</span>
+          <div class="bar-right">
+            <span id="replayed" class="tag" hidden title="These events are the golden-path fixture, re-emitted. Nothing here is a new call.">fixture replay</span>
+            <span id="conn" class="conn" data-state="connecting" role="status">Connecting</span>
+            <button id="kill" class="btn-sm btn-kill" type="button" hidden disabled title="Ends the live call through POST /demo/kill-call">Kill call</button>
+            <button id="replay" class="btn-sm" type="button">Replay</button>
+          </div>
+        </header>
+
+        <div class="beat" aria-label="Golden path progress">
+          <ol id="beats" class="beats"></ol>
+          <p id="beat-label" class="beat-label"></p>
+          <p id="beat-caption" class="beat-caption" aria-live="polite"></p>
+        </div>
+
+        <main class="grid">
+          <div class="col col-a">
+            <section class="cell cell-darwin" aria-labelledby="darwin-title">
+              <header class="cell-head"><h2 id="darwin-title" class="cell-title">Darwin · Search v3</h2><span id="darwin-meta" class="cell-meta"></span></header>
+              <div id="darwin" class="cell-body"></div>
+            </section>
+            <section class="cell cell-phone" aria-labelledby="phone-title">
+              <header class="cell-head"><h2 id="phone-title" class="cell-title">Owner's phone</h2><span id="phone-meta" class="cell-meta"></span></header>
+              <div class="cell-body phone-wrap">
+                <div class="phone">
+                  <div class="phone-screen">
+                    <div class="phone-head">
+                      <span id="phone-avatar" class="phone-avatar" aria-hidden="true">P</span>
+                      <span id="phone-name" class="phone-name">No texts yet</span>
+                      <span id="phone-sub" class="phone-sub">Texts start after the owner says yes</span>
+                    </div>
+                    <ol id="bubbles" class="bubbles" aria-live="polite"></ol>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="col col-b">
+            <section class="cell cell-call" aria-labelledby="call-title">
+              <header class="cell-head"><h2 id="call-title" class="cell-title">Call · Dial</h2><span id="call-meta" class="cell-meta"></span></header>
+              <div id="call" class="cell-body call"></div>
+            </section>
+            <section class="cell cell-book" aria-labelledby="book-title">
+              <header class="cell-head"><h2 id="book-title" class="cell-title">Bookings</h2><span id="book-meta" class="cell-meta"></span></header>
+              <div class="cell-body"><ol id="bookings" class="bookings"></ol></div>
+            </section>
+          </div>
+
+          <div class="col col-c">
+            <section class="cell cell-biz" aria-labelledby="biz-title">
+              <header class="cell-head"><h2 id="biz-title" class="cell-title">Businesses</h2><span id="biz-meta" class="cell-meta"></span></header>
+              <div class="cell-body"><ol id="cards" class="cards"></ol></div>
+            </section>
+            <section class="cell cell-supply" aria-labelledby="supply-title">
+              <header class="cell-head"><h2 id="supply-title" class="cell-title">Supply</h2><span class="cell-meta">from the event log</span></header>
+              <div class="cell-body supply-body">
+                <table class="supply">
+                  <thead>
+                    <tr><th scope="col">Business</th><th scope="col">Channel</th><th scope="col" class="num">Median reply</th><th scope="col" class="num">Last price</th><th scope="col" class="num">Opt-in</th></tr>
+                  </thead>
+                  <tbody id="supply"></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="cell cell-stream" aria-labelledby="stream-title">
+              <header class="cell-head"><h2 id="stream-title" class="cell-title">Event stream</h2><span id="stream-meta" class="cell-meta">0 events</span></header>
+              <div class="cell-body stream-body"><ol id="stream" class="stream"></ol></div>
+            </section>
+          </div>
+        </main>
+      </div>
+      <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
+    </div>
+    <script type="module" src="/src/live.ts"></script>
+  </body>
+</html>
