@@ -63,6 +63,7 @@ export type GatewayErrorCode =
   | "not_found"
   | "no_route"
   | "idempotency_conflict"
+  | "too_many_open_requests"
   | "owner_confirmation_required";
 
 /** A refusal the calling agent should read. Booking engine refusals arrive as BookingError. */
@@ -77,6 +78,13 @@ export class GatewayError extends Error {
 }
 
 export const RATE_LIMIT = { calls: 30, windowMs: 60_000 } as const;
+/** Idempotency keys and rate-limit buckets idle longer than this are dropped. */
+export const STATE_TTL_MS = 60 * 60_000;
+/** A business is never asked about more than this many open requests at once, across all agents. */
+export const MAX_OPEN_PER_BUSINESS = 3;
+const OPEN_STATUSES = ["pending", "countered", "quote_pending"] as const;
+/** What the agent hears when the owner channel or Darwin fails; the raw error stays in the event log. */
+export const DISPATCH_FAILED_REASON = "could not reach the owner yet; still pending";
 const DEFAULT_SLOT_MINUTES = 30;
 const MAX_SLOTS = 20;
 const OUTCOME_STATUS = { completed: "completed", no_show: "no_show", issue: "disputed" } as const;
@@ -151,10 +159,17 @@ export function createGatewayTools(deps: GatewayDeps): GatewayTools {
 
   // ponytail: in-memory rate limits and idempotency keys reset on restart; move to a table if the gateway runs as more than one process.
   const recentCalls = new Map<string, number[]>();
-  const idempotent = new Map<string, { fingerprint: string; result: Promise<unknown> }>();
+  const idempotent = new Map<string, { fingerprint: string; result: Promise<unknown>; at: number }>();
+
+  /** Sweep on access, so neither map grows without bound. */
+  function sweep(now: number): void {
+    for (const [id, entry] of idempotent) if (now - entry.at > STATE_TTL_MS) idempotent.delete(id);
+    for (const [agentId, times] of recentCalls) if (now - (times.at(-1) ?? 0) > STATE_TTL_MS) recentCalls.delete(agentId);
+  }
 
   function checkRate(agentId: string): void {
     const now = clock.now().getTime();
+    sweep(now);
     const recent = (recentCalls.get(agentId) ?? []).filter((t) => now - t < RATE_LIMIT.windowMs);
     if (recent.length >= RATE_LIMIT.calls) {
       recentCalls.set(agentId, recent);
@@ -175,7 +190,7 @@ export function createGatewayTools(deps: GatewayDeps): GatewayTools {
       return hit.result as Promise<T>;
     }
     const result = run();
-    idempotent.set(id, { fingerprint, result });
+    idempotent.set(id, { fingerprint, result, at: clock.now().getTime() });
     result.catch(() => idempotent.delete(id));
     return result;
   }
@@ -360,7 +375,7 @@ export function createGatewayTools(deps: GatewayDeps): GatewayTools {
       if (hold) releaseHold(bookingCtx, hold.id, "system", "the owner will be called instead");
       reroute(booking, "call", `text not possible: ${why}`);
       await owner.startOnboardingCall(ref);
-      return [`text not possible (${why}); calling instead`];
+      return ["text not possible; calling instead"];
     } catch (error) {
       const message = sanitizeUntrustedText(error instanceof Error ? error.message : String(error), 200);
       record({
@@ -370,7 +385,7 @@ export function createGatewayTools(deps: GatewayDeps): GatewayTools {
         payload: { route, error: message, short_code: booking.short_code },
         reason: "could not reach the owner yet; the booking stays pending",
       });
-      return [`could not reach the owner yet: ${message}`];
+      return [DISPATCH_FAILED_REASON];
     }
   }
 
@@ -448,14 +463,39 @@ export function createGatewayTools(deps: GatewayDeps): GatewayTools {
           throw new GatewayError("no_route", `Platypus will not contact ${business.display_name}: ${decision.reasons.join("; ")}`);
         }
 
+        // From here to createBooking nothing awaits, so a retry racing this call sees one or the other.
+        const windowStart = new Date(input.window.start).toISOString();
+        const windowEnd = new Date(input.window.end).toISOString();
+        const open = selectRows(db, "bookings", `business_id = ? AND status IN (${OPEN_STATUSES.map(() => "?").join(", ")})`, [business.id, ...OPEN_STATUSES]);
+        // An LLM that retries with a fresh idempotency key gets its open request back, and the owner is not contacted twice.
+        const same = open.find(
+          (b) =>
+            b.agent_id === ctx.agent_id &&
+            b.service.toLowerCase() === service.toLowerCase() &&
+            b.window_start !== null &&
+            b.window_end !== null &&
+            b.window_start < windowEnd &&
+            b.window_end > windowStart,
+        );
+        if (same) {
+          const reason = `already requested as ${same.short_code} (${same.status}); the owner is not contacted again. Poll get_booking`;
+          return { booking_id: same.id, status: "pending" as const, route: same.route ?? decision.route, short_code: same.short_code, reasons: [reason] };
+        }
+        if (open.length >= MAX_OPEN_PER_BUSINESS) {
+          throw new GatewayError(
+            "too_many_open_requests",
+            `${business.display_name} already has ${open.length} open requests, the most Platypus sends one business at once. Wait for one to be answered or cancel one.`,
+          );
+        }
+
         const booking = createBooking(bookingCtx, {
           business_id: business.id,
           agent_id: ctx.agent_id,
           service,
           status: "pending",
           route: decision.route,
-          window_start: new Date(input.window.start).toISOString(),
-          window_end: new Date(input.window.end).toISOString(),
+          window_start: windowStart,
+          window_end: windowEnd,
           // The contract's notes carry details such as the vehicle; the address hint is kept apart.
           details: input.notes ? sanitizeUntrustedText(input.notes) : null,
           notes: input.address_hint ? sanitizeUntrustedText(input.address_hint) : null,
