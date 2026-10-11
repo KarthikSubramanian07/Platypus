@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findAttribution, findPhoneNumbers, findTodos, isCommittedEnvFile, isFictionalNumber } from "./repo-hygiene";
+import { findAttribution, findPhoneNumbers, findTodos, isCommittedEnvFile, isFictionalNumber, isLargeFileAllowed } from "./repo-hygiene";
 
 // Real-format numbers are assembled at runtime so this file never trips the scanner it tests.
 const real = (...parts: string[]) => `+${parts.join("")}`;
@@ -46,5 +46,15 @@ describe("findAttribution", () => {
 describe("findTodos", () => {
   it("finds TODO and FIXME as words only", () => {
     expect(findTodos("a\n// TODO: later\nconst todos = 1\n/* FIXME */")).toEqual([2, 4]);
+  });
+});
+
+describe("isLargeFileAllowed", () => {
+  it("allows the film under media/ and nothing else", () => {
+    expect(isLargeFileAllowed("media/ad-v1/platypus_ad_v1.mp4")).toBe(true);
+    expect(isLargeFileAllowed("media/ad-v1/platypus_ad_v1_web.mp4")).toBe(true);
+    expect(isLargeFileAllowed("packages/dashboard/public/film.mp4")).toBe(false);
+    expect(isLargeFileAllowed("media/dump.zip")).toBe(false);
+    expect(isLargeFileAllowed("docs/media/ad.mp4")).toBe(false);
   });
 });
