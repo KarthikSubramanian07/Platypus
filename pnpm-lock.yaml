@@ -94,9 +94,27 @@ importers:
 
   packages/text:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.133.0
+        version: 0.133.0(zod@4.6.6)
       '@platypus/shared':
         specifier: workspace:*
         version: link:../shared
+      chrono-node:
+        specifier: ^2.10.2
+        version: 2.10.2
+      hono:
+        specifier: ^4.13.13
+        version: 4.13.13
+      libphonenumber-js:
+        specifier: ^1.13.15
+        version: 1.13.15
+      ulid:
+        specifier: ^3.0.2
+        version: 3.0.2
+      zod:
+        specifier: ^4.6.6
+        version: 4.6.6
 
   packages/voice:
     dependencies:
@@ -112,6 +130,9 @@ importers:
       '@platypus/shared':
         specifier: workspace:*
         version: link:../shared
+      '@platypus/text':
+        specifier: workspace:*
+        version: link:../text
       hono:
         specifier: ^4.13.13
         version: 4.13.13
@@ -699,6 +720,10 @@ packages:
   chownr@1.1.4:
     resolution: {integrity: sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg==}
 
+  chrono-node@2.10.2:
+    resolution: {integrity: sha512-xBCwGGmodF2YVtzE7/8ewNDajbCg72jgZHyOXvhkuQiYhIQ1KbqyXJJJw2fLaQ603LL4oMVhOyjckEBve45S4w==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+
   content-disposition@2.0.1:
     resolution: {integrity: sha512-e+H0ZXHSWYrENhQzw1LPuP4oF5MzVKmDU6d3hxlvaPEYLLg62MxtQNPRx4SYSuYJSBUgnQIG4HIN2tEtNv7Dog==}
     engines: {node: '>=18'}
@@ -1055,6 +1080,9 @@ packages:
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
+
+  libphonenumber-js@1.13.15:
+    resolution: {integrity: sha512-AHdhEQeDFEJ4GKDAQ9AwxChy+v2kUILUB3TGQRpkXMkWePjXTU/WQEzWVQoIx/Gz8fE73Wr5SEuZCy2vk8jrMQ==}
 
   lightningcss-android-arm64@1.33.0:
     resolution: {integrity: sha512-gEpRTalKdosp4Bb8qWtc2iOgE5SeIHlpS1up9bFq2wAyYhl1UdTObYiHe98zEM9SQvSoqQZ1IQD0JNpg3Ml5pg==}
@@ -2069,6 +2097,8 @@ snapshots:
 
   chownr@1.1.4: {}
 
+  chrono-node@2.10.2: {}
+
   content-disposition@2.0.1: {}
 
   content-type@1.0.5: {}
@@ -2444,6 +2474,8 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
       type-check: 0.4.0
+
+  libphonenumber-js@1.13.15: {}
 
   lightningcss-android-arm64@1.33.0:
     optional: true

@@ -1,38 +1,27 @@
 import type { Hono } from "hono";
-import { loadConfig, type TextChannel } from "@platypus/shared/config";
+import { loadConfig } from "@platypus/shared/config";
 import type { OwnerChannels, SideDeps } from "@platypus/shared/contracts";
 import { listBusinesses, seed } from "@platypus/shared/db";
 import { emitSeedEvents } from "@platypus/shared/events";
 import { FakeDial } from "@platypus/shared/testing";
 import { createCallService, createDialCalls, createFakeDialCalls, type CallService } from "./call/index";
 import { contextMcpAllowedHosts, createContextMcpRoutes, resolveContextMcpCredentials } from "./context-mcp/index";
+import { createFakeDialMessaging, createTextServiceFromEnv, type TextService } from "@platypus/text";
 import { createVoiceTools } from "./tools/voice-tools";
-
-/**
- * The text side of OwnerChannels, supplied by @platypus/text. Kept as a narrow
- * interface so the voice package does not depend on the text package's internals.
- */
-export interface TextSide {
-  routes(app: Hono): void;
-  sendBookingRequest: OwnerChannels["sendBookingRequest"];
-  resendLast?(bookingId?: string): Promise<unknown>;
-  start?(): void;
-  stop?(): void;
-}
 
 export interface PhoneSideOptions {
   env?: NodeJS.ProcessEnv;
-  /** Builds the text side once the call service exists, so the shared Dial webhook can hand call events to it. */
-  text?: (ctx: { onDialEvent: (envelope: unknown) => void; textChannel: TextChannel }) => TextSide;
   /** Pacing of the fake call when no Dial key is present: 1 = real time. */
   fakeTimeScale?: number;
 }
 
 export interface PhoneSide {
   calls: CallService;
-  text: TextSide | null;
+  text: TextService;
   mode: "dial" | "fake";
   owner: OwnerChannels;
+  /** The in-process Dial stand-in when no Dial key is configured; null with real Dial. */
+  fake: FakeDial | null;
   mount(app: Hono): void;
 }
 
@@ -53,14 +42,16 @@ export function createPhoneSide(deps: SideDeps, options: PhoneSideOptions = {}):
 
   let mode: PhoneSide["mode"];
   let dialCalls;
+  let fake: FakeDial | undefined;
+  let fakeAllowed: string[] = [];
   if (realDial) {
     mode = "dial";
     dialCalls = createDialCalls({ apiKey: env.DIAL_API_KEY!, fromNumberId, allowedNumbers: config.allowedNumbers });
   } else {
     mode = "fake";
     // Fakes never ring anything; the allow-list still applies, defaulting to the seeded numbers.
-    const allowed = config.allowedNumbers.length ? config.allowedNumbers : listBusinesses(db).map((b) => b.phone_e164);
-    const fake = new FakeDial({ allowedNumbers: allowed, voiceTools: tools, timeScale: options.fakeTimeScale ?? 1, autoReply: { body: "Y", afterMs: 4_000 } });
+    fakeAllowed = config.allowedNumbers.length ? config.allowedNumbers : listBusinesses(db).map((b) => b.phone_e164);
+    fake = new FakeDial({ allowedNumbers: fakeAllowed, voiceTools: tools, timeScale: options.fakeTimeScale ?? 1, autoReply: { body: "Y", afterMs: 4_000 } });
     dialCalls = createFakeDialCalls(fake, { fromNumberId });
   }
 
@@ -74,28 +65,44 @@ export function createPhoneSide(deps: SideDeps, options: PhoneSideOptions = {}):
     ...(env.DIAL_NUMBER ? { callbackNumber: env.DIAL_NUMBER } : {}),
   });
 
-  const text = options.text?.({ onDialEvent: (envelope) => void calls.handleDialEvent(envelope), textChannel: config.textChannel }) ?? null;
+  // One Dial webhook serves both packages: text handles messages and hands every other verified event to the call service.
+  const text = createTextServiceFromEnv(deps, env, {
+    onDialEvent: (envelope) => void calls.handleDialEvent(envelope),
+    ...(fake ? { messaging: createFakeDialMessaging(fake), allowedNumbers: fakeAllowed } : {}),
+  });
+  // FakeDial delivers the owner's scripted replies in-process instead of through a webhook.
+  fake?.on((envelope) => {
+    if (envelope.type === "message.received") text.ingest(envelope as Parameters<TextService["ingest"]>[0], "events");
+  });
 
   const owner: OwnerChannels = {
     startOnboardingCall: (input) => calls.startOnboardingCall(input),
-    sendBookingRequest: async (input) =>
-      text ? text.sendBookingRequest(input) : { needs_call: true, reason: "The text channel is not running in this process" },
+    sendBookingRequest: (input) => text.sendBookingRequest(input),
   };
 
   function mount(app: Hono): void {
     const { secret, token } = resolveContextMcpCredentials(env);
     app.route("/", createContextMcpRoutes({ tools, secret, token, allowedHosts: contextMcpAllowedHosts(env.PUBLIC_BASE_URL) }));
-    text?.routes(app);
-    text?.start?.();
+    text.routes(app);
+    // The events stream is the second consumer, so a dropped tunnel does not lose a reply (same dedupe as the webhook).
+    if (realDial && env.DIAL_EVENTS_CONSUMER !== "off") text.startEventsConsumer().start();
 
     // Demo controls for the stage and the video (docs/workstreams.md, phone side item 6).
     app.post("/demo/kill-call", async (c) => c.json(await calls.stopCall(undefined, "kill_switch")));
     app.post("/demo/replay-last-call", async (c) => c.json(await calls.replayLastCall({ timeScale: Number(c.req.query("timeScale") ?? 0) })));
     app.post("/demo/resend-last-text", async (c) =>
-      text?.resendLast ? c.json({ ok: true, result: await text.resendLast(c.req.query("booking_id")) }) : c.json({ ok: false, reason: "text side not running" }, 409),
+      c.json(await text.resendLast(c.req.query("booking_id") ?? lastTextBooking())),
     );
     app.get("/demo/phone-side", (c) => c.json({ mode, textChannel: config.textChannel, liveCall: calls.liveCall()?.id ?? null }));
   }
 
-  return { calls, text, mode, owner, mount };
+  /** The booking of the most recent owner text, for "resend last text" on stage. */
+  function lastTextBooking(): string {
+    const row = db.prepare("SELECT booking_id FROM messages WHERE direction = 'outbound' AND booking_id IS NOT NULL ORDER BY created_at DESC LIMIT 1").get() as
+      | { booking_id: string }
+      | undefined;
+    return row?.booking_id ?? "";
+  }
+
+  return { calls, text, mode, owner, mount, fake: fake ?? null };
 }

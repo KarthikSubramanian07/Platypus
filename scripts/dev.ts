@@ -68,6 +68,8 @@ if (!process.argv.includes("--no-dashboard")) {
   process.on("SIGTERM", stop);
 }
 
-if (mode === "fakes" && !process.argv.includes("--no-replay")) {
+// The recorded fixture plays only when nothing real is wired in; with DIAL_IMPL=real the live
+// phone side produces the events itself, and mixing the two would confuse the dashboard.
+if (mode === "fakes" && process.env.DIAL_IMPL !== "real" && !process.argv.includes("--no-replay")) {
   setTimeout(() => void playGoldenPath(Number(process.env.REPLAY_SPEED ?? 2)), 2_500);
 }
