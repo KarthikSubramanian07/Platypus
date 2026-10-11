@@ -599,10 +599,12 @@ h3 { font: 600 18px/1.3 var(--sans); letter-spacing: -0.01em; }
 
 /* ---- Content pages (about, developers, contact, privacy, 404) ------------------ */
 .doc {
-  width: var(--wrap); margin: 0 auto; padding: 72px 0 96px;
-  display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 56px; align-items: start;
+  width: min(980px, calc(100% - 48px)); margin: 0 auto; padding: 64px 0 96px;
+  display: block;
 }
-.prose { min-width: 0; max-width: 760px; font-size: 17px; color: var(--ink-3); }
+.prose { min-width: 0; font-size: 17px; color: var(--ink-3); }
+/* Text keeps a readable measure; code, tables and headings use the full column. */
+
 .prose h1 { font: 400 clamp(40px, 6vw, 68px)/1.02 var(--serif); letter-spacing: -0.03em; margin-bottom: 24px; }
 .prose h2 { font: 400 clamp(26px, 3vw, 34px)/1.15 var(--serif); letter-spacing: -0.02em; margin: 48px 0 12px; max-width: none; }
 .prose h3 { margin: 28px 0 8px; }
@@ -613,13 +615,14 @@ h3 { font: 600 18px/1.3 var(--sans); letter-spacing: -0.01em; }
 .prose strong { color: var(--ink); }
 .prose a { color: var(--green); text-underline-offset: 3px; overflow-wrap: anywhere; }
 .prose em { color: var(--ink-2); }
-.prose table { width: 100%; margin: 18px 0 0; border-collapse: collapse; font-size: 15px; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.prose table { width: 100%; margin: 18px 0 0; border-collapse: collapse; font-size: 15px; }
+.prose .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .prose th, .prose td { text-align: left; vertical-align: top; padding: 10px 12px; border-top: 1px solid var(--line); }
 .prose thead th { border-top: 0; font: 500 11px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--green); }
 .prose code { white-space: normal; overflow-wrap: anywhere; }
 .prose td:first-child code { white-space: nowrap; }
 .prose pre {
-  margin: 16px 0 0; padding: 16px 18px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  position: relative; margin: 16px 0 0; padding: 18px 20px; padding-right: 96px; overflow-x: auto; -webkit-overflow-scrolling: touch;
   background: #12241f; color: #e4ece7; border-radius: 12px; font: 13px/1.6 var(--mono);
 }
 .prose pre code { background: none; border: 0; padding: 0; color: inherit; font: inherit; white-space: pre; }
@@ -631,6 +634,7 @@ h3 { font: 600 18px/1.3 var(--sans); letter-spacing: -0.01em; }
 .doc-aside p:not(.eyebrow) { margin: 0; }
 .doc-aside a { color: var(--green); }
 .doc-aside code { white-space: normal; }
+.doc .hand-label { margin-bottom: 8px; }
 .doc-page .footer { border-top: 1px solid var(--line); padding-top: 28px; }
 .nav-links a[aria-current="page"] { background: var(--panel); color: var(--ink); }
 
@@ -868,3 +872,29 @@ h2 .doodle-underlined .doodle-underline { bottom: -6px; height: 12px; }
   @keyframes wag { 50% { transform: rotate(6deg); } }
 }
 @media (max-width: 1100px) { .platypus-doodle { display: none; } }
+
+/* ---- Copy buttons on code blocks ---------------------------------------------- */
+.code-block { position: relative; margin: 16px 0 0; }
+.code-block pre { margin: 0; }
+.copy-btn {
+  position: absolute; top: 10px; right: 10px; z-index: 1;
+  display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 6px 12px;
+  font: 500 13px var(--sans); color: #e4ece7; background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 8px; cursor: pointer;
+  transition: background 160ms, color 160ms, border-color 160ms;
+}
+.copy-btn:hover { background: rgba(255, 255, 255, 0.16); }
+.copy-btn:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
+.copy-btn[data-copied] { color: #12241f; background: var(--mint); border-color: var(--mint); }
+.copy-btn svg { width: 14px; height: 14px; }
+@media (max-width: 640px) { .prose pre { padding-right: 20px; padding-top: 52px; } }
+
+/* ---- Handwritten label above the hero: a note, not a pill --------------------- */
+.hand-label { position: relative; display: inline-flex; align-items: flex-start; gap: 4px; margin: 0 0 18px; transform: rotate(-3deg); color: var(--green); }
+.hand-text { font: 500 clamp(24px, 2.6vw, 30px)/1 "Caveat", "Bradley Hand", cursive; background: linear-gradient(104deg, transparent 1%, rgba(159, 211, 193, 0.55) 3%, rgba(159, 211, 193, 0.4) 96%, transparent 99%) 0 85% / 100% 42% no-repeat; padding: 0 0.15em; }
+.hand-arrow { width: 54px; height: 42px; margin-top: 10px; }
+.hand-arrow path { stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+@media (prefers-reduced-motion: no-preference) {
+  .hand-arrow path { stroke-dasharray: 120; stroke-dashoffset: 120; animation: draw 1s 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+}
+@media (max-width: 640px) { .hand-arrow { display: none; } }
