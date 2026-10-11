@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 
-export type FakeDarwinMode = "match" | "no_match" | "error_500";
+export type FakeDarwinMode = "match" | "no_match" | "error_500" | "listed" | "listed_context" | "needs_input";
 
 interface Recording {
   _provenance: Record<string, unknown>;
@@ -16,6 +16,9 @@ const FILES: Record<FakeDarwinMode, string> = {
   match: "darwin-match.recorded.json",
   no_match: "darwin-no-match.synthetic.json",
   error_500: "darwin-error-500.recorded.json",
+  listed: "darwin-listed.recorded.json",
+  listed_context: "darwin-listed-context.recorded.json",
+  needs_input: "darwin-needs-input.recorded.json",
 };
 
 export function loadDarwinRecording(mode: FakeDarwinMode): Recording {
@@ -27,6 +30,8 @@ export function loadDarwinRecording(mode: FakeDarwinMode): Recording {
  *  match:     a real recorded completed response (5 agents, none ready).
  *  error_500: the real HTTP 500 the demo query returned on 2026-10-11.
  *  no_match:  SYNTHETIC until Darwin returns a real one; labeled as such in its body.
+ *  listed, listed_context, needs_input: real local-service and clarifying responses
+ *             recorded for the Darwin search ladder (see docs/darwin.md).
  * Refuses to run when DEMO_MODE=live: a simulated Darwin answer must never reach a judge.
  */
 export function createFakeDarwinFetch(mode: FakeDarwinMode, env: NodeJS.ProcessEnv = process.env): typeof fetch {

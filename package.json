@@ -12,6 +12,7 @@
   "scripts": {
     "dev": "tsx scripts/dev.ts",
     "doctor": "tsx scripts/doctor.ts",
+    "darwin:smoke": "tsx scripts/darwin-smoke.ts",
     "db:migrate": "tsx packages/shared/src/db/cli.ts migrate",
     "db:seed": "tsx packages/shared/src/db/cli.ts seed",
     "contracts:export": "tsx packages/shared/src/contracts/export.ts",

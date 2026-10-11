@@ -6,6 +6,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { ENV_VARS, maskNumber, parseAllowedNumbers, TEXT_CHANNELS } from "../packages/shared/src/config";
+import { DarwinError, HttpDarwin, isDarwinEnabled, probeDarwinMcp } from "../packages/shared/src/darwin";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 
@@ -46,6 +47,32 @@ try {
 const channel = process.env.TEXT_CHANNEL ?? "imessage";
 if ((TEXT_CHANNELS as readonly string[]).includes(channel)) ok(`TEXT_CHANNEL = ${channel}`);
 else fail(`TEXT_CHANNEL = ${channel}: must be one of ${TEXT_CHANNELS.join(", ")} (never sms before 10DLC)`);
+
+console.log("\nDarwin");
+const darwinImpl = process.env.DARWIN_IMPL ?? (mode === "live" ? "real" : "fake");
+const darwinNeeded = darwinImpl === "real" && isDarwinEnabled();
+if (!isDarwinEnabled()) warn("DARWIN_ENABLED=false: search_providers reports Darwin as disabled");
+const darwinProblem = darwinNeeded ? fail : warn;
+// "hair salon" is a query Darwin answers reliably; doctor checks reachability and the key, not ranking.
+try {
+  const darwin = new HttpDarwin({
+    baseUrl: process.env.DARWIN_API_BASE_URL || undefined,
+    apiKey: process.env.DARWIN_API_KEY || undefined,
+    timeoutMs: 30_000,
+  });
+  const { search, latencyMs } = await darwin.search({ query: "hair salon", maxResults: 1 });
+  ok(`Search v3 answered in ${(latencyMs / 1000).toFixed(1)}s (${search.status}, ${process.env.DARWIN_API_KEY ? "application key accepted" : "anonymous"})`);
+} catch (error) {
+  const e = error as DarwinError;
+  if (e instanceof DarwinError && e.kind === "unauthorized") fail("DARWIN_API_KEY was rejected (401); Darwin never falls back to anonymous");
+  else darwinProblem(`Search v3 failed: ${e.message}${e instanceof DarwinError && e.details.requestId ? ` (x-request-id ${e.details.requestId})` : ""}`);
+}
+const mcp = await probeDarwinMcp();
+if (mcp.ok) ok(`MCP server ${mcp.serverVersion} lists ${mcp.tools.length} tools, including search, act and get_thread`);
+else darwinProblem(`MCP check failed: ${mcp.error}`);
+if (process.env.DARWIN_ACT_ENABLED === "true" && process.env.DARWIN_ACT_TOKEN) ok("Darwin Act enabled: darwin_act is chosen when Darwin reports a startable agent");
+else warn("Darwin Act off (needs DARWIN_ACT_ENABLED=true and DARWIN_ACT_TOKEN): bookings use call or text");
+warn(`Darwin client in this mode: ${darwinImpl}`);
 
 console.log("\nDial CLI");
 const which = spawnSync("sh", ["-c", "command -v dial"], { encoding: "utf8" });

@@ -7,3 +7,5 @@ import { GATEWAY_TOOL_NAMES } from "@platypus/shared/contracts";
 export const PACKAGE = "@platypus/gateway" as const;
 
 export const implementedTools: readonly string[] = GATEWAY_TOOL_NAMES;
+
+export { decideBookingRoute, type RouteDecision } from "./route";

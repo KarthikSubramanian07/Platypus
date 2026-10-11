@@ -84,6 +84,11 @@ These were checked on 2026-10-11 against `docs.getdial.ai/openapi.json`, `@getdi
   - Its `no_match` mode is a test double labeled SYNTHETIC that refuses to run with `DEMO_MODE=live`.
   - The golden-path fixture carries the real 500, not a simulated `no_match`.
   - The agent side must retry live and record a real `no_match`. If none arrives within 30 minutes, it must default `DARWIN_ENABLED=false` and the Darwin beat is cut, never faked.
+- Follow-up, later on 2026-10-11 (darwin-integration branch, see `docs/darwin.md`):
+  - The 500s depend on the phrasing. Location and booking wording fail consistently, bare trades usually succeed, and some bare trades fail intermittently.
+  - `lookupDarwin` tries the specific query once and the bare trade twice. Live, the demo request returned 500 on the specific query and then `completed` on "auto repair shop", with one agent, "Find shops", that is `unavailable` and `canStartThread: false`. The route was `call`, with the golden path's reasons. All six seeded trades get an answer this way.
+  - Darwin still has not returned `no_match` for a seeded trade. It answers `completed` with an assessment of `partial` and agents that are not ready. The honest dashboard beat is therefore "Darwin returned no ready agent", not `no_match`.
+  - `DARWIN_ENABLED=false` is implemented. `toDarwinSummary(null)` reports `disabled`. Act needs both `DARWIN_ACT_ENABLED=true` and `DARWIN_ACT_TOKEN`.
 
 ## Design
 
