@@ -1,4 +1,4 @@
-# Platypus — We make Main Street agent-native.
+# Platypus: we make Main Street agent-native.
 
 **One call makes any phone-only business bookable by every AI agent. Call once, agent-native forever.**
 

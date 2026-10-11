@@ -30,7 +30,7 @@ Live at [tryplatypus.pages.dev](https://tryplatypus.pages.dev) and [tryplatypus.
 | Businesses | `business.*`, `consent.recorded` | Six cards that flip to text-enabled, with the rail, the masked best cell and the owner's exact words |
 | Bookings | `booking.*`, `hold.placed`, `message.*` | Short code, status, route, price, slot, and the evidence: "Confirmed by call" with the quote, or "Confirmed by text" with the reply |
 | Owner's phone | `message.*`, `reply.classified` | The owner's thread as bubbles, with delivery times and how each reply was read. This is the visible rail when `TEXT_CHANNEL=dial` |
-| Supply | everything above | Channel, median reply, last price, opt-in per script version, or "—" when there is no data |
+| Supply | everything above | Channel, median reply, last price, opt-in per script version, or "none" when there is no data |
 | Event stream | every event | Newest first, with actor and confidence |
 
 The header shows the connection state (Live, Recorded run or Reconnecting), a "fixture replay" tag when the events are a replay, **Replay**, and **Kill call**. Kill call needs two clicks and is enabled only while a call is in progress. It posts `/demo/kill-call` and is hidden on the recorded run.
