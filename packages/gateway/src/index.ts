@@ -1,7 +1,7 @@
 import type { Hono } from "hono";
 import { GATEWAY_TOOL_NAMES, type OwnerChannels, type SideDeps } from "@platypus/shared/contracts";
-import { createDarwin, isDarwinEnabled } from "@platypus/shared/darwin";
-import { seed } from "@platypus/shared/db";
+import { createDarwin, darwinCacheKey, DarwinLookupCache, isDarwinEnabled, lookupDarwin, type Darwin } from "@platypus/shared/darwin";
+import { listBusinesses, seed, type Business } from "@platypus/shared/db";
 import { emitSeedEvents } from "@platypus/shared/events";
 import { createFakeGateway, createFakeOwnerChannels, FakeDial } from "@platypus/shared/testing";
 import { createMcpApp } from "./mcp";
@@ -47,12 +47,33 @@ export function mount(app: Hono, deps: SideDeps & { owner?: OwnerChannels }, env
   if (n === 0) seed(db, { allowedNumbers: allowedNumbers(env), onSeeded: emitSeedEvents(db, { bus }) });
 
   const darwin = isDarwinEnabled(env) ? createDarwin(env) : null;
+  const darwinCache = new DarwinLookupCache();
+  if (darwin && env.DEMO_MODE === "live") warmDarwin(darwin, darwinCache, listBusinesses(db));
   const tools = createGatewayTools({
     db,
     bus,
     owner: deps.owner ?? fakeOwner(deps, env),
     darwin,
     canAct: env.DARWIN_ACT_ENABLED === "true" && Boolean(darwin?.canAct),
+    darwinCache,
   });
   app.route("/", createMcpApp(tools));
+}
+
+/**
+ * Live Darwin takes 10 to 30 seconds, so ask once per seeded trade at start and let the stage
+ * search hit the cache. Fire-and-forget: startup never waits, and no event is emitted because
+ * no agent asked (lookupDarwin itself never emits; consultDarwin does, for agent calls).
+ */
+function warmDarwin(darwin: Darwin, cache: DarwinLookupCache, businesses: Business[]): void {
+  const inputs = new Map(businesses.map((b) => [darwinCacheKey({ trade: b.trade, area: b.service_area ?? undefined }), b]));
+  for (const { trade, service_area } of inputs.values()) {
+    lookupDarwin(darwin, { trade, area: service_area ?? undefined }, { cache })
+      .then((lookup) => {
+        if (lookup.outcome === "unavailable") console.warn(`[gateway] Darwin warm-up for ${trade}: unavailable after ${lookup.attempts.length} attempts`);
+      })
+      .catch((error: unknown) => {
+        console.warn(`[gateway] Darwin warm-up for ${trade} failed: ${String(error instanceof Error ? error.message : error).split("\n")[0]}`);
+      });
+  }
 }

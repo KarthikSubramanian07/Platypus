@@ -119,3 +119,14 @@ Dial and Darwin shapes were taken from their OpenAPI specs, SDK type definitions
 
 **No AI attribution in commits.**
 Every commit is authored by the teammate running the session.
+
+### Agent side
+
+**Darwin answers are cached per trade and area for ten minutes, and warmed when the gateway starts.**
+Live Darwin Search takes 10 to 30 seconds per lookup and returns HTTP 500 for some specific phrasings, so a cold lookup stalls a customer agent's first search. Darwin's answer for our query ladder is driven by the trade (the last rung is always the bare trade), so one answer serves any service wording, budget or deadline in the same area. The gateway looks up each seeded trade in the background at start, and `demo:cli warm` repeats the stage search right before a demo. A lookup where every attempt failed is never cached, so the next request tries again.
+
+**`/mcp` requires `Authorization: Bearer $GATEWAY_TOKEN` when `GATEWAY_TOKEN` is set.**
+Hosted agents such as Claude Desktop reach the gateway through a public tunnel, which makes it reachable by anyone who finds the URL. The token makes callers prove they are ours. With `GATEWAY_TOKEN` unset, `/mcp` is open, which is only acceptable on localhost.
+
+**`confirm_booking` cannot confirm on the owner's behalf.**
+Only the owner's own yes (on the call, by text, or through a rule they confirmed) confirms a booking. On a booking the owner countered, `confirm_booking` returns `owner_confirmation_required`, and the agent polls `get_booking` instead. `cancel_booking` and `reschedule_booking` update the booking but do not notify the owner yet, because `OwnerChannels`, the contract between the agent side and the phone side, has no method for it. Adding one is a contract change left for after the event.

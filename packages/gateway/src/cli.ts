@@ -1,6 +1,8 @@
 /**
  * The stage fallback: any MCP client can drive the golden path, so if Claude Desktop hangs,
  * run `pnpm --filter @platypus/gateway demo:cli oil` (or `brakes`, `tools`) against `pnpm dev`.
+ * Right before going on stage, run `demo:cli warm`: it makes the stage search once, so the live
+ * Darwin answer (10 to 30 seconds cold) is cached for the next ten minutes.
  * Plain lines for a projector; a failed call prints one line and exits 1.
  */
 import { randomUUID } from "node:crypto";
@@ -14,7 +16,7 @@ import { AGENT_HEADER } from "./mcp";
 
 export const DEFAULT_URL = "http://localhost:8787/mcp";
 const AGENT_ID = "demo-cli";
-const USAGE = "Usage: demo:cli [oil|brakes|tools] [--url http://localhost:8787/mcp]";
+const USAGE = "Usage: demo:cli [oil|brakes|warm|tools] [--url http://localhost:8787/mcp]";
 const LOCATION = "1025 Sansome St, San Francisco";
 const BUDGET_CENTS = 12000;
 const REQUESTED_BY = "Alex's assistant";
@@ -151,6 +153,16 @@ async function bookGoldenPath(client: Client, scenario: (typeof SCENARIOS)[strin
   }
 }
 
+/** Makes the stage search once so its Darwin answer is cached. Exits 1 when Darwin did not answer: run it again. */
+async function warmDarwin(client: Client, print: (line: string) => void, now: Date): Promise<number> {
+  const { service, window } = SCENARIOS.oil!;
+  const started = Date.now();
+  const found = await call(client, "search_providers", { service, location: LOCATION, window: window(now), budget_cents: BUDGET_CENTS });
+  print(darwinLine(found));
+  print(`Round trip: ${((Date.now() - started) / 1000).toFixed(1)}s`);
+  return found.darwin.status === "error" ? 1 : 0;
+}
+
 /** Runs one subcommand against the gateway at --url and returns the exit code. Never throws. */
 export async function run(argv: string[], options: CliOptions = {}): Promise<number> {
   const print = options.print ?? ((line: string) => console.log(line));
@@ -165,7 +177,7 @@ export async function run(argv: string[], options: CliOptions = {}): Promise<num
     return 1;
   }
   const scenario = SCENARIOS[command];
-  if (command !== "tools" && !scenario) {
+  if (command !== "tools" && command !== "warm" && !scenario) {
     print(`Unknown command "${command}". ${USAGE}`);
     return 1;
   }
@@ -181,6 +193,8 @@ export async function run(argv: string[], options: CliOptions = {}): Promise<num
       print(`Cannot reach the gateway at ${url.href}: ${firstLine(error)}`);
       return 1;
     }
+    const now = options.now ?? (() => new Date());
+    if (command === "warm") return await warmDarwin(client, print, now());
     if (!scenario) {
       const { tools } = await client.listTools();
       for (const tool of tools) print(tool.name);
@@ -190,7 +204,7 @@ export async function run(argv: string[], options: CliOptions = {}): Promise<num
       print,
       pollMs: options.pollMs ?? POLL_MS,
       timeoutMs: options.timeoutMs ?? TIMEOUT_MS,
-      now: options.now ?? (() => new Date()),
+      now,
     });
   } catch (error) {
     print(firstLine(error));

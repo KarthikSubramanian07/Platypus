@@ -19,6 +19,8 @@ export interface Darwin {
   search(request: SearchRequest): Promise<DarwinSearchResult>;
   /** True only when an Act pilot credential is configured. Search never needs one. */
   readonly canAct: boolean;
+  /** True when answers are replayed recordings, not api.darwin.so (DEMO_MODE=fakes). */
+  readonly recorded?: boolean;
   act(request: ActStartRequest | ActContinueRequest, options: ActOptions): Promise<ActResponse>;
 }
 
@@ -88,6 +90,8 @@ export interface HttpDarwinOptions {
   /** Ceiling for any single backoff, including a server-sent Retry-After. */
   maxBackoffMs?: number;
   fetch?: typeof fetch;
+  /** Set by createDarwin when `fetch` replays recordings, so events say provenance "recorded". */
+  recorded?: boolean;
   sleep?: (ms: number) => Promise<void>;
   random?: () => number;
 }
@@ -104,6 +108,7 @@ export class HttpDarwin implements Darwin {
   private readonly fetchImpl: typeof fetch;
   private readonly sleep: (ms: number) => Promise<void>;
   private readonly random: () => number;
+  readonly recorded: boolean;
 
   constructor(options: HttpDarwinOptions = {}) {
     this.baseUrl = (options.baseUrl ?? DARWIN_API_BASE_URL).replace(/\/+$/, "");
@@ -115,6 +120,7 @@ export class HttpDarwin implements Darwin {
     this.fetchImpl = options.fetch ?? fetch;
     this.sleep = options.sleep ?? realSleep;
     this.random = options.random ?? Math.random;
+    this.recorded = options.recorded ?? false;
   }
 
   get canAct(): boolean {

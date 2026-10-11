@@ -19,7 +19,7 @@ export function createDarwin(env: NodeJS.ProcessEnv = process.env, options: { fa
   const impl = env.DARWIN_IMPL || (env.DEMO_MODE === "live" ? "real" : "fake");
   if (impl !== "fake" && impl !== "real") throw new Error(`DARWIN_IMPL must be fake or real, got ${impl}`);
   if (impl === "fake") {
-    return new HttpDarwin({ fetch: createFakeDarwinFetch(options.fakeMode ?? "listed", env), maxRetries: 0 });
+    return new HttpDarwin({ fetch: createFakeDarwinFetch(options.fakeMode ?? "listed", env), maxRetries: 0, recorded: true });
   }
   return new HttpDarwin({
     baseUrl: env.DARWIN_API_BASE_URL || undefined,
