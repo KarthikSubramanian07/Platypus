@@ -2,7 +2,7 @@
 
 **We make Main Street agent-native.** One honest AI call makes a phone-only business bookable by every AI agent, by text, forever.
 
-[![CI](https://github.com/KarthikSubramanian07/Platypus/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/KarthikSubramanian07/Platypus/actions/workflows/ci.yml) ![Tests](https://img.shields.io/badge/tests-1000%2B%20passing-1c5449) ![License](https://img.shields.io/badge/license-MIT-22231f) ![Built on](https://img.shields.io/badge/built%20on-Dial%20·%20Darwin%20·%20Alike-1c5449)
+![Tests](https://img.shields.io/badge/tests-1000%2B%20passing-1c5449) ![License](https://img.shields.io/badge/license-MIT-22231f) ![Built on](https://img.shields.io/badge/built%20on-Dial%20·%20Darwin%20·%20Alike-1c5449)
 
 **[tryplatypus.pages.dev](https://tryplatypus.pages.dev)** · **[Watch the demo run](https://tryplatypus.pages.dev/live)** · **[For agents](https://tryplatypus.pages.dev/developers)**
 
@@ -92,7 +92,7 @@ The architecture is built so that a booking is never confirmed just because a mo
 - **History is append-only.** Every change is an event with an actor, a reason and a confidence, and database triggers block edits.
 - **Only allowlisted numbers can ring.** The check runs right before any network request, including in the fakes.
 
-**Two auditors check every log.** One is in TypeScript and the other was written independently in Rust ([`crates/platypus-audit`](crates/platypus-audit/README.md)). Both replay the event log against eight rules, and CI fails if they disagree on any of more than 1,600 logs.
+**Two auditors check every log.** One is in TypeScript and the other was written independently in Rust ([`crates/platypus-audit`](crates/platypus-audit/README.md)). Both replay the event log against eight rules, and `pnpm verify` fails if they disagree on any of more than 1,600 logs.
 
 ![Architecture](docs/readme-arch.png)
 

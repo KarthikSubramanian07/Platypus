@@ -1,5 +1,5 @@
 /**
- * `pnpm verify`: every check CI runs that needs no keys and no network, in one
+ * `pnpm verify`: every check that needs no keys and no network, in one
  * command, ending in a scorecard. Built for a reviewer (human or agent) who
  * wants proof in a few minutes. Exits 1 if any step fails.
  *
@@ -41,7 +41,7 @@ for (const step of STEPS) {
     continue;
   }
   if (step.needs && !has(step.needs)) {
-    results.push({ step, status: "skip", seconds: 0, note: `${step.needs} not installed; CI runs it on every push` });
+    results.push({ step, status: "skip", seconds: 0, note: `${step.needs} not installed` });
     continue;
   }
   console.log(`\n▶ ${step.name}: ${step.cmd.join(" ")}`);
