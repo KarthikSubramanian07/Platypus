@@ -32,7 +32,7 @@ Two people use Platypus.
 ## How it works
 
 1. The customer's agent calls the Platypus MCP tools: `search_providers`, then `request_booking`. Demo request: "Oil change tomorrow afternoon, under $120, near 1025 Sansome."
-2. The gateway runs Darwin Search v3 to see whether an agent already covers the job. For our trades Darwin returns no ready agent, so the route is a phone call.
+2. The gateway runs Darwin Search v3 to see whether an agent already covers the job. For our trades Darwin finds no agent that can book it (with our application key it answers `no_match` for the auto shop; anonymously it listed agents, none ready), so the route is a phone call.
 3. Dial places one outbound AI call. Its first sentence says it is an AI. It asks for a price and an opening, and books through our `check_slot`, `hold_slot` and `create_booking` tools while the owner is still on the line (Dial Context MCP).
 4. It then asks: "Next time a customer's agent needs you, can I text you instead of calling?" A yes is stored with the owner's exact words and the call id, and the shop switches from phone-only to text-enabled.
 5. The agent gets a typed result: shop, time, price, short code. A booking is confirmed only when the owner says yes, on the call or by text, never because the AI said so.
@@ -72,7 +72,7 @@ We found no credible published figure for minutes per booking, so the customer b
 - Sal's Auto is not a business: its line is a second Dial number, and the owner on the call is Dial's AI playing the owner from a script, because Dial approves real numbers only after review. No oil change is booked at any real shop.
 - The other five shops on the dashboard are fictional, with phone numbers reserved for fiction.
 - No real phone number is involved yet: calls and texts run between two Dial numbers until Dial approves a real number. Dial approves real numbers after review, for messaging (SMS and iMessage) after a review on their backend, and plain SMS also needs 10DLC registration. The owner replies to texts from the dashboard's owner-phone panel, not from a phone.
-- Darwin has never returned `no_match` for our trades. It answers with a completed search and no ready agent, and we report exactly that. We do not use Darwin Act or Publish, and Darwin is never simulated.
+- Darwin's answer for our trades varies: with our application key it returns `no_match` for the auto shop and listed-but-not-ready agents for two trades; anonymous search returned listed agents, none ready. We report exactly what Darwin returns. We do not use Darwin Act or Publish, and Darwin is never simulated.
 - Only our own Dial numbers can be called or texted; an allow-list in the code enforces it.
 - The public page replays a recording of the golden path.
 - The time-saved numbers are estimates.

@@ -273,7 +273,7 @@ Owners pay **per confirmed booking** (they already pay per lead), then an **auto
 | --- | --- |
 | Contracts, booking state machine, holds, consent rules, event log, SSE stream, CI | Sal's Auto is not a real business. Its line is a second Dial number, answered by Dial's AI playing the owner, until Dial approves a real number. |
 | The gateway's nine MCP tools, routing and the demo CLI | The site's replay runs on FakeDial; the live Dial call is on the phone side. |
-| The live Darwin Search v3 client, search ladder and daily smoke check | Darwin has returned listed agents, none ready, rather than `no_match`. |
+| The live Darwin Search v3 client, search ladder and daily smoke check | Darwin's answer varies: `no_match` for the auto shop with our application key, listed agents none ready anonymously. |
 | Dial shapes checked against Dial's OpenAPI spec and SDK | Texts to regular phones wait on 10DLC. Five of six seeded businesses use 555 numbers. |
 | The site negotiates Markdown for agents and returns real 404s, verified in production | Time saved is an estimate, with every assumption above. |
 
