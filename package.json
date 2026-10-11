@@ -37,7 +37,8 @@
     "ci:bundle-budget": "tsx scripts/ci/bundle-budget.ts",
     "ci:smoke": "tsx scripts/ci/dashboard-smoke.ts",
     "dial:owner-sim": "tsx scripts/owner-sim.ts",
-    "audit:log": "tsx scripts/audit-log.ts"
+    "audit:log": "tsx scripts/audit-log.ts",
+    "ci:audit-diff": "tsx scripts/ci/audit-differential.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
