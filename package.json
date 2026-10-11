@@ -25,6 +25,7 @@
     "test:e2e": "vitest run --project voice src/phone-side.test.ts && vitest run --passWithNoTests .e2e.test.ts",
     "test:eval": "vitest run --project text src/evals.test.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "verify": "tsx scripts/verify.ts",
     "demo:reset": "tsx scripts/demo-reset.ts",
     "live:reset": "DEMO_MODE=live tsx scripts/demo-reset.ts",
     "tunnel": "tsx scripts/tunnel.ts",
