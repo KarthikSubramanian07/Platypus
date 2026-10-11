@@ -41,7 +41,11 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 .step button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 .step[data-state="done"] button { color: var(--ink-3); }
 .step[data-state="live"] button { color: var(--ink); }
-.step[data-state="live"] button::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px var(--lime-wash); }
+.step[data-state="live"] button::before { display: none; }
+/* Steps 0 to 7 are numbered; the payoff is not a step. */
+.step-num { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px; font: 600 11px/1 var(--mono); color: inherit; border: 1px solid currentColor; opacity: 0.7; }
+.step[data-state="live"] .step-num, .step[data-state="done"] .step-num { background: var(--green); border-color: var(--green); color: #fff; opacity: 1; }
+.step[data-state="live"] .step-num { box-shadow: 0 0 0 4px var(--lime-wash); }
 .step[data-view="true"] button { background: var(--panel-2); border-color: var(--line); color: var(--ink); }
 .head-right { display: flex; align-items: center; gap: 12px; font: 12.5px var(--mono); color: var(--muted); white-space: nowrap; }
 .tag { font: 500 10.5px/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 7px; border-radius: 6px; border: 1px dashed var(--line-warm); color: var(--ink-3); }
@@ -57,7 +61,9 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 
 /* ---- Story: scenes left, the pinned phone right -------------------------------------------- */
 .story { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 40vw); max-width: 1680px; margin: 0 auto; }
-.scenes { padding: 0 clamp(24px, 4vw, 72px) 0 clamp(28px, 7vw, 132px); }
+.scenes { padding: 0 clamp(28px, 4vw, 72px) 0 clamp(36px, 7vw, 140px); }
+.scene-sub { margin: 18px 0 0; max-width: 34ch; font: 400 clamp(17px, 1.5vw, 20px)/1.5 var(--sans); color: var(--ink-3); }
+.scene-fine { display: block; margin-top: 8px; font: 12.5px/1.4 var(--mono); color: var(--muted); }
 .scene {
   min-height: calc(100dvh - var(--head)); scroll-margin-top: var(--head);
   display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: clamp(28px, 4.5vh, 48px);
@@ -219,6 +225,8 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 .iphone[data-screen="lock"] .sb-time { visibility: hidden; }
 .iphone[data-screen="messages"] .statusbar { color: #000; }
 .iphone[data-screen="messages"] .home-bar { background: #000; }
+.iphone[data-screen="agent"] .statusbar { color: #000; }
+.iphone[data-screen="agent"] .home-bar { background: #000; }
 
 /* The script sets each screen's opacity from the scroll; the short transition only smooths a change mid-scene. */
 .scr { position: absolute; inset: 0; opacity: 0; transition: opacity 160ms linear; }
@@ -229,6 +237,28 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 .round-green { background: #30d158; }
 .round-red { background: #ff3b30; }
 .ico-hang { transform: rotate(135deg); }
+
+/* Step 0: the customer's own phone, with their agent open */
+.scr-agent { display: flex; flex-direction: column; padding: 58px 0 0; background: linear-gradient(180deg, #fbfaf6 0%, #f4f1ea 100%); color: #1d1d1f; font-family: var(--ios-font); }
+.ag-head { display: grid; justify-items: center; gap: 3px; padding: 8px 0 14px; border-bottom: 1px solid rgba(0, 0, 0, 0.06); }
+.ag-avatar { width: 44px; height: 44px; border-radius: 50%; background: radial-gradient(circle at 32% 30%, #f3d9ff 0%, #b78cf0 42%, #6c4bd8 100%); box-shadow: 0 6px 18px -6px rgba(108, 75, 216, 0.6); }
+.ag-name { font: 600 17px var(--ios-font); }
+.ag-sub { font: 400 12px var(--ios-font); color: #8a8a8e; }
+.ag-thread { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 22px 16px; }
+.ag-bubble { margin: 0; max-width: 80%; padding: 11px 15px; border-radius: 20px; font: 400 17px/1.35 var(--ios-font); }
+.ag-me { align-self: flex-end; background: #1c5449; color: #fff; border-bottom-right-radius: 6px; min-height: 46px; }
+.ag-them { align-self: flex-start; background: #ebe7dd; color: #1d1d1f; border-bottom-left-radius: 6px; }
+.ag-caret { display: inline-block; width: 2px; height: 1.1em; margin-left: 2px; vertical-align: -3px; background: currentColor; opacity: 0; }
+.ag-me[data-typing="true"] .ag-caret { opacity: 1; animation: ag-blink 1s steps(2) infinite; }
+@keyframes ag-blink { 50% { opacity: 0; } }
+.ag-tool { margin: 0; align-self: flex-start; display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px; font: 500 12.5px var(--ios-font); color: #1c5449; background: rgba(28, 84, 73, 0.1); }
+.ag-tool-dot { width: 7px; height: 7px; border-radius: 50%; background: #1c5449; animation: ag-blink 1.2s ease-in-out infinite; }
+.ag-them[hidden], .ag-tool[hidden] { display: none; }
+.ag-them:not([hidden]), .ag-tool:not([hidden]) { animation: ag-in 420ms var(--ease-out) both; }
+@keyframes ag-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+.ag-compose { display: flex; align-items: center; justify-content: space-between; margin: 0 14px 34px; padding: 10px 10px 10px 16px; border-radius: 22px; background: #fff; border: 1px solid rgba(0, 0, 0, 0.08); font: 400 16px var(--ios-font); color: #a1a1a6; }
+.ag-compose b { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #1c5449; color: #fff; font-size: 16px; }
+@media (prefers-reduced-motion: reduce) { .ag-caret, .ag-tool-dot, .ag-them, .ag-tool { animation: none !important; } }
 
 /* Lock screen */
 .scr-lock { text-align: center; background: radial-gradient(90% 60% at 18% 8%, rgba(236, 246, 240, 0.85) 0%, transparent 60%), radial-gradient(80% 60% at 100% 100%, #0f2e28 0%, transparent 70%), linear-gradient(168deg, #cfe6dc 0%, #7fb9a5 34%, #2b6b5d 68%, #12352e 100%); }
