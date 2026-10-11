@@ -1,4 +1,5 @@
 import type { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { loadConfig } from "@platypus/shared/config";
 import type { OwnerChannels, SideDeps } from "@platypus/shared/contracts";
@@ -9,6 +10,15 @@ import { createCallService, createDialCalls, createFakeDialCalls, type CallServi
 import { contextMcpAllowedHosts, createContextMcpRoutes, resolveContextMcpCredentials } from "./context-mcp/index";
 import { createFakeDialMessaging, createTextServiceFromEnv, type TextService } from "@platypus/text";
 import { createVoiceTools } from "./tools/voice-tools";
+
+/** A demo control carries at most a one-line owner reply. */
+export const MAX_DEMO_BODY_BYTES = 4 * 1024;
+
+/** Replay pacing from ?timeScale: 0 (at once) to 4x slower than the call; anything else plays at once. */
+export function replayTimeScale(raw: string | undefined): number {
+  const value = Number(raw ?? 0);
+  return Number.isFinite(value) ? Math.min(4, Math.max(0, value)) : 0;
+}
 
 export interface PhoneSideOptions {
   env?: NodeJS.ProcessEnv;
@@ -94,9 +104,10 @@ export function createPhoneSide(deps: SideDeps, options: PhoneSideOptions = {}):
 
     // /live may be served from another origin (?events=...), so the controls answer cross-origin.
     app.use("/demo/*", cors());
+    app.use("/demo/*", bodyLimit({ maxSize: MAX_DEMO_BODY_BYTES, onError: (c) => c.json({ ok: false, reason: "body too large" }, 413) }));
     // Demo controls for the stage and the video (docs/workstreams.md, phone side item 6).
     app.post("/demo/kill-call", async (c) => c.json(await calls.stopCall(undefined, "kill_switch")));
-    app.post("/demo/replay-last-call", async (c) => c.json(await calls.replayLastCall({ timeScale: Number(c.req.query("timeScale") ?? 0) })));
+    app.post("/demo/replay-last-call", async (c) => c.json(await calls.replayLastCall({ timeScale: replayTimeScale(c.req.query("timeScale")) })));
     app.post("/demo/resend-last-text", async (c) =>
       c.json(await text.resendLast(c.req.query("booking_id") ?? lastTextBooking())),
     );

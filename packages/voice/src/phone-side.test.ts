@@ -4,7 +4,7 @@ import { createBooking, getBooking, placeHold } from "@platypus/shared/booking";
 import { getActiveConsent, getBusinessBySlug, openDb } from "@platypus/shared/db";
 import { EventBus, listEvents } from "@platypus/shared/events";
 import { generateContextMcpSecret, generateContextMcpToken } from "./context-mcp/secret";
-import { createPhoneSide } from "./phone-side";
+import { createPhoneSide, MAX_DEMO_BODY_BYTES, replayTimeScale } from "./phone-side";
 
 const ENV = { DEMO_MODE: "fakes", TEXT_CHANNEL: "imessage", CONTEXT_MCP_SECRET: generateContextMcpSecret(), CONTEXT_MCP_TOKEN: generateContextMcpToken() } as NodeJS.ProcessEnv;
 
@@ -73,6 +73,20 @@ describe("phone side controls", () => {
     expect(await res.json()).toMatchObject({ ok: true });
     await side.text.drain();
     expect(listEvents(db, { type: "message.received" })).toHaveLength(1);
+    side.calls.dispose();
+  });
+
+  it("refuses an oversized demo body and clamps the replay pacing", async () => {
+    const db = openDb(":memory:");
+    const side = createPhoneSide({ db, bus: new EventBus() }, { env: ENV, fakeTimeScale: 0 });
+    const app = new Hono();
+    side.mount(app);
+    const huge = JSON.stringify({ body: "Y".repeat(MAX_DEMO_BODY_BYTES) });
+    const res = await app.request("/demo/owner-reply", { method: "POST", headers: { "content-type": "application/json", "content-length": String(huge.length) }, body: huge });
+    expect(res.status).toBe(413);
+    await side.text.drain();
+    expect(listEvents(db, { type: "message.received" })).toHaveLength(0);
+    expect([replayTimeScale(undefined), replayTimeScale("1e9"), replayTimeScale("-3"), replayTimeScale("abc"), replayTimeScale("0.5")]).toEqual([0, 4, 0, 0, 0.5]);
     side.calls.dispose();
   });
 
