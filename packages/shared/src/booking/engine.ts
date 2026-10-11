@@ -190,6 +190,7 @@ export function confirm(ctx: BookingContext, bookingId: string, evidence: Confir
     if (!CONFIRMABLE_STATUSES.includes(booking.status)) throw new InvalidTransitionError(booking.status, "confirmed");
     expireHoldsInTx(ctx, record, now);
     const actor = verifyEvidence(ctx, booking, evidence);
+    assertSlotStillFree(ctx, booking);
     const iso = now.toISOString();
     // A yes that arrived before it was matched to a booking is bound to this one, so it cannot confirm a second.
     if (evidence.kind === "text") {
@@ -206,6 +207,25 @@ export function confirm(ctx: BookingContext, bookingId: string, evidence: Confir
       evidence,
     });
   });
+}
+
+/**
+ * Never double-book on a late yes: a hold lapses after 10 minutes, and an owner who
+ * answers after that may be saying yes to a time someone else has since held or booked.
+ */
+function assertSlotStillFree(ctx: BookingContext, booking: Booking): void {
+  if (booking.slot_start === null || booking.slot_end === null) return;
+  const window = [booking.slot_end, booking.slot_start];
+  const holds = selectRows(ctx.db, "holds", `business_id = ? AND status = 'active' AND (booking_id IS NULL OR booking_id <> ?) AND ${overlaps}`, [booking.business_id, booking.id, ...window]);
+  const booked = selectRows(
+    ctx.db,
+    "bookings",
+    `business_id = ? AND id <> ? AND status IN (${OCCUPYING_STATUSES.map(() => "?").join(", ")}) AND ${overlaps}`,
+    [booking.business_id, booking.id, ...OCCUPYING_STATUSES, ...window],
+  );
+  if (holds.length || booked.length) {
+    throw new BookingError("slot_unavailable", `Cannot confirm ${booking.short_code}: its time was held or booked by someone else while waiting for the owner`);
+  }
 }
 
 function verifyEvidence(ctx: BookingContext, booking: Booking, evidence: ConfirmationEvidence): EventActor {
