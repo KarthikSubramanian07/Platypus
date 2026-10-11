@@ -71,6 +71,9 @@ code {
 .btn-primary:hover { background: var(--green-deep); }
 .btn-primary:disabled { opacity: 0.6; cursor: default; }
 .btn-ghost { background: var(--panel-2); color: var(--ink-2); border: 1px solid var(--line); }
+/* The landing nav's way into /live: the one filled pill among the links. */
+.nav-links a.nav-live { background: var(--green); color: #fbfaf6; font-weight: 500; }
+.nav-links a.nav-live:hover { background: var(--green-deep); color: #fff; }
 .btn-ghost:hover { background: var(--panel); }
 .conn { display: inline-flex; align-items: center; gap: 7px; }
 .conn::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
