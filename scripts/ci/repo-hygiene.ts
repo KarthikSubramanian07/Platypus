@@ -6,7 +6,7 @@
  *      NANP 555-01xx (any area code), the +1 555 area code, or +1 415 555 xxxx.
  *   3. No AI co-author or "Generated with" attribution in the commit messages of the range.
  *   4. No TODO or FIXME left in packages/*\/src.
- *   5. No tracked file over 1 MB.
+ *   5. No tracked file over 1 MB, except the film under media/, which is a deliberate asset.
  *
  * The commit range comes from the first argument or HYGIENE_RANGE ("base..head");
  * locally it defaults to origin/main..HEAD.
@@ -17,6 +17,9 @@ import { basename } from "node:path";
 import { pathToFileURL } from "node:url";
 
 export const MAX_FILE_BYTES = 1024 * 1024;
+
+/** Media under media/ is the team's film: large on purpose, and the site ships it from there. */
+export const isLargeFileAllowed = (path: string): boolean => /^media\/[^/].*\.(mp4|webm|mov)$/i.test(path);
 
 /** Example env files that are meant to be committed. */
 const ENV_TEMPLATES = new Set([".env.example", ".env.sample", ".env.template"]);
@@ -125,7 +128,7 @@ export function scan(): { findings: Finding[]; files: number; commits: number; r
     if (isCommittedEnvFile(path)) findings.push({ rule: "env-file", where: path, detail: "env files hold secrets; commit .env.example instead" });
 
     const size = statSync(path).size;
-    if (size > MAX_FILE_BYTES) findings.push({ rule: "large-file", where: path, detail: `${(size / 1024 / 1024).toFixed(2)} MB (limit 1 MB)` });
+    if (size > MAX_FILE_BYTES && !isLargeFileAllowed(path)) findings.push({ rule: "large-file", where: path, detail: `${(size / 1024 / 1024).toFixed(2)} MB (limit 1 MB)` });
 
     const buffer = readFileSync(path);
     if (buffer.subarray(0, 8000).includes(0)) continue; // binary
