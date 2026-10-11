@@ -34,5 +34,5 @@ darwin-cache/
 # Logs
 *.log
 
-# Local agent worktrees and settings
-.claude/
+# Local agent worktrees
+.claude/worktrees/

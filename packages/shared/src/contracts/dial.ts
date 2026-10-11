@@ -34,12 +34,15 @@ export const DialCall = z
   .passthrough();
 export type DialCall = z.infer<typeof DialCall>;
 
+/** POST /api/v1/calls. Send exactly one of fromNumber (id, E.164 or nickname; preferred) and fromNumberId (legacy). */
 export const PlaceCallRequest = z.object({
   to: z.string(),
-  fromNumberId: z.string(),
+  fromNumber: z.string().optional(),
+  fromNumberId: z.string().optional(),
   outboundInstruction: z.string(),
   language: z.string().optional(),
   maxCallDurationSeconds: z.number().int().min(60).max(3600).optional(),
+  voiceGender: z.enum(["male", "female"]).optional(),
   transferTo: z.string().optional(),
 });
 export type PlaceCallRequest = z.infer<typeof PlaceCallRequest>;
@@ -88,17 +91,38 @@ export const DialMessageReceived = envelope(
     messageId: z.string(),
     from: z.string(),
     to: z.string().nullable(),
-    channel: z.enum(["sms", "imessage", "rcs", "whatsapp"]),
+    channel: z.enum(["sms", "imessage", "rcs", "whatsapp", "unknown"]),
     body: z.string(),
     media: z.array(z.unknown()).default([]),
+    /** On iMessage, a Tapback arrives with an empty body and this set (a name like "like" or an emoji). */
+    reaction: z.string().nullable().optional(),
+    replyToId: z.string().nullable().optional(),
     source: z.enum(["external", "internal"]).optional(),
   }),
 );
 
-export const DialEvent = z.discriminatedUnion("type", [DialCallStatusChanged, DialCallEnded, DialCallTranscribed, DialMessageReceived]);
+/** Delivery and read receipts for messages we sent. */
+export const DialMessageStatusChanged = envelope(
+  "message.status_changed",
+  z.object({ messageId: z.string(), changed: z.string().optional(), deliveryState: z.string().optional(), readState: z.string().optional() }).passthrough(),
+);
+export const DialWebhookPing = envelope("webhook.ping", z.object({}).passthrough());
+
+export const DialEvent = z.discriminatedUnion("type", [
+  DialCallStatusChanged,
+  DialCallEnded,
+  DialCallTranscribed,
+  DialMessageReceived,
+  DialMessageStatusChanged,
+  DialWebhookPing,
+]);
 export type DialEvent = z.infer<typeof DialEvent>;
 
-/** Headers Dial adds to every Context MCP request during a call. */
+/**
+ * Headers Dial adds to every Context MCP request during a call. X-Dial-User-Number is the
+ * other party: the business on our outbound calls. On Dial's tool-discovery connection they
+ * may be absent or arrive as literal templates such as "{{user_number}}".
+ */
 export const DIAL_HEADERS = {
   direction: "x-dial-direction",
   userNumber: "x-dial-user-number",
