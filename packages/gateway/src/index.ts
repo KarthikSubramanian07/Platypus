@@ -29,8 +29,11 @@ const allowedNumbers = (env: NodeJS.ProcessEnv): string[] =>
 function fakeOwner({ db, bus }: SideDeps, env: NodeJS.ProcessEnv): OwnerChannels {
   const textChannel = env.TEXT_CHANNEL === "whatsapp" || env.TEXT_CHANNEL === "dial" ? env.TEXT_CHANNEL : "imessage";
   const businessPhones = (db.prepare("SELECT phone_e164 FROM businesses").all() as { phone_e164: string }[]).map((b) => b.phone_e164);
+  const lines = [...new Set([...allowedNumbers(env), ...businessPhones])];
   const dial = new FakeDial({
-    allowedNumbers: [...new Set([...allowedNumbers(env), ...businessPhones])],
+    allowedNumbers: lines,
+    // On the Dial-to-Dial rail every simulated owner line counts as a Dial number, as in the phone side's fake.
+    ...(textChannel === "dial" ? { dialNumbers: lines } : {}),
     voiceTools: createFakeGateway({ db, bus, textChannel }),
     db,
     bus,
