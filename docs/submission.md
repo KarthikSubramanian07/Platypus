@@ -36,7 +36,7 @@ Two people use Platypus.
 3. Dial places one outbound AI call. Its first sentence says it is an AI. It asks for a price and an opening, and books through our `check_slot`, `hold_slot` and `create_booking` tools while the owner is still on the line (Dial Context MCP).
 4. It then asks: "Next time a customer's agent needs you, can I text you instead of calling?" A yes is stored with the owner's exact words and the call id, and the shop switches from phone-only to text-enabled.
 5. The agent gets a typed result: shop, time, price, short code. A booking is confirmed only when the owner says yes, on the call or by text, never because the AI said so.
-6. Every later request to that shop goes by text, Dial to Dial today: the request arrives on a second Dial number that stands in for Sal's Auto's line, and the owner replies Y, N or a time from the dashboard's owner-phone panel. The booking is confirmed within seconds.
+6. Every later request to that shop goes by text. In the demo it arrives as a real iMessage on the owner's phone, and the owner replies Y, N or a time. The booking is confirmed within seconds.
 
 ## Time saved
 
@@ -58,24 +58,24 @@ We found no credible published figure for minutes per booking, so the customer b
 
 ## What is real today and what is mocked
 
-[CONFIRM before submitting: every item under "Real" ran live in the video. Move anything that ran on a fake (`DIAL_IMPL=fake`, `GATEWAY_IMPL=fake`, `DARWIN_ENABLED=false`) to "Mocked".]
+[CONFIRM before submitting: every item under "Real" ran live in the video. Move anything that ran on a fake (`DIAL_IMPL=fake`, `GATEWAY_IMPL=fake`, `DARWIN_ENABLED=false`) to "Mocked". If the real-number path failed on the day and the take used the Dial-to-Dial fallback (our Dial number calls a second Dial number answered by Dial's AI playing the owner, and the owner replies from the dashboard's owner-phone panel), rewrite the "Real" and "Mocked" items below to say so.]
 
 **Real**
 
 - The foundation: contracts (Zod, exported as JSON Schema), a booking state machine where `confirm()` is the only way into `confirmed`, a database that refuses a consent row without the quoted sentence and call id, an append-only event log with a live stream, and CI.
-- A live Dial outbound call, placed from our Dial number to a second Dial number that stands in for Sal's Auto's line, with the AI disclosure as the first sentence and the booking made through our tools during the call. The call, the mid-call tool calls, the consent capture and the text exchange are real Dial traffic between two Dial numbers.
+- A live Dial AI call to a real phone, placed from our Dial number to the owner's own phone, with the AI disclosure as the first sentence, the booking made through our tools during the call, and the owner's yes to texting stored with their exact words and the call id.
 - Darwin Search v3, queried live before the call. The dashboard shows what Darwin returned.
-- Real Dial texts between two Dial numbers: the booking request, and the owner's Y that confirms it (sent from the dashboard's owner-phone panel, see below).
+- A real iMessage and a real Y: the second request arrives as an iMessage on the owner's phone, and the owner's reply of Y confirms it. Dial approved our team for iMessage and for calls to real phone numbers.
 
 **Mocked or not yet built**
 
-- Sal's Auto is not a business: its line is a second Dial number, and the owner on the call is Dial's AI playing the owner from a script, because Dial approves real numbers only after review. No oil change is booked at any real shop.
+- Sal's Auto is not a business: its line is Karthik's phone, and he is not a mechanic. No oil change is booked at any real shop.
 - The other five shops on the dashboard are fictional, with phone numbers reserved for fiction.
-- No real phone number is involved yet: calls and texts run between two Dial numbers until Dial approves a real number. Dial approves real numbers after review, for messaging (SMS and iMessage) after a review on their backend, and plain SMS also needs 10DLC registration. The owner replies to texts from the dashboard's owner-phone panel, not from a phone.
+- SMS to arbitrary regular phone numbers still needs 10DLC registration. iMessage is approved, and the demo uses iMessage to one phone.
 - Darwin's answer for our trades varies: with our application key it returns `no_match` for the auto shop and listed-but-not-ready agents for two trades; anonymous search returned listed agents, none ready. We report exactly what Darwin returns. We do not use Darwin Act or Publish, and Darwin is never simulated.
-- Only our own Dial numbers can be called or texted; an allow-list in the code enforces it.
+- Only numbers on an allow-list can be called or texted (here, Karthik's phone); the code enforces it.
 - The public page replays a recording of the golden path.
-- The time-saved numbers are estimates.
+- The time-saved baseline is our estimate, next to the cited published figures.
 
 ## Partner tools used
 
@@ -95,7 +95,7 @@ TypeScript, Node 22, Hono, MCP (streamable HTTP), SQLite, Zod, Vite, Vitest, pnp
 ## What's next
 
 - Call ten real shop owners and measure the real opt-in rate and reply time.
-- Get Dial's approval for real numbers (messaging review, and 10DLC registration for plain SMS), so calls and texts reach the owner's own phone.
+- Register for 10DLC, so plain SMS reaches owners' regular numbers (Dial has already approved our team for iMessage and for calls to real phone numbers).
 - List Platypus businesses through Darwin Publish when it ships, so each onboarded shop becomes executable local supply in Darwin.
 - Build a Personal Agent Protocol adapter, so agents on that standard can reach these shops too.
 
