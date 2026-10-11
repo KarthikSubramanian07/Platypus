@@ -215,9 +215,24 @@ export function createGatewayTools(deps: GatewayDeps): GatewayTools {
     return wrapped as unknown as GatewayTools[K];
   }
 
-  async function consultDarwin(input: DarwinLookupInput, businessId?: string): Promise<DarwinLookup | null> {
+  // request_booking reuses the answer search_providers just got for the same business, so a slow
+  // Darwin (10-20 s on a 500 then a retry) is paid once, not again before the phone rings.
+  const recentByBusiness = new Map<string, { at: number; lookup: DarwinLookup }>();
+  const RECENT_MS = 10 * 60_000;
+
+  async function consultDarwin(
+    input: DarwinLookupInput,
+    businessId?: string,
+    options: { reuseRecent?: boolean } = {},
+  ): Promise<DarwinLookup | null> {
     if (!deps.darwin) return null;
-    const lookup = await lookupDarwin(deps.darwin, input, { cache: darwinCache });
+    const now = clock.now().getTime();
+    const recent = businessId && options.reuseRecent ? recentByBusiness.get(businessId) : undefined;
+    const lookup =
+      recent && now - recent.at < RECENT_MS
+        ? { ...recent.lookup, cached: true }
+        : await lookupDarwin(deps.darwin, input, { cache: darwinCache });
+    if (businessId && lookup.outcome !== "unavailable" && !recent) recentByBusiness.set(businessId, { at: now, lookup });
     record({
       type: "darwin.searched",
       actor: "system",
@@ -427,7 +442,7 @@ export function createGatewayTools(deps: GatewayDeps): GatewayTools {
         if (Date.parse(input.window.end) <= clock.now().getTime()) throw new GatewayError("invalid_request", "The window has already passed");
         const service = sanitizeUntrustedText(input.service, 120);
 
-        const lookup = await consultDarwin({ trade: business.trade, service, area: business.service_area ?? undefined, deadline: input.window.end }, business.id);
+        const lookup = await consultDarwin({ trade: business.trade, service, area: business.service_area ?? undefined, deadline: input.window.end }, business.id, { reuseRecent: true });
         const decision = decideBookingRoute({ business, darwin: lookup, canAct });
         if (!decision.route) {
           throw new GatewayError("no_route", `Platypus will not contact ${business.display_name}: ${decision.reasons.join("; ")}`);
