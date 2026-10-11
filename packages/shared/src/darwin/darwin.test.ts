@@ -290,6 +290,22 @@ describe("DarwinLookupCache", () => {
     expect(darwin.searches).toHaveLength(2);
   });
 
+  it("reuses a warm-up answer for the same trade and area whatever the service, budget and deadline", async () => {
+    const cache = new DarwinLookupCache();
+    const darwin = new ScriptedDarwin();
+    await lookupDarwin(darwin, { trade: "salon", area: "San Francisco" }, { cache });
+    const stage = await lookupDarwin(
+      darwin,
+      { trade: "salon", service: "color and cut", area: "san francisco", budgetCents: 9000, deadline: "2026-10-13T00:00:00Z" },
+      { cache },
+    );
+    expect(stage.cached).toBe(true);
+    expect(darwin.searches).toHaveLength(1);
+    await lookupDarwin(darwin, { trade: "salon", area: "Oakland" }, { cache });
+    await lookupDarwin(darwin, { trade: "mover", area: "San Francisco" }, { cache });
+    expect(darwin.searches).toHaveLength(3);
+  });
+
   it("never caches an outage", async () => {
     const cache = new DarwinLookupCache();
     const darwin = new ScriptedDarwin({ script: [darwinFailures.server500(), darwinFailures.server500(), darwinFailures.server500()] });
@@ -351,6 +367,8 @@ describe("createDarwin", () => {
     const lookup = await lookupDarwin(darwin, { trade: "salon", service: "haircut", area: "San Francisco" });
     expect(lookup.outcome).toBe("listed_only");
     expect(lookup.search?.searchId).toBe(DARWIN_FIXTURES.hairSalon.searchId);
+    expect(darwinEventPayload(lookup).provenance).toBe("recorded");
+    expect(createDarwin({ DEMO_MODE: "live" }).recorded).toBe(false);
     const failing = await lookupDarwin(createDarwin({ DEMO_MODE: "fakes" }, { fakeMode: "error_500" }), { trade: "auto_repair", area: "SF" });
     expect(failing.outcome).toBe("unavailable");
     expect(failing.attempts.map((a) => a.status)).toEqual([500, 500, 500]);

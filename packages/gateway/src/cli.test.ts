@@ -78,6 +78,25 @@ describe("demo CLI", () => {
     expect(agents).toEqual([{ agent_id: "demo-cli" }]);
   });
 
+  it("warms Darwin with the stage search, prints its answer and latency, and books nothing", async () => {
+    const requests: unknown[] = [];
+    const searches: unknown[] = [];
+    const answer = (status: "completed" | "error") => ({ ...stubTools(requests, []), search_providers: async (input: unknown) => {
+      searches.push(input);
+      return { providers: [], darwin: { status, agents: [], cached: false, latency_ms: 3500 } };
+    } }) as GatewayTools;
+    const lines: string[] = [];
+
+    const code = await run(["warm"], { fetch: fetchInto(answer("completed")), token: "s3cret", print: (l) => lines.push(l) });
+
+    expect(code).toBe(0);
+    expect(lines[0]).toBe("Darwin: completed (3500ms)");
+    expect(lines[1]).toMatch(/^Round trip: \d+\.\ds$/);
+    expect(searches).toEqual([expect.objectContaining({ service: "oil change", location: "1025 Sansome St, San Francisco", budget_cents: 12000 })]);
+    expect(requests).toEqual([]);
+    expect(await run(["warm"], { fetch: fetchInto(answer("error")), token: "s3cret", print: () => {} })).toBe(1);
+  });
+
   it("prints one line and exits 1 when a call fails", async () => {
     const lines: string[] = [];
     const code = await run(["oil"], { fetch: fetchInto(stubTools([], [])), token: "wrong", print: (l) => lines.push(l) });

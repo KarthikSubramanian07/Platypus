@@ -87,6 +87,8 @@ export interface DarwinLookup {
   configError: DarwinErrorKind | null;
   /** True when this answer came from DarwinLookupCache rather than a new search. */
   cached?: boolean;
+  /** "recorded" when the client replays recordings (DEMO_MODE=fakes). Absent means live. */
+  provenance?: "live" | "recorded";
 }
 
 const CONFIG_ERRORS: ReadonlySet<DarwinErrorKind> = new Set(["unauthorized", "forbidden"]);
@@ -96,9 +98,10 @@ export function isStartable(agent: SearchAgent): boolean {
 }
 
 /**
- * Darwin's docs ask callers to cache identical read-only searches, and a lookup
- * whose first rung fails can take 20 seconds. Answers are kept for `ttlMs`;
- * "unavailable" is never cached so the next request tries again.
+ * Darwin's docs ask callers to cache identical read-only searches, and a live
+ * lookup takes 10 to 30 seconds when a rung returns 500. Answers are kept per
+ * trade and area (see darwinCacheKey) for `ttlMs`; "unavailable" is never cached
+ * so the next request tries again.
  */
 export class DarwinLookupCache {
   private readonly entries = new Map<string, { at: number; lookup: DarwinLookup }>();
@@ -125,19 +128,29 @@ export class DarwinLookupCache {
 }
 
 /**
+ * Darwin's answer for the ladder is driven by the trade (the last rung is always the
+ * bare trade), so one answer serves every service wording, budget and deadline for
+ * that trade in that area. This is what lets a warm-up lookup serve the stage search.
+ */
+export function darwinCacheKey(input: Pick<DarwinLookupInput, "trade" | "area">): string {
+  const area = input.area ? sanitizeUntrustedText(input.area, 120).toLowerCase() : "";
+  return JSON.stringify([tradeQuery(input.trade), area]);
+}
+
+/**
  * Asks Darwin whether an agent-native route already exists for this request.
  * Never throws for Darwin-side failures: the booking always has a fallback.
+ * Emits no event: callers that answer an agent (consultDarwin) log darwin.searched themselves.
  */
 export async function lookupDarwin(
   darwin: Darwin,
   input: DarwinLookupInput,
   options: { cache?: DarwinLookupCache } = {},
 ): Promise<DarwinLookup> {
-  const ladder = searchLadder(input);
-  const key = JSON.stringify(ladder);
+  const key = darwinCacheKey(input);
   const cached = options.cache?.get(key);
   if (cached) return { ...cached, cached: true };
-  const lookup = await runLadder(darwin, ladder);
+  const lookup: DarwinLookup = { ...(await runLadder(darwin, searchLadder(input))), provenance: darwin.recorded ? "recorded" : "live" };
   options.cache?.set(key, lookup);
   return lookup;
 }
@@ -224,7 +237,7 @@ export function darwinEventPayload(lookup: DarwinLookup): Record<string, unknown
   return {
     status: summary.status,
     http_status: last?.status ?? null,
-    provenance: "live",
+    provenance: lookup.provenance ?? "live",
     latency_ms: summary.latency_ms,
     query: last?.query ?? null,
     search_id: summary.search_id ?? null,

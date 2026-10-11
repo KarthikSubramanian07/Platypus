@@ -72,7 +72,7 @@ describe("search_providers", () => {
     expect(types()).toEqual(["agent.tool_called", "darwin.searched", "signals.computed"]);
     const [called, searched, signals] = listEvents(db).filter((e) => e.type !== "business.listed");
     expect(called!.payload).toMatchObject({ tool: "search_providers", agent_id: "claude-desktop", service: "oil change", budget_cents: 12000 });
-    expect(searched!.payload).toMatchObject({ status: "completed", outcome: "listed_only", provenance: "live" });
+    expect(searched!.payload).toMatchObject({ status: "completed", outcome: "listed_only", provenance: "recorded" });
     expect(signals!.payload).toEqual({ source: "local", signals: {}, note: "no history yet" });
   });
 
