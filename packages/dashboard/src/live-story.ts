@@ -9,7 +9,7 @@ import { GOLDEN_PATH, planRecording, recordedAt } from "./fixture";
 import { formatClock, formatLatency, formatMoney, formatRail, formatSlot, formatTrade, SHOP_TIME_ZONE, type StreamEvent } from "./format";
 import { darwinCaption, liveScene, pace, PAYOFF, quoteCaption, SCENES, screenAt, threadAt } from "./scenes";
 import { confirmSeconds, currentCall, evidenceMessage, initialState, reduce, reduceAll, storyBookings, VOICE_TOOLS, type AskView, type BusinessView, type DarwinView, type DashboardState, type VoiceTool } from "./state";
-import { askFacts, callElapsedMs, darwinSummary } from "./story";
+import { askFacts, callElapsedMs, darwinSummary, phoneLabel, railOf } from "./story";
 
 /**
  * /live-story: the golden path as seven scenes, moved along by the event stream. Every page
@@ -440,11 +440,26 @@ function say(message: string): void {
   noticeTimer = setTimeout(() => (notice.hidden = true), 4_500);
 }
 
+/** The recording's rail is known before its consent plays, so the phone can say it from the start. */
+const RECORDED_RAIL = railOf(reduceAll(GOLDEN_PATH));
+const stageNote = stage.querySelector<HTMLElement>(".stage-note");
+
+/** The Dial-to-Dial note and label only when the events' rail is dial; a real phone is the owner's phone. */
+function renderRail(): void {
+  const rail = RECORDING ? RECORDED_RAIL : railOf(state);
+  setText($("#lock-hint"), phoneLabel(rail));
+  if (stageNote && stageNote.hidden !== (rail !== "dial")) {
+    stageNote.hidden = rail !== "dial";
+    fitPhone();
+  }
+}
+
 let frame = 0;
 function render(): void {
   frame = 0;
   renderSteps();
   renderScenes();
+  renderRail();
   renderPhone();
   $("#follow").hidden = story.following;
   setText($("#follow-label"), RECORDING ? "Follow the run" : "Follow live");
