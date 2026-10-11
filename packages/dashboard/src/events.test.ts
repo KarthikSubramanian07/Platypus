@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { connectLive, parseStreamEvent, resolveSource, type ConnectionState } from "./events";
+import { connectLive, isCrossOrigin, parseStreamEvent, postDemo, requestKillCall, requestOwnerReply, requestReplay, resolveSource, type ConnectionState } from "./events";
 
 /** Just enough of EventSource to drive connectLive from a test. */
 class FakeSource {
@@ -106,5 +106,42 @@ describe("parseStreamEvent", () => {
     const event = parseStreamEvent(JSON.stringify({ id: "e", type: "t", created_at: "c", payload: [1], refs: "x" }));
     expect(event?.payload).toEqual({});
     expect(event?.refs).toEqual({});
+  });
+});
+
+describe("demo controls", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const ORIGIN = "http://localhost:5173";
+
+  it("tells same-origin from cross-origin bases", () => {
+    expect(isCrossOrigin("", ORIGIN)).toBe(false);
+    expect(isCrossOrigin("http://localhost:5173", ORIGIN)).toBe(false);
+    expect(isCrossOrigin("http://localhost:8794", ORIGIN)).toBe(true);
+    expect(isCrossOrigin("http://[bad", ORIGIN)).toBe(false);
+  });
+
+  it("posts JSON same-origin and reads the answer", async () => {
+    const fetch = vi.fn(async () => new Response("{}", { status: 404 }));
+    vi.stubGlobal("fetch", fetch);
+    expect(await postDemo("", "/demo/owner-reply", { body: "Y" }, ORIGIN)).toEqual({ ok: false, status: 404 });
+    expect(fetch).toHaveBeenCalledWith("/demo/owner-reply", { method: "POST", body: '{"body":"Y"}', headers: { "content-type": "application/json" } });
+  });
+
+  it("sends a CORS-simple no-cors request cross-origin and says the answer is unconfirmed", async () => {
+    const fetch = vi.fn(async () => new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", fetch);
+    expect(await postDemo("http://localhost:8794", "/demo/owner-reply", { body: "N" }, ORIGIN)).toEqual({ ok: true, status: 0, unconfirmed: true });
+    expect(fetch).toHaveBeenCalledWith("http://localhost:8794/demo/owner-reply", { method: "POST", body: '{"body":"N"}', headers: { "content-type": "text/plain" }, mode: "no-cors" });
+  });
+
+  it("reports a server that did not answer, and wires the kill switch, owner reply and replay", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new TypeError("down"))));
+    expect(await requestKillCall("")).toEqual({ ok: false, status: 0 });
+    expect(await requestOwnerReply("", "Y")).toEqual({ ok: false, status: 0 });
+    expect(await requestReplay("")).toBe(false);
+    const fetch = vi.fn(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetch);
+    expect(await requestKillCall("")).toEqual({ ok: true, status: 200 });
+    expect(fetch).toHaveBeenCalledWith("/demo/kill-call", { method: "POST" });
   });
 });
