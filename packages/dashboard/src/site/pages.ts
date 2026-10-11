@@ -13,14 +13,16 @@ export interface SitePage {
   schemaType: "AboutPage" | "ContactPage" | "WebPage" | "TechArticle";
   /** Unknown-path page: not indexed and not in the sitemap. */
   notFound?: boolean;
+  /** A handwritten note above the title. */
+  note: string;
 }
 
 export const SITE_PAGES: readonly SitePage[] = [
-  { slug: "about", title: "About Platypus", description: "Platypus is AI booking for phone-only businesses: one honest AI call makes a business bookable by every AI agent, by text.", schemaType: "AboutPage" },
-  { slug: "developers", title: "Platypus for developers", description: "Connect any AI agent to phone-only businesses over MCP: quickstart, endpoint, the nine tools, booking outcomes and API keys.", schemaType: "TechArticle" },
-  { slug: "contact", title: "Contact Platypus", description: "Reach the Platypus team on GitHub, opt a business out of calls and texts, or report a security problem.", schemaType: "ContactPage" },
-  { slug: "privacy", title: "Privacy", description: "What the Platypus website and booking service store, why, and what we never do with it.", schemaType: "WebPage" },
-  { slug: "404", title: "Page not found", description: "There is no page at this address on tryplatypus.pages.dev.", schemaType: "WebPage", notFound: true },
+  { slug: "about", title: "About Platypus", description: "Platypus is AI booking for phone-only businesses: one honest AI call makes a business bookable by every AI agent, by text.", schemaType: "AboutPage", note: "who we are, and why a platypus" },
+  { slug: "developers", title: "Platypus for developers", description: "Connect any AI agent to phone-only businesses over MCP: quickstart, endpoint, the nine tools, booking outcomes and API keys.", schemaType: "TechArticle", note: "for the builders" },
+  { slug: "contact", title: "Contact Platypus", description: "Reach the Platypus team on GitHub, opt a business out of calls and texts, or report a security problem.", schemaType: "ContactPage", note: "say hi, we read everything" },
+  { slug: "privacy", title: "Privacy", description: "What the Platypus website and booking service store, why, and what we never do with it.", schemaType: "WebPage", note: "the boring, important bit" },
+  { slug: "404", title: "Page not found", description: "There is no page at this address on tryplatypus.pages.dev.", schemaType: "WebPage", note: "well, this is awkward", notFound: true },
 ];
 
 const escapeHtml = (value: string): string =>
@@ -85,13 +87,10 @@ export function renderPage(page: SitePage, bodyHtml: string): string {
       <a class="nav-source" href="https://github.com/KarthikSubramanian07/Platypus" rel="noopener">Source <span aria-hidden="true">↗</span></a>
     </nav>
     <main class="doc">
+      <p class="hand-label"><span class="hand-text">${escapeHtml(page.note)}</span><svg class="hand-arrow" viewBox="0 0 80 60" fill="none" aria-hidden="true"><path d="M8 6 C 30 4, 56 16, 64 44" /><path d="M54 38 L 65 47 L 70 33" /></svg></p>
       <article class="prose">
 ${bodyHtml}
       </article>
-      <aside class="doc-aside" aria-label="For agents">
-        <p class="eyebrow">For agents</p>
-        <p>This page is also Markdown: send <code>Accept: text/markdown</code>${page.notFound ? "" : `, or open <a href="/${page.slug}.md">/${page.slug}.md</a>`}. Start with <a href="/llms.txt">llms.txt</a>.</p>
-      </aside>
     </main>
     <footer class="footer">
       <div class="footer-brand">
