@@ -49,6 +49,7 @@ Dial is the reason a one-call onboarding is possible at all. Without Dial, this 
 - **Context MCP is the killer feature.** Dial's voice agent calls our booking tools *during* the call: `check_slot`, `hold_slot`, `create_booking`, `record_consent` and `set_text_number`. The job is held and booked while the owner is still talking, through the same state machine the rest of the system uses, and each tool call is authorized against the live call. No other voice platform we know makes this so direct.
 - **One number for calls and texts.** The number that called the owner is the number that texts them next time, over iMessage, WhatsApp or SMS. To the owner it is one contact, which is why they say yes.
 - **Signed webhooks** (`X-Dial-Signature`, HMAC-SHA256) and per-event dedupe make inbound replies safe to act on.
+- **It works on real phones today.** In the demo, Dial places a real AI call to a real phone, the tools book the job mid-call, and the owner answers a real iMessage with Y.
 
 *Without Dial there is no call and no consent, so no shop ever becomes agent-native.* Integration is in [`packages/voice`](packages/voice) and [`packages/text`](packages/text). The request shapes were checked against Dial's OpenAPI spec and SDK.
 
