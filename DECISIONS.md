@@ -88,7 +88,7 @@ These were checked on 2026-10-11 against `docs.getdial.ai/openapi.json`, `@getdi
 ## Team plan
 
 **One foundation, then two parallel sides instead of three.**
-The original plan had three sessions after the foundation: voice and text, gateway, and dashboard plus an analytics partner. It now has two: the phone side (`voice`, `text`) and the agent side (`gateway`, the video shot list and the submission text). Why: two sides that meet only at the contracts are easier to keep in sync in one afternoon, and both still ship against fakes. The full dashboard, beyond the shell, has no named owner yet. See [docs/workstreams.md](docs/workstreams.md).
+The original plan had three sessions after the foundation: voice and text, gateway, and dashboard plus an analytics partner. It now has two: the phone side (`voice`, `text`) and the agent side (`gateway`, the video shot list and the submission text). Why: two sides that meet only at the contracts are easier to keep in sync in one afternoon, and both still ship against fakes. The phone side also owns the full dashboard. The two sides meet only in `packages/shared/src/contracts/seams.ts` and `scripts/dev.ts`; [docs/workstreams.md](docs/workstreams.md) says who edits which files.
 
 **No analytics partner today.**
 The earlier plan forwarded events to Keewano for routing signals. It is removed from the repository entirely. Routing signals are computed from the local event log and labeled `source: "local"`. Why: a partner integration only counts if it is load-bearing, and the time is better spent making the phone ring reliably.

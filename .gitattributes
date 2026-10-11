@@ -1,0 +1,2 @@
+# Both sides append to the decisions log; keep both sides of any overlap.
+DECISIONS.md merge=union

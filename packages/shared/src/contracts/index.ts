@@ -8,3 +8,4 @@ export * from "./tool";
 export * from "./gateway";
 export * from "./voice";
 export * from "./json-schema";
+export * from "./seams";
