@@ -322,8 +322,8 @@ h3 { font: 600 18px/1.3 var(--sans); letter-spacing: -0.01em; }
 .ledger-after .ledger-tag { color: var(--mint); }
 .ledger-total { margin: 0; font: 400 20px/1 var(--serif); color: var(--muted); white-space: nowrap; }
 .ledger-after .ledger-total { color: #b8cfc6; }
-.ledger-total span { font-size: clamp(48px, 6vw, 72px); letter-spacing: -0.04em; color: var(--ink); }
-.ledger-after .ledger-total span { color: #fff; }
+.ledger-total > span:not(.doodle) { font-size: clamp(48px, 6vw, 72px); letter-spacing: -0.04em; color: var(--ink); }
+.ledger-after .ledger-total > span:not(.doodle) { color: #fff; }
 .ledger ul { list-style: none; margin: 0; padding: 0; flex: 1; }
 .ledger li {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: baseline;
@@ -671,6 +671,83 @@ h3 { font: 600 18px/1.3 var(--sans); letter-spacing: -0.01em; }
 .more .next { padding: 22px; }
 .more .next > div { border: 0; padding: 0; background: transparent; }
 
+
+/* ---- Subpages (/technical, /business) and the overview's way in ------------- */
+.subhead { position: relative; width: var(--wrap); margin: 0 auto; padding: 88px 0 8px; text-align: center; }
+.subhead h1 { font-size: clamp(40px, 6.4vw, 80px); }
+.subhead h1 em { font-style: italic; color: var(--green); }
+.subpage { width: var(--wrap); margin: 0 auto; }
+.subpage > .section:first-child { margin-top: 56px; }
+.close-slim .close-inner { padding: 64px 0 56px; }
+.close-slim h2 { font-size: clamp(36px, 5vw, 56px); }
+.close-slim .actions { margin-top: 24px; }
+.moat-more { margin: 18px 0 0; font: 400 19px var(--serif); }
+.moat-more a { color: var(--green); text-underline-offset: 4px; }
+.deeper { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.deeper-card {
+  position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0;
+  padding: 26px 26px 56px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel);
+  text-decoration: none; color: var(--ink-3); transition: border-color 200ms, transform 300ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 300ms;
+}
+.deeper-card:hover { border-color: var(--green); transform: translateY(-2px); box-shadow: var(--shadow); }
+.deeper-card:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+.deeper-kicker { font: 500 12px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--green); }
+.deeper-card b { font: 400 24px/1.2 var(--serif); color: var(--ink); }
+.deeper-card > span:not(.deeper-kicker):not(.deeper-go):not(.doodle) { font-size: 15px; }
+.deeper-go { position: absolute; right: 22px; bottom: 18px; font: 400 24px var(--serif); color: var(--green); transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1); }
+.deeper-card:hover .deeper-go { transform: translateX(4px); }
+
+
+/* ---- Hand-drawn notes: a person scribbled on the page ------------------------
+ * Decorative only (aria-hidden). Hidden on narrow screens, where they'd crowd. */
+.doodle { pointer-events: none; color: var(--green); }
+.doodle-note, .doodle-setup { font: 500 22px/1 "Caveat", "Bradley Hand", cursive; color: var(--green); white-space: nowrap; }
+.doodle svg path, .doodle-underline path, .doodle-circle path, .chart-doodle path {
+  stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none;
+}
+.actions-doodled { position: relative; }
+.doodle-start { position: absolute; right: calc(50% + 190px); top: -34px; display: flex; flex-direction: column; align-items: flex-start; transform: rotate(-4deg); }
+.doodle-start svg { width: 110px; height: 64px; margin: -2px 0 0 54px; }
+.doodle-underlined { position: relative; display: inline-block; }
+.doodle-underline { position: absolute; left: -4px; right: -4px; bottom: -10px; width: calc(100% + 8px); height: 14px; color: var(--green); }
+.receipt li { position: relative; }
+.doodle-idea { position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%) rotate(-3deg); display: flex; align-items: center; gap: 4px; }
+.doodle-idea svg { width: 36px; height: 22px; }
+.chart-doodle path { stroke: var(--mint); stroke-width: 2; }
+.chart-doodle text { fill: var(--mint); font: 500 17px "Caveat", "Bradley Hand", cursive; }
+.doodle-circled { position: relative; display: inline-block; }
+.doodle-circle { position: absolute; left: -16%; top: -14%; width: 132%; height: 128%; color: var(--mint); }
+.ledger-after .ledger-total { position: relative; }
+.doodle-setup { position: absolute; right: 0; top: -30px; color: var(--mint); transform: rotate(-3deg); font-size: 20px; }
+@media (prefers-reduced-motion: no-preference) {
+  .doodle-start svg path, .doodle-underline path, .doodle-circle path { stroke-dasharray: 400; stroke-dashoffset: 400; animation: draw 1.4s 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+}
+
+/* Highlighter swipes and margin notes. */
+mark.hl { color: inherit; background: linear-gradient(104deg, transparent 0.6%, rgba(159, 211, 193, 0.75) 2.4%, rgba(159, 211, 193, 0.55) 96%, transparent 99%); background-size: 100% 46%; background-position: 0 86%; background-repeat: no-repeat; padding: 0 0.12em; border-radius: 0.2em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+mark.hl-dark { background-image: linear-gradient(104deg, transparent 0.6%, rgba(159, 211, 193, 0.38) 2.4%, rgba(159, 211, 193, 0.28) 96%, transparent 99%); }
+@media (prefers-reduced-motion: no-preference) {
+  mark.hl { background-size: 0% 46%; animation: swipe 900ms 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+  @keyframes swipe { to { background-size: 100% 46%; } }
+}
+.section-head > div { position: relative; }
+.doodle-margin { position: absolute; font: 500 21px/1.05 "Caveat", "Bradley Hand", cursive; color: var(--green); transform: rotate(-4deg); text-align: left; white-space: nowrap; }
+.doodle-demo { right: -8px; bottom: -38px; }
+.doodle-time { left: 4px; bottom: -48px; transform: rotate(-2deg); }
+#time .section-head, #moat .section-head, #demo .section-head, #honest .section-head { margin-bottom: 64px; }
+.doodle-moat { right: 24px; bottom: -46px; transform: rotate(-3deg); }
+.doodle-honest { right: 0; bottom: -40px; }
+.doodle-nerds { position: absolute; right: 18px; top: -30px; color: var(--green); display: inline-flex; align-items: flex-end; gap: 2px; font: 500 20px "Caveat", "Bradley Hand", cursive; transform: rotate(-3deg); }
+.doodle-nerds svg { width: 34px; height: 22px; transform: rotate(90deg); }
+.deeper-card { overflow: visible; }
+h2 .doodle-underlined .doodle-underline { bottom: -6px; height: 12px; }
+.ledger-total .doodle-setup { font-size: 20px; letter-spacing: 0; right: auto; left: -150px; top: 10px; }
+.doodle-circle { left: -12%; top: -6%; width: 124%; height: 112%; }
+@media (max-width: 900px) { .doodle-margin, .doodle-nerds, .ledger-total .doodle-setup { display: none; } }
+@media (max-width: 1180px) { .doodle-idea { display: none; } }
+@media (max-width: 900px) { .doodle-start { display: none; } }
+
 /* ---- Agent P: type "perry" anywhere ------------------------------------------------ */
 .agent-p .fedora { opacity: 1; transform: translate(-50%, 0) rotate(-8deg); }
 .agent-toast { position: fixed; left: 50%; bottom: 24px; z-index: 30; margin: 0; transform: translate(-50%, 20px); opacity: 0; padding: 12px 18px; border-radius: 999px; background: var(--green); color: #fff; font: 500 15px var(--sans); box-shadow: var(--shadow); transition: opacity 220ms, transform 320ms cubic-bezier(0.22, 1, 0.36, 1); pointer-events: none; }
@@ -685,6 +762,7 @@ h3 { font: 600 18px/1.3 var(--sans); letter-spacing: -0.01em; }
   .minor-rules { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .partners, .market { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .timeline, .moat { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .deeper { grid-template-columns: minmax(0, 1fr); }
   .insight { grid-template-columns: minmax(0, 1fr); }
   .next { grid-template-columns: minmax(0, 1fr); }
   .partner-alike, .market article:last-child { grid-column: 1 / -1; }
@@ -743,6 +821,7 @@ h3 { font: 600 18px/1.3 var(--sans); letter-spacing: -0.01em; }
   .chart-axis text { font-size: 15px; }
   .problem-copy, .next > div, .landscape, .timeline li, .moat article { padding: 20px; }
   .close { margin-top: 80px; }
+  .subhead { padding-top: 56px; }
   .close-inner .actions .btn { flex: 1 1 100%; justify-content: center; }
   .flow { grid-template-columns: minmax(0, 1fr); }
   .partner-alike, .market article:last-child { grid-column: auto; }
@@ -775,3 +854,17 @@ h3 { font: 600 18px/1.3 var(--sans); letter-spacing: -0.01em; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* ---- An original platypus, off duty, in a fedora. Drawn by hand, not borrowed. */
+.close-inner { position: relative; }
+.platypus-doodle { position: absolute; right: 0; top: 50%; width: min(340px, 30vw); transform: translateY(-46%) rotate(-3deg); color: var(--mint); pointer-events: none; }
+.platypus-doodle svg { display: block; width: 100%; height: auto; overflow: visible; }
+.platypus-doodle path, .platypus-doodle ellipse, .platypus-doodle circle { stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.platypus-doodle .fill { fill: currentColor; }
+.platypus-doodle .hat { fill: rgba(159, 211, 193, 0.18); }
+.platypus-doodle p { margin: 6px 0 0 18px; font: 500 22px/1.1 "Caveat", "Bradley Hand", cursive; color: var(--mint); text-align: center; }
+@media (prefers-reduced-motion: no-preference) {
+  .platypus-doodle .tail { transform-origin: 70px 128px; animation: wag 3.2s ease-in-out infinite; }
+  @keyframes wag { 50% { transform: rotate(6deg); } }
+}
+@media (max-width: 1100px) { .platypus-doodle { display: none; } }

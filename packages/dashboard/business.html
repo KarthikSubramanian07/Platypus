@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Business · Platypus, AI booking for phone-only businesses</title>
+    <meta name="description" content="Why now, the competitive landscape, and how Platypus makes money: per confirmed booking, an autopilot subscription, and platform access for agent platforms. Plus the roadmap and the risks we say out loud." />
+    <link rel="canonical" href="https://tryplatypus.pages.dev/business" />
+    <link rel="alternate" type="text/markdown" href="https://tryplatypus.pages.dev/business.md" title="This page as Markdown" />
+    <link rel="help" type="text/plain" href="https://tryplatypus.pages.dev/llms.txt" title="llms.txt" />
+    <meta property="og:site_name" content="Platypus" />
+    <meta property="og:title" content="Platypus · Business" />
+    <meta property="og:description" content="Why now, the competitive landscape, and how Platypus makes money: per confirmed booking, an autopilot subscription, and platform access for agent platforms. Plus the roadmap and the risks we say out loud." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://tryplatypus.pages.dev/business" />
+    <meta property="og:image" content="https://tryplatypus.pages.dev/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#F4F1EA" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://tryplatypus.pages.dev/#org",
+            "name": "Platypus",
+            "url": "https://tryplatypus.pages.dev/",
+            "logo": "https://tryplatypus.pages.dev/favicon.svg",
+            "slogan": "We make Main Street agent-native.",
+            "description": "AI booking for phone-only businesses. One AI call makes a business bookable by every AI agent, by text.",
+            "foundingDate": "2026-10-11",
+            "sameAs": ["https://github.com/KarthikSubramanian07/Platypus"],
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "San Francisco",
+              "addressRegion": "CA",
+              "addressCountry": "US"
+            },
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "contactType": "customer support",
+              "url": "https://tryplatypus.pages.dev/contact",
+              "availableLanguage": "en"
+            }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "Platypus",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web",
+            "description": "AI booking for phone-only businesses: one call makes any phone-only business bookable by every AI agent.",
+            "url": "https://tryplatypus.pages.dev/",
+            "publisher": { "@id": "https://tryplatypus.pages.dev/#org" },
+            "codeRepository": "https://github.com/KarthikSubramanian07/Platypus",
+            "license": "https://opensource.org/licenses/MIT",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to the content</a>
+    <nav class="nav" aria-label="Primary">
+      <a class="brand" href="/" aria-label="Platypus home" title="Oh, there you are.">
+        <span class="brand-mark" aria-hidden="true"><i class="fedora"></i></span>
+        <span class="brand-word">platypus</span>
+      </a>
+      <div class="nav-links">
+        <a class="nav-live" href="/live" data-live-link>Live demo</a>
+        <a href="/technical">Technical</a>
+        <a href="/business" aria-current="page">Business</a>
+        <a href="/developers">Developers</a>
+      </div>
+      <a class="nav-source" href="https://github.com/KarthikSubramanian07/Platypus" rel="noopener">Source <span aria-hidden="true">↗</span></a>
+    </nav>
+
+    <header class="subhead">
+      <p class="badge"><span class="badge-dot" aria-hidden="true"></span>Platypus · Business</p>
+      <h1>Why now, <em>and why us.</em></h1>
+      <p class="lede">Every lab shipped a calling agent in September. Platypus is the neutral supply they all route through: owners pay per confirmed job, and every yes compounds.</p>
+    </header>
+
+    <main id="main" class="subpage">
+      <!-- ============================== SHIFT ============================= -->
+      <section id="shift" class="section" aria-labelledby="shift-title">
+        <div class="section-head">
+          <div>
+            <h2 id="shift-title">In one month, every lab shipped a personal agent. Then they all added phone calls.</h2>
+          </div>
+          <p class="section-lede">Everyone is building the demand side. Nobody is connecting the businesses that run on a phone.</p>
+        </div>
+        <ol class="timeline">
+          <li><time>Sep 8</time><h3>Meta launches Muse</h3><p>2.5M downloads in two weeks. Calling US businesses from Sep 16.</p></li>
+          <li><time>Sep 16</time><h3>Instinct Concierge</h3><p>Adds business calls. Books call by call; nothing persists.</p></li>
+          <li><time>Sep 29</time><h3>OpenAI launches Dots</h3><p>Always-on agents in ChatGPT. SMS "coming soon".</p></li>
+          <li><time>Oct 6</time><h3>Personal Agent Protocol</h3><p>A business needs a website, an API or its own agent. A three-person shop has none.</p></li>
+        </ol>
+
+        <div class="problem">
+          <div class="problem-copy">
+            <h3>Agents can book Delta and Walmart. Nothing in between.</h3>
+            <p>Websites are blocking agents. The new standard only covers businesses with a site, an API or an agent. And businesses hang up on AI calls: Meta put human contractors on Muse's calls for exactly that reason.</p>
+          </div>
+          <ul class="routes" aria-label="The routes a small business does and doesn't have">
+            <li><span aria-hidden="true">×</span><div><b>A website agents can use</b><small>Most of Main Street has a basic page or none.</small></div></li>
+            <li><span aria-hidden="true">×</span><div><b>An API (MCP or OpenAPI)</b><small>No developer. No software budget.</small></div></li>
+            <li><span aria-hidden="true">×</span><div><b>Their own agent</b><small>They have a phone and a van.</small></div></li>
+            <li class="routes-yes"><span aria-hidden="true">✓</span><div><b>A phone</b><small>All 33 million have one. Even Doofenshmirtz Evil Inc. has a landline.</small></div></li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="landscape" class="section" aria-labelledby="ls-title">
+        <div class="section-head">
+          <div>
+            <h2 id="ls-title">Everyone else is on one side of the bridge.</h2>
+          </div>
+          <p class="section-lede">Personal agents call every time, receptionists answer people, marketplaces gate agents, and the new standards only cover businesses that already have systems.</p>
+        </div>
+        <details class="more" open>
+          <summary>Everyone else is on one side of the bridge: the landscape</summary>
+        <div class="landscape" role="region" aria-labelledby="landscape-title" tabindex="0">
+          <h3 id="landscape-title" class="sr-only">The landscape</h3>
+          <table>
+            <thead>
+              <tr><th scope="col">Category</th><th scope="col">Examples</th><th scope="col">What they do</th><th scope="col">Why Platypus is different</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Personal agents that call</th><td data-label="Examples">Muse, Instinct Concierge, Google Ask for Me</td><td data-label="What they do">Call a business for one task, every time. Nothing persists. Businesses hang up.</td><td data-label="Why Platypus is different">Calls once to onboard, then texts. Books and persists. Neutral supply for all of them.</td></tr>
+              <tr><th scope="row">AI receptionists</th><td data-label="Examples">Rosie, Yelp Host</td><td data-label="What they do">Answer human calls for the business.</td><td data-label="Why Platypus is different">Serve the agents calling in, through open standards.</td></tr>
+              <tr><th scope="row">Marketplaces</th><td data-label="Examples">Yelp, Thumbtack, Angi</td><td data-label="What they do">Own discovery; gate or charge agents.</td><td data-label="Why Platypus is different">Open to every agent; the business keeps its customer.</td></tr>
+              <tr><th scope="row">Agent commerce standards</th><td data-label="Examples">PAP, UCP, ACP, Visa TAP</td><td data-label="What they do">Identity and checkout for businesses with systems.</td><td data-label="Why Platypus is different">The adapter for every business without a site, an API or an agent.</td></tr>
+              <tr><th scope="row">Booking software</th><td data-label="Examples">ServiceTitan, Jobber, Calendly</td><td data-label="What they do">Great for businesses that adopt software.</td><td data-label="Why Platypus is different">The ones that never will.</td></tr>
+            </tbody>
+          </table>
+          <p class="landscape-note">Google's call is a lookup. Ours is onboarding.</p>
+        </div>
+        </details>
+      </section>
+
+      <!-- ============================= MARKET ============================= -->
+      <section id="market" class="section" aria-labelledby="m-title">
+        <div class="section-head">
+          <div>
+            <h2 id="m-title">We sell to the owner. Agents bring the customers.</h2>
+          </div>
+          <p class="section-lede">Home services first, then clinics, auto shops, salons, movers. Supply is up for grabs for a few months.</p>
+        </div>
+        <div class="market">
+          <article>
+            <p class="num">Per confirmed booking</p>
+            <h3>Owners pay for jobs, not leads</h3>
+            <p>They already pay per lead on marketplaces.</p>
+          </article>
+          <article>
+            <p class="num">Autopilot subscription</p>
+            <h3>The front office as software</h3>
+            <p>Rules by text: "oil changes Tue to Thu under $100, auto-yes."</p>
+          </article>
+          <article>
+            <p class="num">Platform access</p>
+            <h3>Agent platforms pay for reach</h3>
+            <p>Routing signals and SLAs. They can't onboard millions of shops one by one.</p>
+          </article>
+        </div>
+        <details class="more" open>
+          <summary>What's next, and the risks we say out loud</summary>
+        <div class="next">
+          <div>
+            <p class="num">Next, in order</p>
+            <ol class="roadmap">
+              <li>The live Dial call and owner texts, end to end</li>
+              <li>Ten real owners called on Monday; opt-in rate is the number we live on</li>
+              <li>SMS to regular phones after 10DLC registration through Dial</li>
+              <li>Autopilot rules, then a Personal Agent Protocol adapter when v0.1 lands</li>
+              <li>Darwin Publish: every flipped business becomes executable supply</li>
+            </ol>
+          </div>
+          <div>
+            <p class="num">Risks we say out loud</p>
+            <dl class="risks">
+              <div><dt>Owners hang up on AI</dt><dd>We only need one call to work, and it brings a paying job. We ask after the booking, and after a yes they never hear an AI voice again.</dd></div>
+              <div><dt>Platforms may build this</dt><dd>Meta's human-concierge test shows how hard calls are at scale. We stay neutral so platforms use us instead of rebuilding supply city by city.</dd></div>
+              <div><dt>AI calls carry stricter rules</dt><dd>Published business lines only, AI disclosed first, "don't call again" honored instantly, texts only after a recorded yes. Counsel before scale.</dd></div>
+              <div><dt>Owner says no to texting</dt><dd>We book the job anyway and log the no. Three no's and we stop asking for 90 days.</dd></div>
+            </dl>
+          </div>
+        </div>
+        </details>
+      </section>
+
+    </main>
+
+    <section class="close close-slim" aria-label="Next">
+      <div class="close-inner">
+        <h2>See it run.</h2>
+        <div class="actions actions-left">
+          <a class="btn btn-light btn-live" href="/live"><span class="live-dot" aria-hidden="true"></span>Open the live demo <span aria-hidden="true">→</span></a>
+          <a class="btn btn-outline-light" href="/">Back to the overview</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <p>A semi-aquatic, egg-laying agent of action. No platypuses were harmed; one was given a fedora.</p>
+      </div>
+      <nav class="footer-meta" aria-label="Footer">
+        <a href="/about">About</a>
+        <a href="/developers">Developers</a>
+        <a href="/contact">Contact</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/llms.txt">llms.txt</a>
+        <a href="https://github.com/KarthikSubramanian07/Platypus" rel="noopener">GitHub ↗</a>
+        <span>MIT · SpeedHacks SF, Oct 11, 2026</span>
+      </nav>
+    </footer>
+
+    <script type="module" src="/src/page.ts"></script>
+  </body>
+</html>

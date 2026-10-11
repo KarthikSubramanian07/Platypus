@@ -12,6 +12,13 @@ describe("content pages", () => {
     expect(existsSync(resolve(root, "content", "index.md"))).toBe(true);
   });
 
+  it("publishes Markdown for the technical and business pages", () => {
+    for (const slug of ["technical", "business"]) {
+      expect(existsSync(resolve(root, `${slug}.html`))).toBe(true);
+      expect(read(`content/${slug}.md`).length).toBeGreaterThan(500);
+    }
+  });
+
   it("gives the trust pages at least 500 characters of real content", () => {
     for (const slug of ["about", "contact", "privacy", "developers"]) expect(read(`content/${slug}.md`).length).toBeGreaterThan(500);
   });

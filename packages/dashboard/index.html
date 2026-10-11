@@ -71,12 +71,8 @@
       </a>
       <div class="nav-links">
         <a class="nav-live" href="/live" data-live-link>Live demo</a>
-        <a href="#demo">Demo</a>
-        <a href="#shift">Why now</a>
-        <a href="#time">Time saved</a>
-        <a href="#how">How it works</a>
-        <a href="#moat">Moat</a>
-        <a href="#partners">Partners</a>
+        <a href="/technical">Technical</a>
+        <a href="/business">Business</a>
         <a href="/developers">Developers</a>
       </div>
       <a class="nav-source" href="https://github.com/KarthikSubramanian07/Platypus" rel="noopener">Source <span aria-hidden="true">↗</span></a>
@@ -91,7 +87,11 @@
         books the job through its own tools while the owner is on the line, and asks to text next time.
         After one yes, every AI agent books that business by text, and the owner answers with one letter.
       </p>
-      <div class="actions">
+      <div class="actions actions-doodled">
+        <span class="doodle doodle-start" aria-hidden="true">
+          <span class="doodle-note">start here!</span>
+          <svg viewBox="0 0 120 70" fill="none"><path d="M6 10 C 40 4, 78 18, 96 46" /><path d="M84 40 L 97 49 L 100 33" /></svg>
+        </span>
         <a class="btn btn-primary btn-live" href="/live" data-live-link><span class="live-dot" aria-hidden="true"></span>See the live demo <span aria-hidden="true">&rarr;</span></a>
         <button id="replay" class="btn btn-ghost" type="button">Watch the golden path</button>
       </div>
@@ -99,7 +99,7 @@
       <ul class="receipt" aria-label="Time saved per booking, estimated">
         <li><span class="receipt-who">Customer</span><s>15 to 25 min calling around</s><b>under 1 minute</b></li>
         <li><span class="receipt-who">Owner</span><s>a 3 to 5 min call, every job</s><b>a 5 to 10 second text</b></li>
-        <li><span class="receipt-who">Calls per shop</span><s>one per agent, per booking</s><b>one, ever</b></li>
+        <li><span class="receipt-who">Calls per shop</span><s>one per agent, per booking</s><b class="doodle-underlined">one, ever<svg class="doodle-underline" viewBox="0 0 140 14" fill="none" aria-hidden="true" preserveAspectRatio="none"><path d="M3 9 C 30 3, 70 12, 137 5" /><path d="M14 12 C 50 7, 96 13, 128 9" /></svg></b><span class="doodle doodle-idea" aria-hidden="true"><svg viewBox="0 0 40 24" fill="none"><path d="M36 12 C 26 6, 14 8, 4 13" /><path d="M10 6 L 3 13 L 11 18" /></svg><span class="doodle-note">the whole idea</span></span></li>
       </ul>
     </header>
 
@@ -108,7 +108,8 @@
       <section id="demo" class="section" aria-labelledby="demo-title">
         <div class="section-head">
           <div>
-            <h2 id="demo-title">Watch one oil change make a shop agent-native.</h2>
+            <h2 id="demo-title">Watch one oil change make a shop <mark class="hl">agent-native.</mark></h2>
+            <span class="doodle doodle-margin doodle-demo" aria-hidden="true">no mechanics were<br />harmed in this demo</span>
           </div>
           <p class="section-lede">The real event log, replayed from a recorded run through the real booking engine. Sal, the owner, is Dial's AI on a second Dial number. Sal is not a mechanic either.</p>
         </div>
@@ -142,40 +143,11 @@
         </div>
       </section>
 
-      <!-- ============================== SHIFT ============================= -->
-      <section id="shift" class="section" aria-labelledby="shift-title">
-        <div class="section-head">
-          <div>
-            <h2 id="shift-title">In one month, every lab shipped a personal agent. Then they all added phone calls.</h2>
-          </div>
-          <p class="section-lede">Everyone is building the demand side. Nobody is connecting the businesses that run on a phone.</p>
-        </div>
-        <ol class="timeline">
-          <li><time>Sep 8</time><h3>Meta launches Muse</h3><p>2.5M downloads in two weeks. Calling US businesses from Sep 16.</p></li>
-          <li><time>Sep 16</time><h3>Instinct Concierge</h3><p>Adds business calls. Books call by call; nothing persists.</p></li>
-          <li><time>Sep 29</time><h3>OpenAI launches Dots</h3><p>Always-on agents in ChatGPT. SMS "coming soon".</p></li>
-          <li><time>Oct 6</time><h3>Personal Agent Protocol</h3><p>A business needs a website, an API or its own agent. A three-person shop has none.</p></li>
-        </ol>
-
-        <div class="problem">
-          <div class="problem-copy">
-            <h3>Agents can book Delta and Walmart. Nothing in between.</h3>
-            <p>Websites are blocking agents. The new standard only covers businesses with a site, an API or an agent. And businesses hang up on AI calls: Meta put human contractors on Muse's calls for exactly that reason.</p>
-          </div>
-          <ul class="routes" aria-label="The routes a small business does and doesn't have">
-            <li><span aria-hidden="true">×</span><div><b>A website agents can use</b><small>Most of Main Street has a basic page or none.</small></div></li>
-            <li><span aria-hidden="true">×</span><div><b>An API (MCP or OpenAPI)</b><small>No developer. No software budget.</small></div></li>
-            <li><span aria-hidden="true">×</span><div><b>Their own agent</b><small>They have a phone and a van.</small></div></li>
-            <li class="routes-yes"><span aria-hidden="true">✓</span><div><b>A phone</b><small>All 33 million have one. Even Doofenshmirtz Evil Inc. has a landline.</small></div></li>
-          </ul>
-        </div>
-      </section>
-
       <!-- ============================= INSIGHT ============================ -->
       <section id="insight" class="insight" aria-labelledby="insight-title">
         <div class="insight-copy">
           <h2 id="insight-title">The call is the onboarding, not the product.</h2>
-          <p class="insight-sub">Everyone else calls a business every time. We call it once.</p>
+          <p class="insight-sub">Everyone else calls a business every time. <mark class="hl hl-dark">We call it once.</mark></p>
           <p>The call books a paying job, then asks one question: <em>"Can I text you next time?"</em> A yes turns a phone number into supply every agent can route to, forever.</p>
           <p class="insight-big">One call. Agent-native forever.</p>
         </div>
@@ -201,6 +173,12 @@
             <polyline class="chart-them" points="64,210 101,190 138,170 175,150 212,130 249,110 286,90 323,70 360,50 397,30" />
             <polyline class="chart-us" points="64,210 101,210 138,210 175,210 212,210 249,210 286,210 323,210 360,210 397,210" />
             <circle class="chart-us-dot" cx="64" cy="210" r="5" />
+            <g class="chart-doodle" aria-hidden="true">
+              <path d="M150 150 C 160 172, 176 186, 196 200" />
+              <path d="M184 198 L 197 202 L 194 189" />
+              <text x="96" y="140">this flat line is the</text>
+              <text x="108" y="160">whole company</text>
+            </g>
             <circle class="chart-them-dot" cx="397" cy="30" r="5" />
             <text class="chart-label chart-label-them" x="60" y="48">Agents that call every time: 10 calls</text>
             <text class="chart-label chart-label-us" x="397" y="198" text-anchor="end">Platypus: 1 call, then texts</text>
@@ -213,7 +191,8 @@
       <section id="time" class="section" aria-labelledby="time-title">
         <div class="section-head">
           <div>
-            <h2 id="time-title">There are 104 days of summer vacation. Spend none of them on hold.</h2>
+            <h2 id="time-title">There are 104 days of summer vacation. Spend <span class="doodle-underlined">none<svg class="doodle-underline" viewBox="0 0 140 14" fill="none" aria-hidden="true" preserveAspectRatio="none"><path d="M3 9 C 30 3, 70 12, 137 5" /></svg></span> of them on hold.</h2>
+            <span class="doodle doodle-margin doodle-time" aria-hidden="true">Ferb, I know what we're<br />gonna do today</span>
           </div>
           <p class="section-lede">One booking, every minute counted: setup, review and corrections included. <strong>Transparent estimates</strong>; opt-in rate and reply seconds are measured live.</p>
         </div>
@@ -236,7 +215,7 @@
           <article class="ledger ledger-after">
             <header>
               <p class="ledger-tag">With Platypus · your attention</p>
-              <p class="ledger-total"><span>0.8</span> min</p>
+              <p class="ledger-total"><span class="doodle-circled">0.8<svg class="doodle-circle" viewBox="0 0 120 80" fill="none" aria-hidden="true" preserveAspectRatio="none"><path d="M60 6 C 20 4, 4 24, 8 44 C 12 66, 50 76, 84 70 C 112 64, 118 40, 108 22 C 98 6, 70 2, 46 8" /></svg></span> min<span class="doodle doodle-setup" aria-hidden="true">yes, setup included</span></p>
             </header>
             <ul>
               <li><span>Setup: add the MCP server to your agent, once (2 min, amortized)</span><b>~0:00</b><i style="--w: 0%"></i></li>
@@ -264,79 +243,12 @@
         </div>
       </section>
 
-      <!-- ============================== HOW =============================== -->
-      <section id="how" class="section" aria-labelledby="how-title">
-        <div class="section-head">
-          <div>
-            <h2 id="how-title">Any agent asks Platypus. Platypus finds a route, or makes one.</h2>
-          </div>
-          <p class="section-lede">The customer never sees us. Their agent asks us. The business texts us.</p>
-        </div>
-
-        <ol class="flow">
-          <li>
-            <p class="num">01 · ask</p>
-            <h3>An agent asks</h3>
-            <p>Any MCP client calls <code>request_booking</code>.</p>
-          </li>
-          <li>
-            <p class="num">02 · route</p>
-            <h3>Route the cheapest way</h3>
-            <p>Darwin agent if one is ready, text if the owner said yes before, otherwise one call.</p>
-          </li>
-          <li>
-            <p class="num">03 · call once</p>
-            <h3>One honest call</h3>
-            <p>Dial rings the shop, says it's an AI first, and books mid-call through our tools.</p>
-          </li>
-          <li>
-            <p class="num">04 · consent</p>
-            <h3>"Yeah, text me."</h3>
-            <p>The owner's exact words and the call id are stored. The shop flips to text-enabled.</p>
-          </li>
-          <li>
-            <p class="num">05 · text forever</p>
-            <h3>Every agent, by text</h3>
-            <p>Next request: one text. The owner replies <b>Y</b>, <b>N</b> or a time. Confirmed in seconds.</p>
-          </li>
-        </ol>
-
-        <figure class="arch" aria-labelledby="arch-cap">
-          <div class="arch-row">
-            <div class="node node-ext"><b>Customer agents</b><span>Claude · Muse · Dots · any MCP client</span></div>
-            <div class="wire" aria-hidden="true"><span>MCP</span></div>
-            <div class="node node-core">
-              <b>gateway</b>
-              <span>9 typed MCP tools · Darwin routing · idempotency keys · per-agent rate limits</span>
-            </div>
-            <div class="wire" aria-hidden="true"><span>Search v3</span></div>
-            <div class="node node-ext node-darwin"><b>Darwin</b><span>is there already an agent for this?</span></div>
-          </div>
-          <div class="arch-split" aria-hidden="true"><i></i><i></i></div>
-          <div class="arch-row arch-row-2">
-            <div class="node node-dial">
-              <b>voice</b>
-              <span>Dial outbound call · AI disclosure is sentence one · Context MCP serves 5 mid-call tools, each authorized per request</span>
-            </div>
-            <div class="node node-dial">
-              <b>text</b>
-              <span>Dial webhooks, HMAC-verified and deduplicated · STOP, HELP and PAUSE before any model · Claude classifies replies</span>
-            </div>
-          </div>
-          <div class="arch-merge" aria-hidden="true"><i></i></div>
-          <div class="node node-shared">
-            <b>shared</b>
-            <span><code>confirm()</code> evidence gate · booking state machine with holds · consent CHECK constraints · append-only event log · replayable SSE · Zod contracts exported as JSON Schema · FakeDial, FakeDarwin, FakeGateway</span>
-          </div>
-          <figcaption id="arch-cap">Five TypeScript packages in one pnpm workspace. Each side builds against a fake of the other and switches to the real thing with one flag.</figcaption>
-        </figure>
-      </section>
-
       <!-- ============================== MOAT ============================== -->
       <section id="moat" class="section" aria-labelledby="moat-title">
         <div class="section-head">
           <div>
-            <h2 id="moat-title">Consent compounds. Calls don't.</h2>
+            <h2 id="moat-title"><mark class="hl">Consent compounds.</mark> Calls don't.</h2>
+            <span class="doodle doodle-margin doodle-moat" aria-hidden="true">Meta needed humans.<br />we needed a platypus.</span>
           </div>
           <p class="section-lede">Every yes we collect is supply no other agent can reach without making that call itself. That's why Meta needed humans and we won't.</p>
         </div>
@@ -363,90 +275,7 @@
           </article>
         </div>
 
-        <details class="more">
-          <summary>Everyone else is on one side of the bridge: the landscape</summary>
-        <div class="landscape" role="region" aria-labelledby="landscape-title" tabindex="0">
-          <h3 id="landscape-title" class="sr-only">The landscape</h3>
-          <table>
-            <thead>
-              <tr><th scope="col">Category</th><th scope="col">Examples</th><th scope="col">What they do</th><th scope="col">Why Platypus is different</th></tr>
-            </thead>
-            <tbody>
-              <tr><th scope="row">Personal agents that call</th><td data-label="Examples">Muse, Instinct Concierge, Google Ask for Me</td><td data-label="What they do">Call a business for one task, every time. Nothing persists. Businesses hang up.</td><td data-label="Why Platypus is different">Calls once to onboard, then texts. Books and persists. Neutral supply for all of them.</td></tr>
-              <tr><th scope="row">AI receptionists</th><td data-label="Examples">Rosie, Yelp Host</td><td data-label="What they do">Answer human calls for the business.</td><td data-label="Why Platypus is different">Serve the agents calling in, through open standards.</td></tr>
-              <tr><th scope="row">Marketplaces</th><td data-label="Examples">Yelp, Thumbtack, Angi</td><td data-label="What they do">Own discovery; gate or charge agents.</td><td data-label="Why Platypus is different">Open to every agent; the business keeps its customer.</td></tr>
-              <tr><th scope="row">Agent commerce standards</th><td data-label="Examples">PAP, UCP, ACP, Visa TAP</td><td data-label="What they do">Identity and checkout for businesses with systems.</td><td data-label="Why Platypus is different">The adapter for every business without a site, an API or an agent.</td></tr>
-              <tr><th scope="row">Booking software</th><td data-label="Examples">ServiceTitan, Jobber, Calendly</td><td data-label="What they do">Great for businesses that adopt software.</td><td data-label="Why Platypus is different">The ones that never will.</td></tr>
-            </tbody>
-          </table>
-          <p class="landscape-note">Google's call is a lookup. Ours is onboarding.</p>
-        </div>
-        </details>
-      </section>
-
-      <!-- =========================== GUARANTEES =========================== -->
-      <section id="guarantees" class="section" aria-labelledby="g-title">
-        <div class="section-head">
-          <div>
-            <h2 id="g-title">A booking is never confirmed because the AI said so.</h2>
-          </div>
-          <p class="section-lede">These are types, constraints and triggers, not prompt guidelines. A test proves each one; 800 run on every push.
-            <span class="aside">A model saying "booked" is not evidence. Curse you, Hallucinat-inator!</span>
-          </p>
-        </div>
-
-        <div class="rules">
-          <article class="rule">
-            <header><span>01</span><h3>Only <code>confirm()</code> can confirm, and only with evidence</h3></header>
-            <p>A quoted yes on the call, a Y by text, or a rule the owner approved. Nothing else can be expressed.</p>
-            <pre><code><span class="k">export function</span> <span class="f">confirm</span>(ctx, bookingId,
-  evidence: <span class="t">ConfirmationEvidence</span>) {
-  <span class="c">// "call" | "text" | "rule". A transcript
-  // alone cannot be expressed here.</span>
-  <span class="k">const</span> actor = <span class="f">verifyEvidence</span>(ctx, booking, evidence);</code></pre>
-            <a class="src" href="https://github.com/KarthikSubramanian07/Platypus/blob/main/packages/shared/src/booking/engine.ts" rel="noopener">booking/engine.ts ↗</a>
-          </article>
-          <article class="rule">
-            <header><span>02</span><h3>Consent cannot exist without its proof</h3></header>
-            <p>The database refuses a consent row without the owner's sentence and the call.</p>
-            <pre><code><span class="k">CHECK</span> (
-  (source = <span class="s">'call'</span> <span class="k">AND</span> call_id <span class="k">IS NOT NULL</span>
-    <span class="k">AND</span> <span class="f">LENGTH</span>(quoted_sentence) &gt; 0)
-  <span class="k">OR</span> (source = <span class="s">'join_text'</span>
-    <span class="k">AND</span> message_id <span class="k">IS NOT NULL</span>)
-)</code></pre>
-            <a class="src" href="https://github.com/KarthikSubramanian07/Platypus/blob/main/packages/shared/src/db/migrations/001_init.sql" rel="noopener">migrations/001_init.sql ↗</a>
-          </article>
-          <article class="rule">
-            <header><span>03</span><h3>Every change is an append-only event</h3></header>
-            <p>Actor, reason and confidence on every event. Nobody can edit history, including us.</p>
-            <pre><code><span class="k">CREATE TRIGGER</span> events_no_update
-  <span class="k">BEFORE UPDATE ON</span> events
-<span class="k">BEGIN</span>
-  <span class="k">SELECT</span> <span class="f">RAISE</span>(ABORT, <span class="s">'events are append-only'</span>);
-<span class="k">END</span>;</code></pre>
-            <a class="src" href="https://github.com/KarthikSubramanian07/Platypus/blob/main/packages/shared/src/db/migrations/002_events_append_only.sqlite.sql" rel="noopener">002_events_append_only.sql ↗</a>
-          </article>
-          <article class="rule">
-            <header><span>04</span><h3>Only allowed numbers can ever ring</h3></header>
-            <p>Checked right before anything that can reach a phone, in the real adapter and the fakes.</p>
-            <pre><code><span class="k">export function</span> <span class="f">assertAllowedNumber</span>(number,
-  allowed = <span class="f">parseAllowedNumbers</span>(env.ALLOWED_NUMBERS)) {
-  <span class="k">if</span> (!allowed.<span class="f">includes</span>(number))
-    <span class="k">throw new</span> <span class="t">NumberNotAllowedError</span>(number);
-}</code></pre>
-            <a class="src" href="https://github.com/KarthikSubramanian07/Platypus/blob/main/packages/shared/src/safety.ts" rel="noopener">shared/src/safety.ts ↗</a>
-          </article>
-        </div>
-        <details class="more">
-          <summary>Four more rules</summary>
-          <ul class="minor-rules">
-            <li>Agent and owner text is data, not instructions: links stripped, length capped, rendered as text.</li>
-            <li>Mid-call tools check that each request comes from the live call's number and names that call's business.</li>
-            <li>STOP, HELP and PAUSE are handled before any model sees the message.</li>
-            <li>Darwin is never simulated in live mode. If it is down, the step is skipped and the log says so.</li>
-          </ul>
-        </details>
+        <p class="moat-more"><a href="/business">See the landscape, the business model and the risks <span aria-hidden="true">→</span></a></p>
       </section>
 
       <!-- ============================ PARTNERS ============================ -->
@@ -464,7 +293,6 @@
             <ul>
               <li><b>Outbound AI voice</b>, AI disclosure hard-coded as sentence one.</li>
               <li><b>Context MCP</b>: five booking tools called <em>during</em> the call, authorized by caller number.</li>
-              <li><b>The same number texts afterward</b>, through HMAC-signed, deduplicated webhooks.</li>
             </ul>
             <p class="partner-why">Without Dial: no call, no consent, and no business ever becomes agent-native. It's a week of glue we didn't have to write.</p>
           </article>
@@ -473,7 +301,6 @@
             <ul>
               <li><b>Search v3 before every booking</b>; we never call a shop an agent already covers.</li>
               <li><b>Typed answers we branch on.</b> Today no listed agent is ready for our trades: that's the gap.</li>
-              <li><b>A search ladder</b> that rides out 500s, honors 429s, caches, and is smoke-tested live daily.</li>
             </ul>
             <p class="partner-why">Without Darwin: we'd call shops that are already agent-native. The day Publish ships, every business on Platypus becomes executable local supply in Darwin.</p>
           </article>
@@ -482,69 +309,49 @@
             <ul>
               <li><b>Parallel coding sessions</b> on separate packages, no meetings until integration.</li>
               <li>Decisions anchored to file paths reached every session: <em>"never simulate Darwin live"</em>, <em>"only allowed numbers may ring"</em>.</li>
-              <li>The <a href="https://github.com/KarthikSubramanian07/Platypus/blob/main/DECISIONS.md" rel="noopener">decisions log</a> is what Alike recorded.</li>
             </ul>
-            <p class="partner-why">Without Alike: parallel agents rewrite each other's contracts and nobody notices until 4:59pm.</p>
+            <p class="partner-why">Without Alike: parallel agents rewrite each other's contracts and nobody notices until <mark class="hl">4:59pm.</mark></p>
           </article>
         </div>
       </section>
 
-      <!-- ============================= MARKET ============================= -->
-      <section id="market" class="section" aria-labelledby="m-title">
+      <!-- ============================== DEEPER ============================ -->
+      <section id="deeper" class="section" aria-labelledby="deeper-title">
         <div class="section-head">
           <div>
-            <h2 id="m-title">We sell to the owner. Agents bring the customers.</h2>
+            <h2 id="deeper-title">Go deeper.</h2>
           </div>
-          <p class="section-lede">Home services first, then clinics, auto shops, salons, movers. Supply is up for grabs for a few months.</p>
+          <p class="section-lede">Everything behind the demo, one click away.</p>
         </div>
-        <div class="market">
-          <article>
-            <p class="num">Per confirmed booking</p>
-            <h3>Owners pay for jobs, not leads</h3>
-            <p>They already pay per lead on marketplaces.</p>
-          </article>
-          <article>
-            <p class="num">Autopilot subscription</p>
-            <h3>The front office as software</h3>
-            <p>Rules by text: "oil changes Tue to Thu under $100, auto-yes."</p>
-          </article>
-          <article>
-            <p class="num">Platform access</p>
-            <h3>Agent platforms pay for reach</h3>
-            <p>Routing signals and SLAs. They can't onboard millions of shops one by one.</p>
-          </article>
+        <div class="deeper">
+          <a class="deeper-card" href="/technical">
+            <span class="doodle doodle-nerds" aria-hidden="true">nerds, this way <svg viewBox="0 0 40 24" fill="none"><path d="M4 6 C 16 4, 28 10, 34 18" /><path d="M26 18 L 35 19 L 34 10" /></svg></span>
+            <span class="deeper-kicker">Technical</span>
+            <b>How it works, and the rules the code enforces</b>
+            <span>The route decision, the architecture, and the code behind "confirmed means the owner said yes."</span>
+            <span class="deeper-go" aria-hidden="true">→</span>
+          </a>
+          <a class="deeper-card" href="/business">
+            <span class="deeper-kicker">Business</span>
+            <b>Why now, the landscape, and how it makes money</b>
+            <span>The September agent launches, everyone on one side of the bridge, revenue, roadmap and risks.</span>
+            <span class="deeper-go" aria-hidden="true">→</span>
+          </a>
+          <a class="deeper-card" href="/developers">
+            <span class="deeper-kicker">Developers</span>
+            <b>Connect an agent in two minutes</b>
+            <span>The MCP endpoint, the nine tools, and a sandbox that needs no keys.</span>
+            <span class="deeper-go" aria-hidden="true">→</span>
+          </a>
         </div>
-        <details class="more">
-          <summary>What's next, and the risks we say out loud</summary>
-        <div class="next">
-          <div>
-            <p class="num">Next, in order</p>
-            <ol class="roadmap">
-              <li>The live Dial call and owner texts, end to end</li>
-              <li>Ten real owners called on Monday; opt-in rate is the number we live on</li>
-              <li>SMS to regular phones after 10DLC registration through Dial</li>
-              <li>Autopilot rules, then a Personal Agent Protocol adapter when v0.1 lands</li>
-              <li>Darwin Publish: every flipped business becomes executable supply</li>
-            </ol>
-          </div>
-          <div>
-            <p class="num">Risks we say out loud</p>
-            <dl class="risks">
-              <div><dt>Owners hang up on AI</dt><dd>We only need one call to work, and it brings a paying job. We ask after the booking, and after a yes they never hear an AI voice again.</dd></div>
-              <div><dt>Platforms may build this</dt><dd>Meta's human-concierge test shows how hard calls are at scale. We stay neutral so platforms use us instead of rebuilding supply city by city.</dd></div>
-              <div><dt>AI calls carry stricter rules</dt><dd>Published business lines only, AI disclosed first, "don't call again" honored instantly, texts only after a recorded yes. Counsel before scale.</dd></div>
-              <div><dt>Owner says no to texting</dt><dd>We book the job anyway and log the no. Three no's and we stop asking for 90 days.</dd></div>
-            </dl>
-          </div>
-        </div>
-        </details>
       </section>
 
       <!-- ============================= HONEST ============================= -->
       <section id="honest" class="section" aria-labelledby="h-title">
         <div class="section-head">
           <div>
-            <h2 id="h-title">What works today, and what doesn't yet.</h2>
+            <h2 id="h-title">What works today, and what <span class="doodle-underlined">doesn't<svg class="doodle-underline" viewBox="0 0 140 14" fill="none" aria-hidden="true" preserveAspectRatio="none"><path d="M3 9 C 30 3, 70 12, 137 5" /></svg></span> yet.</h2>
+            <span class="doodle doodle-margin doodle-honest" aria-hidden="true">we'd rather you<br />hear it from us</span>
           </div>
           <p class="section-lede">The rules ask us to mark every mock. The whole product is about only claiming what's true.</p>
         </div>
@@ -555,8 +362,6 @@
               <li>Contracts, booking state machine, holds, consent rules, event log, SSE stream, CI.</li>
               <li>The gateway's nine MCP tools, routing, and a terminal client that drives the golden path over MCP.</li>
               <li>The live Darwin Search v3 client, its search ladder and a daily smoke check.</li>
-              <li>Dial request and webhook shapes, checked against Dial's OpenAPI spec and SDK.</li>
-              <li>The replay on this page was generated by running the whole demo through the real state machine.</li>
             </ul>
           </div>
           <div>
@@ -565,8 +370,6 @@
               <li>Sal's Auto is not a real shop. Its line is a second Dial number, answered by Dial's AI playing the owner, until Dial approves a real number.</li>
               <li>This page's replay uses FakeDial. The live Dial call is being wired on the phone side.</li>
               <li>Five of six seeded businesses use 555-01xx numbers, which are reserved for fiction.</li>
-              <li>Texts to regular phones wait on 10DLC; today's rail is iMessage, WhatsApp or Dial.</li>
-              <li>Time saved is an estimate, with the assumptions shown above.</li>
             </ul>
           </div>
         </div>
@@ -576,6 +379,36 @@
     <!-- ============================== CLOSE =============================== -->
     <section class="close" aria-labelledby="close-title">
       <div class="close-inner">
+        <figure class="platypus-doodle" aria-hidden="true">
+          <svg viewBox="0 0 320 220" fill="none">
+            <!-- tail: a flat paddle -->
+            <path class="tail" d="M78 132 C 52 128, 22 138, 14 152 C 8 164, 30 172, 56 162 C 70 156, 80 146, 84 140" />
+            <path class="tail" d="M28 150 L 50 148 M30 158 L 54 154" />
+            <!-- body -->
+            <path d="M78 132 C 84 104, 128 88, 172 92 C 214 96, 238 116, 238 138 C 238 162, 206 176, 164 176 C 118 176, 82 164, 78 132 Z" />
+            <!-- fur flicks -->
+            <path d="M120 112 q 6 -4 12 0 M150 104 q 6 -4 12 0 M186 108 q 6 -4 12 0" />
+            <!-- legs -->
+            <path d="M118 172 c -2 10, -10 14, -16 16 M130 174 c 0 10, -4 16, -10 18 M196 172 c 2 10, 10 14, 16 16 M184 174 c 0 10, 4 16, 10 18" />
+            <!-- head and bill -->
+            <path d="M226 120 C 236 104, 258 100, 270 112" />
+            <path d="M262 118 C 280 112, 306 116, 310 128 C 312 138, 296 144, 276 140 C 266 138, 258 134, 256 128" />
+            <path d="M286 124 l 2 2 M296 126 l 2 2" />
+            <circle class="fill" cx="250" cy="116" r="3.2" />
+            <path d="M246 108 q 5 -4 10 0" />
+            <!-- fedora, tipped -->
+            <g transform="rotate(-10 246 86)">
+              <path class="hat" d="M220 92 C 222 72, 232 62, 246 62 C 262 62, 272 72, 272 92 Z" />
+              <path d="M220 92 C 222 72, 232 62, 246 62 C 262 62, 272 72, 272 92" />
+              <path d="M240 66 q 6 6 12 0" />
+              <path d="M208 94 C 228 100, 268 100, 286 92" />
+              <path d="M221 86 C 236 89, 258 89, 271 86" />
+            </g>
+            <!-- motion squiggles -->
+            <path d="M40 104 q 8 -8 16 0 q 8 8 16 0" />
+          </svg>
+          <p>Agent P, off duty.<br />Booking oil changes now.</p>
+        </figure>
         <h2 id="close-title">Businesses live on the phone.<br />Agents live online.<br /><em>Platypus lives in both.</em></h2>
         <p>The internet got a front door for every business with a website. Agents need one for every business with a phone.</p>
         <p class="close-kicker">Ferb, I know what we're gonna do today.</p>

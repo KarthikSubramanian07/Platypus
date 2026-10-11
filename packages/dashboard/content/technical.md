@@ -1,0 +1,25 @@
+# Platypus: how it works, and what it refuses to do
+
+One gateway, two phone channels on Dial, and a shared core where a booking is confirmed only when the owner says yes. Every rule below is enforced in code and proven by a test.
+
+## The route
+
+1. **Ask.** Any MCP client calls `request_booking`.
+2. **Route.** A Darwin agent if one is ready, a text if the owner already said yes, otherwise one call. Paused and do-not-call businesses are never contacted.
+3. **Call once.** Dial rings the shop, says it is an AI first, and books mid-call through `check_slot`, `hold_slot` and `create_booking`.
+4. **Consent.** `record_consent` stores the owner's exact words and the call id. The shop flips to text-enabled.
+5. **Text forever.** The next request is one text. The owner replies Y, N or a time, and the agent gets a typed outcome in seconds.
+
+## Architecture
+
+- **Customer agents** (Claude, Muse, any MCP client) talk to the **gateway** over MCP: nine typed tools, idempotency keys, per-agent rate limits, and the route decision, which searches Darwin first.
+- The **phone side** runs on Dial: **voice** places the outbound call and serves five mid-call tools over Context MCP, each authorized per request; **text** handles owner messages through HMAC-signed, deduplicated webhooks, with STOP, HELP and PAUSE handled before any model.
+- The **shared** core holds the `confirm()` evidence gate, the booking state machine with holds, consent constraints, an append-only event log, a replayable SSE stream, Zod contracts exported as JSON Schema, and fakes for Dial, Darwin and the gateway.
+
+## Rules the code enforces
+
+- **Only `confirm()` can confirm, and only with evidence:** a quoted yes on the call, a Y by text, or a rule the owner approved. `transition()` refuses `confirmed` outright. ([booking/engine.ts](https://github.com/KarthikSubramanian07/Platypus/blob/main/packages/shared/src/booking/engine.ts))
+- **Consent cannot exist without its proof.** A `CHECK` constraint refuses a consent row without the owner's sentence and the call id. ([001_init.sql](https://github.com/KarthikSubramanian07/Platypus/blob/main/packages/shared/src/db/migrations/001_init.sql))
+- **Every change is an append-only event** with an actor, a reason and a confidence; database triggers refuse updates and deletes.
+- **Only allowlisted numbers can ever ring**, checked immediately before any network request, in the real adapter and in the fakes. ([safety.ts](https://github.com/KarthikSubramanian07/Platypus/blob/main/packages/shared/src/safety.ts))
+- Agent and owner text is data, not instructions. Mid-call tools check the live call's number and business. Darwin is never simulated in live mode.
