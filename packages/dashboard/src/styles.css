@@ -56,7 +56,6 @@ code {
   border-radius: 16px;
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
-.brand-word { font-weight: 600; letter-spacing: -0.02em; font-size: 17px; color: var(--ink); }
 .nav-links { display: flex; gap: 2px; min-width: 0; }
 .nav-links a, .nav-source {
   text-decoration: none; font-size: 14px; color: var(--ink-3); white-space: nowrap;

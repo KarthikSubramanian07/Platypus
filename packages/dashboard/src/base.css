@@ -54,12 +54,8 @@ code {
 
 /* ---- Shared primitives --------------------------------------------------------- */
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
-/* The logo is a switch flipped on: a phone-only business becoming text-enabled. */
-.brand-mark { position: relative; width: 30px; height: 17px; border-radius: 999px; background: var(--green); flex-shrink: 0; }
-.brand-mark::after {
-  content: ""; position: absolute; top: 3px; right: 3px; width: 11px; height: 11px; border-radius: 50%;
-  background: #fff; transition: transform 220ms cubic-bezier(0.3, 1.4, 0.5, 1);
-}
+/* The logo: a platypus head cut out of a green circle (public/brand/). */
+.brand-mark { position: relative; width: 26px; height: 26px; background: url(/brand/platypus-mark.svg) center / contain no-repeat; flex-shrink: 0; }
 /* Hover the logo. A fedora appears. Classic. */
 .fedora {
   position: absolute; left: 50%; top: -8px; z-index: 1; width: 24px; height: 8px;
@@ -70,8 +66,8 @@ code {
 .fedora::before { content: ""; position: absolute; left: 5px; right: 5px; top: 0; height: 6px; border-radius: 5px 5px 1px 1px; background: #7a5a2e; }
 .fedora::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 3px; background: #6a4c24; }
 .brand:hover .fedora, .brand:focus-visible .fedora { opacity: 1; transform: translate(-50%, 0) rotate(-8deg); }
-.brand:hover .brand-mark::after, .brand:focus-visible .brand-mark::after { transform: translateX(-13px); }
-.brand-word { font-weight: 600; letter-spacing: -0.02em; font-size: 17px; color: var(--ink); }
+/* The wordmark is drawn, not typed; the link's aria-label carries the name. */
+.brand-word { width: 85px; height: 22px; background: url(/brand/platypus-wordmark.svg) left center / contain no-repeat; font-size: 0; color: transparent; }
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
   font: 500 15px/1 var(--sans);
