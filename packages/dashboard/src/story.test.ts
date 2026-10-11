@@ -36,12 +36,12 @@ describe("the phone's rail", () => {
     expect(railOf(upTo((e) => e.type === "call.placed"))).toBeUndefined();
     expect(railOf(upTo((e) => e.type === "business.channel_changed"))).toBe("imessage");
     expect(railOf(reduceAll(GOLDEN_PATH))).toBe("imessage");
-    expect(railOf(reduceAll([ev("business.listed", { display_name: "Sal's Auto" }, { business_id: "b1" }), ev("business.channel_changed", { to: "text_enabled", rail: "dial" }, { business_id: "b1" })]))).toBe("dial");
+    expect(railOf(reduceAll([ev("business.listed", { display_name: "Eddy's Auto" }, { business_id: "b1" }), ev("business.channel_changed", { to: "text_enabled", rail: "dial" }, { business_id: "b1" })]))).toBe("dial");
   });
 
   it("calls it a Dial-to-Dial line only on the dial rail", () => {
-    expect(phoneLabel("dial")).toBe("Sal's Auto line · Dial-to-Dial");
-    for (const rail of ["imessage", "whatsapp", "sms", undefined]) expect(phoneLabel(rail)).toBe("Sal's Auto · the owner's phone");
+    expect(phoneLabel("dial")).toBe("Eddy's Auto line · Dial-to-Dial");
+    for (const rail of ["imessage", "whatsapp", "sms", undefined]) expect(phoneLabel(rail)).toBe("Eddy's Auto · the owner's phone");
   });
 });
 

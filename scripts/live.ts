@@ -69,6 +69,11 @@ process.on("SIGTERM", stop);
 await waitForPublicHealth(tunnel.url);
 
 console.log("4/4 Registering the Context MCP with Dial");
-const code = await runRegisterCli([], { env, fetch: (url, init) => fetch(url, init), out: (line) => console.log(`  ${line}`) });
+// Dial probes the URL while registering, and a new quick tunnel can take a few seconds to resolve from Dial's side.
+let code = 1;
+for (let attempt = 1; attempt <= 3 && code !== 0; attempt++) {
+  if (attempt > 1) await new Promise((r) => setTimeout(r, 5_000));
+  code = await runRegisterCli([], { env, fetch: (url, init) => fetch(url, init), out: (line) => console.log(`  ${line}`) });
+}
 if (code !== 0) console.error("  Context MCP registration failed; calls will fall back to the transcript path. See the lines above.");
 console.log(`\nLive. Dashboard: http://localhost:5173/live   Gateway MCP: http://localhost:${port}/mcp   Kill switch: POST /demo/kill-call\n`);

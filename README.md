@@ -18,7 +18,7 @@ Most of the 33 million US small businesses will never build an API. They have a 
 
 ## The demo
 
-An oil change turns Sal's Auto agent-native. The next booking, a brake inspection, goes by text and is confirmed in 4 seconds.
+An oil change turns Eddy's Auto agent-native. The next booking, a brake inspection, goes by text and is confirmed in 4 seconds.
 
 ![The live operator view after the demo run](docs/live-dashboard.png)
 
@@ -83,7 +83,7 @@ The architecture is built so that a booking is never confirmed just because a mo
 ## Real vs mocked
 
 - **Real:** a live Dial AI call to a real phone that books through our tools mid-call, stores consent in the owner's own words, then sends a real iMessage that gets a real Y. Also real: the contracts, state machine, consent rules, event log and both auditors; the MCP tools and routing; the live Darwin client, with a daily smoke check; and Dial request shapes, checked against Dial's OpenAPI spec.
-- **Mocked:** Sal's Auto is not a real business. Its line is Karthik's phone, and he is not a mechanic. The other five shops are fictional, and the site's replay runs on fakes. SMS to regular phones waits on 10DLC registration (iMessage is approved). The time-saved figures are estimates.
+- **Mocked:** Eddy's Auto is not a real business. Its line is Karthik's phone, and he is not a mechanic. The other five shops are fictional, and the site's replay runs on fakes. SMS to regular phones waits on 10DLC registration (iMessage is approved). The time-saved figures are estimates.
 
 ## Run it
 

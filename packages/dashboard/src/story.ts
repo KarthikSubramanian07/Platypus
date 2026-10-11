@@ -58,7 +58,7 @@ export function railOf(state: DashboardState): string | undefined {
 
 /** The phone's caption. On the dial rail a Dial number plays the shop's line; otherwise it is the owner's own phone. */
 export function phoneLabel(rail: string | undefined): string {
-  return rail === "dial" ? "Sal's Auto line · Dial-to-Dial" : "Sal's Auto · the owner's phone";
+  return rail === "dial" ? "Eddy's Auto line · Dial-to-Dial" : "Eddy's Auto · the owner's phone";
 }
 
 /** One line on what Darwin said, for the first story card. */

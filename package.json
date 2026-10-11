@@ -26,6 +26,7 @@
     "test:eval": "vitest run --project text src/evals.test.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "demo:reset": "tsx scripts/demo-reset.ts",
+    "live:reset": "DEMO_MODE=live tsx scripts/demo-reset.ts",
     "tunnel": "tsx scripts/tunnel.ts",
     "dial:register-mcp": "tsx packages/voice/scripts/register-mcp.ts",
     "dial:mcp-status": "tsx packages/voice/scripts/mcp-status.ts",
