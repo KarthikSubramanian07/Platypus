@@ -90,13 +90,13 @@ describe("darwinSummary", () => {
 
 describe("the agent's ask", () => {
   it("lists service, budget, window in shop time and the street", () => {
-    expect(askFacts(reduceAll(GOLDEN_PATH).ask)).toEqual(["oil change", "under $120", "Mon 12–5 PM", "1025 Sansome St"]);
+    expect(askFacts(reduceAll(GOLDEN_PATH).ask)).toEqual(["oil change", "under $120", "Mon 12 to 5 PM", "1025 Sansome St"]);
     expect(askFacts(undefined)).toEqual([]);
   });
 
   it("formats windows within a day, across days and open-ended", () => {
-    expect(formatWindow("2026-10-12T16:00:00.000Z", "2026-10-12T21:00:00.000Z")).toBe("Mon 9 AM–2 PM");
-    expect(formatWindow("2026-10-13T17:00:00.000Z", "2026-10-16T00:00:00.000Z")).toBe("Tue 10 AM – Thu 5 PM");
+    expect(formatWindow("2026-10-12T16:00:00.000Z", "2026-10-12T21:00:00.000Z")).toBe("Mon 9 AM to 2 PM");
+    expect(formatWindow("2026-10-13T17:00:00.000Z", "2026-10-16T00:00:00.000Z")).toBe("Tue 10 AM to Thu 5 PM");
     expect(formatWindow("2026-10-12T21:30:00.000Z", undefined)).toBe("Mon 2:30 PM");
     expect(formatWindow(undefined, undefined)).toBeUndefined();
   });

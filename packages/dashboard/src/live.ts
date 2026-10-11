@@ -525,7 +525,7 @@ function darwinDetails(d: DarwinView): HTMLElement[] {
   }
   if (d.attempts.length > 1 || (d.attempts.length === 1 && !d.attempts[0]!.ok)) {
     const list = el("ol", "plain-list mono");
-    for (const a of d.attempts) list.append(el("li", "", `${a.status ?? a.errorKind ?? "—"} · ${a.query ?? ""} · ${formatLatency(a.latencyMs) ?? ""}`));
+    for (const a of d.attempts) list.append(el("li", "", `${a.status ?? a.errorKind ?? "none"} · ${a.query ?? ""} · ${formatLatency(a.latencyMs) ?? ""}`));
     nodes.push(list);
   }
   return nodes;
@@ -575,9 +575,9 @@ function renderDetails(): void {
       name.scope = "row";
       name.append(el("span", "", r.name), el("span", "supply-trade", formatTrade(r.trade)));
       const channel = el("td", "", r.channel === "text_enabled" ? (formatRail(r.rail) ?? "Text") : "Phone");
-      const reply = el("td", "num", r.medianReplySeconds !== undefined ? `${formatSeconds(r.medianReplySeconds)} s` : "—");
-      const price = el("td", "num", formatMoney(r.lastPriceCents) ?? "—");
-      const optIn = el("td", "num", r.optIn.length ? r.optIn.map((v) => `${Math.round(v.rate * 100)}% ${v.version} (${v.consents}/${v.calls})`).join(", ") : "—");
+      const reply = el("td", "num", r.medianReplySeconds !== undefined ? `${formatSeconds(r.medianReplySeconds)} s` : "none");
+      const price = el("td", "num", formatMoney(r.lastPriceCents) ?? "none");
+      const optIn = el("td", "num", r.optIn.length ? r.optIn.map((v) => `${Math.round(v.rate * 100)}% ${v.version} (${v.consents}/${v.calls})`).join(", ") : "none");
       tr.append(name, channel, reply, price, optIn);
       return tr;
     }),

@@ -74,7 +74,7 @@ export function darwinSummary(d: DarwinView | undefined, reasons: readonly strin
   }
 }
 
-/** "Mon 12–5 PM" for a request window, in shop time; "Tue 10 AM – Thu 5 PM" across days. */
+/** "Mon 12 to 5 PM" for a request window, in shop time; "Tue 10 AM to Thu 5 PM" across days. */
 export function formatWindow(start: string | undefined, end: string | undefined): string | undefined {
   if (!start || Number.isNaN(Date.parse(start))) return undefined;
   const fmt = (iso: string, parts: Intl.DateTimeFormatOptions) => new Date(iso).toLocaleString("en-US", { ...parts, timeZone: SHOP_TIME_ZONE });
@@ -82,9 +82,9 @@ export function formatWindow(start: string | undefined, end: string | undefined)
   const time = (iso: string) => fmt(iso, { hour: "numeric", minute: "2-digit" }).replace(":00", "");
   if (!end || Number.isNaN(Date.parse(end))) return `${day(start)} ${time(start)}`;
   const date = (iso: string) => fmt(iso, { year: "numeric", month: "numeric", day: "numeric" });
-  if (date(start) !== date(end)) return `${day(start)} ${time(start)} – ${day(end)} ${time(end)}`;
+  if (date(start) !== date(end)) return `${day(start)} ${time(start)} to ${day(end)} ${time(end)}`;
   const [a, b] = [time(start), time(end)];
-  return `${day(start)} ${a.slice(-2) === b.slice(-2) ? a.slice(0, -3) : a}–${b}`;
+  return `${day(start)} ${a.slice(-2) === b.slice(-2) ? a.slice(0, -3) : a} to ${b}`;
 }
 
 /** The request as a short list: service, budget, window, place. */
