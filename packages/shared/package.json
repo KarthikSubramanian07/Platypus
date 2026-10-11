@@ -16,7 +16,8 @@
     "./darwin": "./src/darwin/index.ts",
     "./testing": "./src/testing/index.ts",
     "./ids": "./src/ids.ts",
-    "./clock": "./src/clock.ts"
+    "./clock": "./src/clock.ts",
+    "./audit": "./src/audit/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
@@ -29,6 +30,7 @@
     "zod": "^4.6.6"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13"
+    "@types/better-sqlite3": "^7.6.13",
+    "fast-check": "^4.10.2"
   }
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GOLDEN_PATH } from "./fixture";
 import type { StreamEvent } from "./format";
-import { bookingForCall, currentCall, evidenceMessage, initialState, MAX_EVENTS, readDarwin, reduce, reduceAll, replySeconds, supplyRows, VOICE_TOOLS, type DashboardState } from "./state";
+import { awaitingOwner, bookingForCall, confirmSeconds, currentCall, evidenceMessage, initialState, storyBookings, MAX_EVENTS, readDarwin, reduce, reduceAll, replySeconds, supplyRows, VOICE_TOOLS, type DashboardState } from "./state";
 
 const SAL = "biz_01M4PXD580DHZN65A76SE0V0ZE";
 const CALL = "call_01M4PXD580DHZN65A76SE0V0ZZ";
@@ -344,5 +344,38 @@ describe("owner phone and supply table", () => {
     ]);
     expect(supplyRows(state)[0]!.lastPriceCents).toBe(6500);
     expect(state.bookings.k1!.status).toBe("confirmed");
+  });
+});
+
+describe("story selectors", () => {
+  const b = { business_id: "b1" };
+
+  it("finds the call booking and the text booking, and times the text confirmation", () => {
+    const state = reduceAll(GOLDEN_PATH);
+    const { byCall, byText } = storyBookings(state);
+    expect(byCall?.shortCode).toBe("SAL-WGD");
+    expect(byText?.shortCode).toBe("SAL-9S2");
+    expect(byText?.confirmedAt).toBeDefined();
+    expect(confirmSeconds(state, byText!)).toBe(4);
+    expect(confirmSeconds(state, byCall!)).toBeUndefined();
+    expect(storyBookings(initialState())).toEqual({});
+  });
+
+  it("keeps the routing reasons on the booking they were given for", () => {
+    const state = reduceAll(GOLDEN_PATH);
+    expect(state.bookings[state.bookingOrder[1]!]!.reasons).toEqual(["consent recorded on the call (imessage)"]);
+    expect(state.bookings[state.bookingOrder[0]!]!.reasons[0]).toBe("Darwin returned no ready agent");
+  });
+
+  it("waits on the owner only while their booking is open and the last word is ours", () => {
+    expect(awaitingOwner(upTo((e) => e.type === "message.sent"))?.body.startsWith("New job via")).toBe(true);
+    expect(awaitingOwner(reduceAll(GOLDEN_PATH))).toBeUndefined();
+    expect(awaitingOwner(initialState())).toBeUndefined();
+    const receipt = reduceAll([
+      ev("booking.pending", { route: "text" }, { ...b, booking_id: "k1" }),
+      ev("booking.confirmed", { from: "pending", to: "confirmed" }, { ...b, booking_id: "k1" }),
+      ev("message.sent", { body: "Booked: brake inspection, Tue 10am. Ref SAL-9S2. Reply UNDO to reverse it." }, { ...b, booking_id: "k1", message_id: "m9" }),
+    ]);
+    expect(awaitingOwner(receipt)).toBeUndefined();
   });
 });

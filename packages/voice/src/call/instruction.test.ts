@@ -38,9 +38,28 @@ describe("buildOutboundInstruction", () => {
     expect(text.indexOf(DISCLOSURE)).toBeLessThan(text.indexOf("# The call"));
   });
 
-  it("asks the consent question exactly", () => {
-    expect(text).toContain(`Ask exactly: "${CONSENT_QUESTION}"`);
-    expect(text).toContain(`Ask exactly: "Perfect. What's the best cell to text?"`);
+  it("asks the consent question exactly, in the same turn as Booked", () => {
+    expect(text).toContain(`Then say: "Booked. ${CONSENT_QUESTION}"`);
+    expect(text).toContain(`then say: "Perfect. What's the best cell to text?"`);
+  });
+
+  it("tells the agent to be brisk and to keep tool output off the line", () => {
+    expect(text).toContain("Speak briskly, at a quick natural pace.");
+    expect(text).toContain("No filler, no small talk.");
+    expect(text).toContain("Never read tool results, codes or JSON aloud.");
+    expect(text).toContain("Answer anything off-script in five words or fewer");
+    expect(text).not.toMatch(/slower/i);
+  });
+
+  it("scripts each turn as one line and holds without check_slot", () => {
+    const call = text.slice(text.indexOf("# The call"), text.indexOf("# Tool arguments"));
+    expect(call).toContain("call hold_slot (not check_slot");
+    expect(call).not.toMatch(/call check_slot/);
+    expect(call).toContain(`"Tomorrow at <their time> for <their price>. I'll book that. Can I confirm it's a 2019 Civic?"`);
+    expect(call).toContain(`call set_text_number, say "Got it, this number. Thanks!" and end the call.`);
+    expect(call.indexOf("hold_slot")).toBeLessThan(call.indexOf("create_booking"));
+    expect(call.indexOf("create_booking")).toBeLessThan(call.indexOf("record_consent"));
+    expect(call.indexOf("record_consent")).toBeLessThan(call.indexOf("set_text_number"));
   });
 
   it("gives the tools exact arguments: business_id and the window with the local offset", () => {
@@ -53,9 +72,8 @@ describe("buildOutboundInstruction", () => {
 
   it("says the window the way a person does and keeps the demo lines", () => {
     expect(text).toContain(`"A customer needs an oil change tomorrow afternoon. Do you have an opening, and what's the price?"`);
-    expect(text).toContain(`"I'll book that. Can I confirm it's a 2019 Civic?"`);
     expect(text).toContain(`"Understood, we won't call again."`);
-    expect(text).toContain("If the price is over one hundred twenty dollars, or there is no opening tomorrow afternoon");
+    expect(text).toContain(`If the price is over one hundred twenty dollars, or there is no opening tomorrow afternoon: do not hold or book. Say "Thanks, I'll check with the customer. ${CONSENT_QUESTION}"`);
     expect(text).toContain("You can reach Platypus at four one five, five five five, oh one nine nine.");
     expect(text).toContain("booking for Alex's assistant");
   });
@@ -63,9 +81,9 @@ describe("buildOutboundInstruction", () => {
   it("stays under the length budget and records what was sent", () => {
     expect(text.length).toBeLessThan(MAX_INSTRUCTION_CHARS);
     expect(text).not.toContain("{{");
-    expect(templateVersion).toBe("onboard-v2");
+    expect(templateVersion).toBe("onboard-v3");
     expect(sha256).toMatch(/^[0-9a-f]{64}$/);
-    expect(scriptVersion).toBe(`onboard-v2@${sha256.slice(0, 16)}`);
+    expect(scriptVersion).toBe(`onboard-v3@${sha256.slice(0, 16)}`);
     expect(text).toMatchSnapshot();
   });
 

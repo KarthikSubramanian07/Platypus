@@ -190,7 +190,13 @@ export function confirm(ctx: BookingContext, bookingId: string, evidence: Confir
     if (!CONFIRMABLE_STATUSES.includes(booking.status)) throw new InvalidTransitionError(booking.status, "confirmed");
     expireHoldsInTx(ctx, record, now);
     const actor = verifyEvidence(ctx, booking, evidence);
+    assertSlotStillFree(ctx, booking);
     const iso = now.toISOString();
+    // A yes that arrived before it was matched to a booking is bound to this one, so it cannot confirm a second.
+    if (evidence.kind === "text") {
+      const message = getRow(ctx.db, "messages", evidence.messageId);
+      if (message && !message.booking_id) updateRow(ctx.db, "messages", message.id, { booking_id: booking.id });
+    }
     for (const hold of selectRows(ctx.db, "holds", "booking_id = ? AND status = 'active'", [booking.id])) {
       updateRow(ctx.db, "holds", hold.id, { status: "converted", updated_at: iso });
       record({ type: "hold.converted", actor, refs: { hold_id: hold.id, booking_id: booking.id, business_id: booking.business_id }, reason: "booking confirmed" });
@@ -203,6 +209,25 @@ export function confirm(ctx: BookingContext, bookingId: string, evidence: Confir
   });
 }
 
+/**
+ * Never double-book on a late yes: a hold lapses after 10 minutes, and an owner who
+ * answers after that may be saying yes to a time someone else has since held or booked.
+ */
+function assertSlotStillFree(ctx: BookingContext, booking: Booking): void {
+  if (booking.slot_start === null || booking.slot_end === null) return;
+  const window = [booking.slot_end, booking.slot_start];
+  const holds = selectRows(ctx.db, "holds", `business_id = ? AND status = 'active' AND (booking_id IS NULL OR booking_id <> ?) AND ${overlaps}`, [booking.business_id, booking.id, ...window]);
+  const booked = selectRows(
+    ctx.db,
+    "bookings",
+    `business_id = ? AND id <> ? AND status IN (${OCCUPYING_STATUSES.map(() => "?").join(", ")}) AND ${overlaps}`,
+    [booking.business_id, booking.id, ...OCCUPYING_STATUSES, ...window],
+  );
+  if (holds.length || booked.length) {
+    throw new BookingError("slot_unavailable", `Cannot confirm ${booking.short_code}: its time was held or booked by someone else while waiting for the owner`);
+  }
+}
+
 function verifyEvidence(ctx: BookingContext, booking: Booking, evidence: ConfirmationEvidence): EventActor {
   const fail = (why: string): never => {
     throw new BookingError("invalid_evidence", `Cannot confirm ${booking.short_code}: ${why}`);
@@ -213,6 +238,7 @@ function verifyEvidence(ctx: BookingContext, booking: Booking, evidence: Confirm
         getRow(ctx.db, "calls", evidence.callId) ?? selectRows(ctx.db, "calls", "dial_call_id = ?", [evidence.callId])[0];
       if (!call) return fail("the call does not exist");
       if (call.business_id !== booking.business_id) return fail("the call was with a different business");
+      if (call.ended_at) return fail("the call has ended; a yes on a call is taken mid-call, through the booking tools");
       if (!evidence.quotedSentence?.trim()) return fail("the owner's yes must be quoted");
       if (booking.slot_start === null || booking.price_cents === null) return fail("it was not booked through hold_slot and create_booking");
       const holds = selectRows(ctx.db, "holds", "booking_id = ? AND status IN ('active', 'converted')", [booking.id]);
@@ -225,6 +251,8 @@ function verifyEvidence(ctx: BookingContext, booking: Booking, evidence: Confirm
       if (message.direction !== "inbound") return fail("the message was not from the owner");
       if (message.business_id !== booking.business_id) return fail("the message came from a different business");
       if (message.reply_class !== "accept") return fail("the reply was not classified as a yes");
+      // One yes confirms one booking: the reply the owner sent about another job is not a yes to this one.
+      if (message.booking_id && message.booking_id !== booking.id) return fail("the owner's reply was about a different booking");
       return "owner";
     }
     case "rule": {
@@ -251,6 +279,19 @@ export interface PlaceHoldInput {
 
 const overlaps = "slot_start < ? AND slot_end > ?";
 
+/**
+ * A hold or an agreed slot rewrites a booking's time (and price). That is only
+ * open while the owner has not said yes yet, or after a reschedule. Once a
+ * booking is confirmed or closed, its terms are what the owner agreed to.
+ */
+const SLOT_OPEN_STATUSES: readonly BookingStatus[] = ["quote_pending", "quoted", "pending", "countered", "rescheduled"];
+
+function assertSlotOpen(booking: Booking): void {
+  if (!SLOT_OPEN_STATUSES.includes(booking.status)) {
+    throw new BookingError("invalid_transition", `Booking ${booking.short_code} is ${booking.status}: its time and price change only through a reschedule`);
+  }
+}
+
 /** Places a 10-minute hold. Never double-books: refuses overlap with live holds and confirmed bookings. */
 export function placeHold(ctx: BookingContext, input: PlaceHoldInput): Hold {
   return inTx(ctx, (record, now) => {
@@ -259,6 +300,7 @@ export function placeHold(ctx: BookingContext, input: PlaceHoldInput): Hold {
     if (!(start.getTime() < end.getTime())) throw new BookingError("invalid_slot", "A slot must end after it starts");
     const iso = now.toISOString();
     expireHoldsInTx(ctx, record, now);
+    if (input.booking_id) assertSlotOpen(getBooking(ctx, input.booking_id));
     const s = start.toISOString();
     const e = end.toISOString();
     const clashHold = selectRows(ctx.db, "holds", `business_id = ? AND status = 'active' AND ${overlaps}`, [input.business_id, e, s]);
@@ -306,6 +348,8 @@ export function attachHold(ctx: BookingContext, holdId: string, bookingId: strin
     if (!hold || hold.status !== "active") throw new BookingError("hold_not_active", "The hold has expired or does not exist");
     const booking = getBooking(ctx, bookingId);
     if (hold.business_id !== booking.business_id) throw new BookingError("hold_not_active", "The hold belongs to a different business");
+    if (hold.booking_id && hold.booking_id !== booking.id) throw new BookingError("hold_not_active", "The hold belongs to a different booking");
+    assertSlotOpen(booking);
     if (!Number.isInteger(priceCents) || priceCents < 0) throw new BookingError("invalid_slot", "Price must be a non-negative integer of cents");
     const iso = now.toISOString();
     updateRow(ctx.db, "holds", hold.id, { booking_id: booking.id, updated_at: iso });

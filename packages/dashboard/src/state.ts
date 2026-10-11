@@ -155,6 +155,10 @@ export interface BookingView {
   slotEnd?: string;
   priceCents?: number;
   evidence?: { kind: string; quote?: string; messageId?: string; callId?: string };
+  /** Why the gateway routed it to a call or a text, as booking.pending said. */
+  reasons: string[];
+  /** When the booking.confirmed event landed, for "confirmed in 4 s". */
+  confirmedAt?: string;
   /** True when any booking event for it said source "transcript" (the post-call fallback path). */
   fromTranscript: boolean;
   createdAt: string;
@@ -306,7 +310,8 @@ export function readDarwin(event: StreamEvent): DarwinView {
   });
 }
 
-function readTranscript(payload: Obj): TranscriptTurn[] {
+/** The turns of a call.transcribed payload, in call order. Exported so the recorded run can caption the call as it plays. */
+export function readTranscript(payload: Obj): TranscriptTurn[] {
   return list(payload.turns)
     .map(obj)
     .filter((t): t is Obj => t !== undefined)
@@ -348,7 +353,7 @@ function newBusiness(id: string): BusinessView {
 }
 
 function newBooking(id: string, event: StreamEvent): BookingView {
-  return { id, businessId: str(event.refs.business_id, 80), status: "pending", fromTranscript: false, createdAt: event.created_at, updatedAt: event.created_at };
+  return { id, businessId: str(event.refs.business_id, 80), status: "pending", reasons: [], fromTranscript: false, createdAt: event.created_at, updatedAt: event.created_at };
 }
 
 function append<T>(items: readonly T[], item: T): T[] {
@@ -552,6 +557,8 @@ function applyBookingTransition(state: DashboardState, event: StreamEvent): Dash
       status,
       service: str(p.service, 120) ?? b.service,
       route: str(p.route, 20) ?? b.route,
+      reasons: event.type === "booking.pending" ? strings(p.routing_reasons, 4) : b.reasons,
+      confirmedAt: status === "confirmed" ? (b.confirmedAt ?? event.created_at) : b.confirmedAt,
       windowStart: str(p.window_start, 40) ?? b.windowStart,
       windowEnd: str(p.window_end, 40) ?? b.windowEnd,
       evidence: evidence
@@ -715,4 +722,36 @@ export function supplyRows(state: DashboardState): SupplyRow[] {
       optIn,
     });
   });
+}
+
+/** The booking the most recent call was placed for, and the most recent booking routed by text. */
+export function storyBookings(state: DashboardState): { byCall?: BookingView; byText?: BookingView } {
+  const ordered = state.bookingOrder.map((id) => state.bookings[id]!);
+  const byCall = bookingForCall(state, currentCall(state)) ?? ordered.filter((b) => b.route === "call").at(-1);
+  const byText = ordered.filter((b) => b.route === "text").at(-1);
+  return dropUndefined({ byCall, byText });
+}
+
+/** Seconds from the first text about a booking to its confirmation: the "confirmed in 4 s" figure. */
+export function confirmSeconds(state: DashboardState, booking: BookingView): number | undefined {
+  if (!booking.confirmedAt) return undefined;
+  const first = state.messages.find((m) => m.bookingId === booking.id && m.direction === "out");
+  if (!first) return undefined;
+  const seconds = (Date.parse(booking.confirmedAt) - Date.parse(first.at)) / 1000;
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds : undefined;
+}
+
+const OPEN_STATUSES = new Set(["quote_pending", "quoted", "pending", "countered"]);
+
+/**
+ * The text the owner has not answered yet, if a booking is still waiting on them:
+ * the latest outbound message whose booking is open and that no owner reply follows.
+ * The owner-reply buttons on /live show only while this returns something.
+ */
+export function awaitingOwner(state: DashboardState): MessageView | undefined {
+  const last = state.messages.at(-1);
+  if (!last || last.direction !== "out") return undefined;
+  const booking = last.bookingId ? state.bookings[last.bookingId] : undefined;
+  if (!booking || !OPEN_STATUSES.has(booking.status)) return undefined;
+  return last;
 }

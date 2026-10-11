@@ -188,7 +188,7 @@ export function createCallService(options: CallServiceOptions): CallService {
     let call: WireCall;
     try {
       call = await calls.placeCall(
-        { to, fromNumberId: options.fromNumberId, outboundInstruction: instruction.text, language: "en-US", maxCallDurationSeconds: maxSeconds },
+        { to, fromNumberId: options.fromNumberId, outboundInstruction: instruction.text, language: "en-US", voiceGender: "female", maxCallDurationSeconds: maxSeconds },
         { idempotencyKey, link: { business_id: business.id, booking_id: booking.id } },
       );
     } catch (error) {

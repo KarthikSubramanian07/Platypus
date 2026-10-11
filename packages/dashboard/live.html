@@ -2,12 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Platypus live · the call, the consent, the Y</title>
-    <meta name="description" content="The Platypus operator dashboard: Darwin search, the AI call with its mid-call booking tools, businesses flipping from phone-only to text-enabled, and the owner's replies, all derived from the event log." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Platypus live demo · one call, then every job by text</title>
+    <meta name="description" content="Watch the whole Platypus demo on the shop owner's phone: an AI call that discloses itself, books the job mid-call and asks to text next time, then the next job arriving as one iMessage the owner answers with Y." />
     <link rel="canonical" href="https://tryplatypus.pages.dev/live" />
-    <meta property="og:title" content="Platypus live" />
-    <meta property="og:description" content="Watch one AI call make a phone-only shop bookable by text: every tool call, consent and confirmation, straight from the event log." />
+    <meta property="og:title" content="Platypus live demo" />
+    <meta property="og:description" content="One honest AI call makes a phone-only shop bookable by text. Watch the call, the consent and the Y on the owner's phone." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://tryplatypus.pages.dev/live" />
     <meta property="og:image" content="https://tryplatypus.pages.dev/og.png" />
@@ -16,88 +16,177 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   </head>
   <body class="live" data-hydrating="true">
-    <div class="shell">
-      <div class="window app">
-        <header class="bar">
-          <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
-          <a class="brand" href="/" aria-label="Platypus home">
-            <span class="brand-mark" aria-hidden="true"></span>
-            <span class="brand-word">platypus</span>
-          </a>
-          <span class="bar-page" aria-hidden="true">/ live</span>
-          <div class="bar-right">
-            <span id="replayed" class="tag" hidden title="These events are the golden-path fixture, re-emitted. Nothing here is a new call.">fixture replay</span>
-            <span id="conn" class="conn" data-state="connecting" role="status">Connecting</span>
-            <button id="kill" class="btn-sm btn-kill" type="button" hidden disabled title="Ends the live call through POST /demo/kill-call">Kill call</button>
-            <button id="replay" class="btn-sm" type="button">Replay</button>
-          </div>
-        </header>
-
-        <div class="beat" aria-label="Golden path progress">
-          <ol id="beats" class="beats"></ol>
-          <p id="beat-label" class="beat-label"></p>
-          <p id="beat-caption" class="beat-caption" aria-live="polite"></p>
-        </div>
-
-        <main class="grid">
-          <div class="col col-a">
-            <section class="cell cell-darwin" aria-labelledby="darwin-title">
-              <header class="cell-head"><h2 id="darwin-title" class="cell-title">Darwin · Search v3</h2><span id="darwin-meta" class="cell-meta"></span></header>
-              <div id="darwin" class="cell-body"></div>
-            </section>
-            <section class="cell cell-phone" aria-labelledby="phone-title">
-              <header class="cell-head"><h2 id="phone-title" class="cell-title">Owner's phone</h2><span id="phone-meta" class="cell-meta"></span></header>
-              <div class="cell-body phone-wrap">
-                <div class="phone">
-                  <div class="phone-screen">
-                    <div class="phone-head">
-                      <span id="phone-avatar" class="phone-avatar" aria-hidden="true">P</span>
-                      <span id="phone-name" class="phone-name">No texts yet</span>
-                      <span id="phone-sub" class="phone-sub">Texts start after the owner says yes</span>
-                    </div>
-                    <ol id="bubbles" class="bubbles" aria-live="polite"></ol>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <div class="col col-b">
-            <section class="cell cell-call" aria-labelledby="call-title">
-              <header class="cell-head"><h2 id="call-title" class="cell-title">Call · Dial</h2><span id="call-meta" class="cell-meta"></span></header>
-              <div id="call" class="cell-body call"></div>
-            </section>
-            <section class="cell cell-book" aria-labelledby="book-title">
-              <header class="cell-head"><h2 id="book-title" class="cell-title">Bookings</h2><span id="book-meta" class="cell-meta"></span></header>
-              <div class="cell-body"><ol id="bookings" class="bookings"></ol></div>
-            </section>
-          </div>
-
-          <div class="col col-c">
-            <section class="cell cell-biz" aria-labelledby="biz-title">
-              <header class="cell-head"><h2 id="biz-title" class="cell-title">Businesses</h2><span id="biz-meta" class="cell-meta"></span></header>
-              <div class="cell-body"><ol id="cards" class="cards"></ol></div>
-            </section>
-            <section class="cell cell-supply" aria-labelledby="supply-title">
-              <header class="cell-head"><h2 id="supply-title" class="cell-title">Supply</h2><span class="cell-meta">from the event log</span></header>
-              <div class="cell-body supply-body">
-                <table class="supply">
-                  <thead>
-                    <tr><th scope="col">Business</th><th scope="col">Channel</th><th scope="col" class="num">Median reply</th><th scope="col" class="num">Last price</th><th scope="col" class="num">Opt-in</th></tr>
-                  </thead>
-                  <tbody id="supply"></tbody>
-                </table>
-              </div>
-            </section>
-            <section class="cell cell-stream" aria-labelledby="stream-title">
-              <header class="cell-head"><h2 id="stream-title" class="cell-title">Event stream</h2><span id="stream-meta" class="cell-meta">0 events</span></header>
-              <div class="cell-body stream-body"><ol id="stream" class="stream"></ol></div>
-            </section>
-          </div>
-        </main>
+    <header class="top">
+      <a class="brand" href="/" aria-label="Platypus home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-word">platypus</span>
+      </a>
+      <span class="top-page">Live demo</span>
+      <div class="top-right">
+        <span id="replayed" class="tag" hidden title="These events are the golden-path fixture, re-emitted by the server. Nothing here is a new call.">fixture replay</span>
+        <span id="conn" class="conn" data-state="connecting" role="status">Connecting</span>
+        <button id="kill" class="pill pill-danger" type="button" hidden title="Ends the live call through POST /demo/kill-call">Kill call</button>
+        <button id="replay" class="pill" type="button">Replay</button>
       </div>
-      <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
-    </div>
+    </header>
+
+    <section class="progress" aria-label="Golden path progress">
+      <ol id="beats" class="beats"></ol>
+      <div class="progress-text">
+        <p id="beat-label" class="beat-label"></p>
+        <p id="beat-caption" class="beat-caption" aria-live="polite"></p>
+      </div>
+      <button id="replay-final" class="pill pill-dark" type="button" hidden>Replay</button>
+    </section>
+
+    <main class="stage">
+      <div class="phone-col">
+        <div id="phone-fit" class="phone-fit">
+          <div id="phone" class="iphone" data-screen="lock" role="img" aria-label="The shop owner's phone">
+            <div class="screen">
+              <div class="statusbar" aria-hidden="true">
+                <span class="sb-time">9:41</span>
+                <span class="sb-icons">
+                  <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" /><rect x="5" y="5.5" width="3" height="6.5" rx="1" /><rect x="10" y="3" width="3" height="9" rx="1" /><rect x="15" y="0" width="3" height="12" rx="1" /></svg>
+                  <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2.6c2.2 0 4.2.9 5.7 2.3l1.1-1.1A9.6 9.6 0 0 0 8 1 9.6 9.6 0 0 0 1.2 3.8l1.1 1.1A8 8 0 0 1 8 2.6Zm0 3.2c1.3 0 2.5.5 3.4 1.4l1.1-1.1A6.4 6.4 0 0 0 8 4.2c-1.8 0-3.4.7-4.5 1.9l1.1 1.1A4.8 4.8 0 0 1 8 5.8Zm0 3.2c.5 0 .9.2 1.2.5L8 10.7 6.8 9.5c.3-.3.7-.5 1.2-.5Z" /></svg>
+                  <span class="sb-battery"><i></i></span>
+                </span>
+              </div>
+              <div class="island" aria-hidden="true"></div>
+
+              <section class="scr scr-lock" aria-hidden="true">
+                <p class="lock-date" id="lock-date">Monday, October 12</p>
+                <p class="lock-time">9:41</p>
+                <p class="lock-hint">Sal's Auto · the owner's phone</p>
+                <div class="lock-foot"><i></i><i></i></div>
+              </section>
+
+              <section class="scr scr-incoming" aria-hidden="true">
+                <div class="inc-top">
+                  <p class="inc-label">Incoming call</p>
+                  <p class="inc-name">Platypus</p>
+                  <p class="inc-sub">AI assistant</p>
+                </div>
+                <div class="inc-avatar"><span class="ring"></span><span class="ring ring-2"></span><span class="inc-mark" aria-hidden="true"></span></div>
+                <div class="inc-actions">
+                  <span class="inc-btn"><b class="round round-red"><svg viewBox="0 0 24 24" class="ico-hang"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" /></svg></b>Decline</span>
+                  <span class="inc-btn"><b class="round round-green"><svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" /></svg></b>Accept</span>
+                </div>
+              </section>
+
+              <section class="scr scr-call" aria-hidden="true">
+                <div class="call-top">
+                  <p class="call-name">Platypus</p>
+                  <p class="call-time" id="call-time">0:00</p>
+                </div>
+                <div class="captions-wrap">
+                  <p class="captions-label" id="captions-label">Live captions</p>
+                  <ol id="captions" class="captions" aria-live="polite"></ol>
+                </div>
+                <div class="call-controls">
+                  <span class="ctl"><b class="round round-glass"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" /></svg></b>mute</span>
+                  <span class="ctl"><b class="round round-glass"><svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="1.8" /><circle cx="12" cy="5" r="1.8" /><circle cx="18" cy="5" r="1.8" /><circle cx="6" cy="11" r="1.8" /><circle cx="12" cy="11" r="1.8" /><circle cx="18" cy="11" r="1.8" /><circle cx="6" cy="17" r="1.8" /><circle cx="12" cy="17" r="1.8" /><circle cx="18" cy="17" r="1.8" /><circle cx="12" cy="22" r="1.4" /></svg></b>keypad</span>
+                  <span class="ctl"><b class="round round-glass"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" /></svg></b>speaker</span>
+                </div>
+                <div class="call-end"><b class="round round-red"><svg viewBox="0 0 24 24" class="ico-hang"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" /></svg></b></div>
+              </section>
+
+              <section class="scr scr-messages" aria-hidden="true">
+                <header class="im-head">
+                  <span class="im-back" aria-hidden="true"><svg viewBox="0 0 12 20" width="12" height="20"><path d="M10 2 2 10l8 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+                  <span class="im-contact">
+                    <span class="im-avatar" aria-hidden="true">P</span>
+                    <span class="im-name">Platypus <i aria-hidden="true">›</i></span>
+                  </span>
+                </header>
+                <div class="im-thread" id="thread">
+                  <p class="im-stamp"><b id="im-service">iMessage</b><span id="im-when">Today</span></p>
+                  <ol id="bubbles" class="bubbles" aria-live="polite"></ol>
+                </div>
+                <div class="im-replies" id="owner-replies" hidden>
+                  <span class="im-replies-label">Reply as the owner</span>
+                  <button type="button" class="im-reply" data-reply="Y">Y</button>
+                  <button type="button" class="im-reply im-reply-n" data-reply="N">N</button>
+                </div>
+                <footer class="im-compose">
+                  <span class="im-plus" aria-hidden="true">+</span>
+                  <span class="im-field" id="compose"><span class="im-placeholder" id="compose-text">iMessage</span><b class="im-send" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg></b></span>
+                </footer>
+              </section>
+
+              <div class="home-bar" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="story">
+        <article class="card" id="card-ask" data-state="todo" aria-labelledby="ask-title">
+          <header class="card-head"><span class="card-num">1</span><h2 id="ask-title">The agent asks</h2><span id="ask-who" class="card-meta"></span></header>
+          <p id="ask-quote" class="card-quote"></p>
+          <p id="ask-facts" class="card-facts"></p>
+          <p class="card-line"><span id="ask-darwin" class="darwin-line"></span><span id="ask-route" class="chip" hidden></span></p>
+        </article>
+
+        <article class="card" id="card-call" data-state="todo" aria-labelledby="call-title">
+          <header class="card-head"><span class="card-num">2</span><h2 id="call-title">One honest call</h2><span id="call-who" class="card-meta"></span></header>
+          <p id="call-lede" class="card-lede"></p>
+          <ol id="checks" class="checks" aria-label="The five booking tools the voice agent called mid-call"></ol>
+          <div id="call-booking" class="booked" hidden></div>
+          <div id="consent" class="consent" hidden>
+            <p id="consent-quote" class="consent-quote"></p>
+            <p class="flip"><span class="flip-from">Phone-only</span><span class="flip-arrow" aria-hidden="true">→</span><span class="flip-to" id="flip-to">Text-enabled</span></p>
+          </div>
+        </article>
+
+        <article class="card" id="card-text" data-state="todo" aria-labelledby="text-title">
+          <header class="card-head"><span class="card-num">3</span><h2 id="text-title">Every request after is a text</h2></header>
+          <p id="text-lede" class="card-lede"></p>
+          <div id="text-booking" class="booked" hidden></div>
+          <p id="text-stat" class="stat" hidden></p>
+        </article>
+      </div>
+    </main>
+
+    <details class="more" id="more">
+      <summary><span>Show the full event log and supply table</span><span class="more-meta" id="more-meta"></span></summary>
+      <div class="more-grid">
+        <section class="panel" aria-labelledby="darwin-title">
+          <h3 id="darwin-title" class="panel-title">Darwin · Search v3</h3>
+          <div id="darwin" class="panel-body"></div>
+        </section>
+        <section class="panel" aria-labelledby="transcript-title">
+          <h3 id="transcript-title" class="panel-title">Call transcript</h3>
+          <ol id="transcript" class="transcript"></ol>
+        </section>
+        <section class="panel panel-wide" aria-labelledby="biz-title">
+          <h3 id="biz-title" class="panel-title">Businesses <span id="biz-meta" class="panel-meta"></span></h3>
+          <ol id="cards" class="biz"></ol>
+        </section>
+        <section class="panel panel-wide" aria-labelledby="supply-title">
+          <h3 id="supply-title" class="panel-title">Supply <span class="panel-meta">computed from the event log</span></h3>
+          <div class="supply-wrap">
+            <table class="supply">
+              <thead>
+                <tr><th scope="col">Business</th><th scope="col">Channel</th><th scope="col" class="num">Median reply</th><th scope="col" class="num">Last price</th><th scope="col" class="num">Opt-in</th></tr>
+              </thead>
+              <tbody id="supply"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="panel panel-wide" aria-labelledby="stream-title">
+          <h3 id="stream-title" class="panel-title">Event stream <span id="stream-meta" class="panel-meta">0 events</span></h3>
+          <ol id="stream" class="stream"></ol>
+        </section>
+      </div>
+    </details>
+
+    <footer class="foot">
+      <span>Every fact on this page is read from the event log.</span>
+      <a href="https://github.com/KarthikSubramanian07/Platypus" rel="noopener">Source ↗</a>
+    </footer>
+
+    <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
     <script type="module" src="/src/live.ts"></script>
   </body>
 </html>

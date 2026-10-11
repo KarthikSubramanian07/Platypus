@@ -27,7 +27,7 @@ export interface ToolCallLog {
 export interface ContextMcpServerOptions {
   tools: VoiceTools;
   onToolCall?: (log: ToolCallLog) => void;
-  /** Zone for times read aloud in result sentences. Defaults to America/Los_Angeles. */
+  /** Unused: success replies are just "OK." and speak no times. Still accepted so existing callers compile. */
   timeZone?: string;
 }
 
@@ -51,15 +51,9 @@ function advertiseOnly(schema: z.ZodType): StandardSchemaWithJSON {
   };
 }
 
-function textResult(sentence: string, structured: Record<string, unknown>): CallToolResult {
-  // One speakable sentence, then compact JSON the model can quote ids from.
-  return { content: [{ type: "text", text: `${sentence}\n${JSON.stringify(structured)}` }], structuredContent: structured };
-}
-
 /** One McpServer per HTTP request, closed over that request's Dial headers (stateless). */
 export function buildContextMcpServer(opts: ContextMcpServerOptions, dial: VoiceToolContext | null): McpServer {
   const server = new McpServer({ name: "platypus-context", version: "1.0.0" });
-  const timeZone = opts.timeZone ?? "America/Los_Angeles";
   for (const name of VOICE_TOOL_NAMES) {
     const spec = VOICE_TOOLS[name];
     const impl = opts.tools[name] as (input: unknown, ctx: VoiceToolContext) => Promise<Record<string, unknown>>;
@@ -92,7 +86,7 @@ export function buildContextMcpServer(opts: ContextMcpServerOptions, dial: Voice
         try {
           const out = await impl(input, who ?? NO_CALLER);
           log(true);
-          return textResult(describeResult(name, input, out, { timeZone }), out);
+          return { content: [{ type: "text", text: describeResult(name, out) }], structuredContent: out };
         } catch (error) {
           log(false, failureCode(error));
           return { isError: true, content: [{ type: "text", text: spokenError(error) }] };

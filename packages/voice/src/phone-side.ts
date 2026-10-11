@@ -1,4 +1,5 @@
 import type { Hono } from "hono";
+import { cors } from "hono/cors";
 import { loadConfig } from "@platypus/shared/config";
 import type { OwnerChannels, SideDeps } from "@platypus/shared/contracts";
 import { listBusinesses, seed } from "@platypus/shared/db";
@@ -91,6 +92,8 @@ export function createPhoneSide(deps: SideDeps, options: PhoneSideOptions = {}):
     // The events stream is the second consumer, so a dropped tunnel does not lose a reply (same dedupe as the webhook).
     if (realDial && env.DIAL_EVENTS_CONSUMER !== "off") text.startEventsConsumer().start();
 
+    // /live may be served from another origin (?events=...), so the controls answer cross-origin.
+    app.use("/demo/*", cors());
     // Demo controls for the stage and the video (docs/workstreams.md, phone side item 6).
     app.post("/demo/kill-call", async (c) => c.json(await calls.stopCall(undefined, "kill_switch")));
     app.post("/demo/replay-last-call", async (c) => c.json(await calls.replayLastCall({ timeScale: Number(c.req.query("timeScale") ?? 0) })));

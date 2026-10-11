@@ -139,12 +139,53 @@ export async function requestReplay(base: string): Promise<boolean> {
   }
 }
 
-/** The demo kill switch: ends the live call. Never retried automatically. */
-export async function requestKillCall(base: string): Promise<{ ok: boolean; status: number }> {
+export interface DemoResult {
+  ok: boolean;
+  status: number;
+  /**
+   * True when the request went to another origin. The /demo routes send no CORS
+   * headers, so the browser delivers the request but cannot read the answer; the
+   * event stream is what shows whether it worked.
+   */
+  unconfirmed?: boolean;
+}
+
+export function isCrossOrigin(base: string, origin: string): boolean {
+  if (!base) return false;
   try {
-    const response = await fetch(`${base}/demo/kill-call`, { method: "POST" });
+    return new URL(base, origin).origin !== origin;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * POSTs to a /demo control. Same-origin (the Vite dev proxy, the stage setup) reads the
+ * answer. Cross-origin (?events=<url>) sends a CORS-simple request, text/plain with a
+ * JSON body, in no-cors mode, so it reaches the server without a preflight the server
+ * would not answer. Never retried automatically.
+ */
+export async function postDemo(base: string, path: string, body?: unknown, origin = globalThis.location?.origin ?? ""): Promise<DemoResult> {
+  const cross = isCrossOrigin(base, origin);
+  try {
+    const response = await fetch(`${base}${path}`, {
+      method: "POST",
+      ...(body === undefined ? {} : { body: JSON.stringify(body), headers: { "content-type": cross ? "text/plain" : "application/json" } }),
+      ...(cross ? { mode: "no-cors" as const } : {}),
+    });
+    if (cross) return { ok: true, status: 0, unconfirmed: true };
     return { ok: response.ok, status: response.status };
   } catch {
     return { ok: false, status: 0 };
   }
+}
+
+/** The demo kill switch: ends the live call. */
+export function requestKillCall(base: string): Promise<DemoResult> {
+  return postDemo(base, "/demo/kill-call");
+}
+
+/** Replies as the shop owner, Y or N, through the server's owner line. */
+export function requestOwnerReply(base: string, body: "Y" | "N"): Promise<DemoResult> {
+  return postDemo(base, "/demo/owner-reply", { body });
 }
