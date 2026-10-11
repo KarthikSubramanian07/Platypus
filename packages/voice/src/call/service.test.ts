@@ -92,13 +92,13 @@ function stubCalls(over: Partial<DialCalls>): DialCalls {
 }
 
 describe("startOnboardingCall on the golden call", () => {
-  it("places one call with the disclosure-first script, en-US, a 120s cap and a stable Idempotency-Key", async () => {
+  it("places one call with the disclosure-first script, en-US, a female voice, a 120s cap and a stable Idempotency-Key", async () => {
     const s = setup();
     const place = vi.spyOn(s.calls, "placeCall");
     const callId = await runCall(s);
     expect(place).toHaveBeenCalledTimes(1);
     const [input, opts] = place.mock.calls[0]!;
-    expect(input).toMatchObject({ to: s.phone, fromNumberId: "num_fake", language: "en-US", maxCallDurationSeconds: 120 });
+    expect(input).toMatchObject({ to: s.phone, fromNumberId: "num_fake", language: "en-US", voiceGender: "female", maxCallDurationSeconds: 120 });
     expect(input.outboundInstruction).toContain(`"${DISCLOSURE} Is this Sal's Auto?"`);
     expect(input.outboundInstruction).toContain(`business_id "${s.businessId}"`);
     expect(opts.idempotencyKey).toBe(`onboard-${s.bookingId}`);
