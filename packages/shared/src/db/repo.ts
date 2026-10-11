@@ -1,7 +1,9 @@
-import type { Db } from "./index";
+import type Database from "better-sqlite3";
 import type { Business, Call, Consent, Hold, Message, TableName, TableRows } from "./types";
 
 export * from "./types";
+
+export type Db = Database.Database;
 
 /**
  * A deliberately thin data layer: plain SQL, one codec per table for JSON and
