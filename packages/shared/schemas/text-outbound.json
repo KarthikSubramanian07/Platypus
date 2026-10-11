@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "to": {
+      "type": "string",
+      "pattern": "^\\+[1-9]\\d{6,14}$"
+    },
+    "body": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300,
+      "description": "Plain, specific, answerable with one word; under 300 characters"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "imessage",
+        "whatsapp",
+        "dial"
+      ]
+    }
+  },
+  "required": [
+    "to",
+    "body",
+    "channel"
+  ],
+  "additionalProperties": false
+}

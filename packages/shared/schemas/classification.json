@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "class": {
+      "type": "string",
+      "enum": [
+        "accept",
+        "decline",
+        "counter",
+        "question",
+        "rule_edit",
+        "availability_update",
+        "stop",
+        "help",
+        "pause",
+        "unrelated"
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "extracted": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "description": "A time the owner proposed, as said (\"2pm\", \"tomorrow 3\") or ISO-8601",
+          "type": "string"
+        },
+        "price_cents": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Amount in US cents"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "class",
+    "confidence"
+  ],
+  "additionalProperties": false
+}
