@@ -59,3 +59,59 @@ export function stepFor(event: StreamEvent): StepKey | undefined {
   if (event.type === "booking.confirmed" && (event.payload.evidence as { kind?: string } | undefined)?.kind === "text") return "confirmed";
   return undefined;
 }
+
+/** Shops are in San Francisco, so slots are shown in the shop's time, not the viewer's. */
+export const SHOP_TIME_ZONE = "America/Los_Angeles";
+
+/** "$89", "$89.50"; undefined for a missing price. */
+export function formatMoney(cents: number | null | undefined): string | undefined {
+  if (cents === null || cents === undefined || !Number.isFinite(cents)) return undefined;
+  const dollars = cents / 100;
+  return `$${Number.isInteger(dollars) ? dollars.toLocaleString("en-US") : dollars.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+/** A booking slot in shop time: "Mon 2:00 PM". */
+export function formatSlot(iso: string | null | undefined, timeZone = SHOP_TIME_ZONE): string | undefined {
+  if (!iso) return undefined;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return undefined;
+  return d.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", timeZone });
+}
+
+/** A clock for durations: 7 -> "0:07", 125 -> "2:05". */
+export function formatClock(totalSeconds: number): string {
+  const s = Number.isFinite(totalSeconds) ? Math.max(0, Math.floor(totalSeconds)) : 0;
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+/** Transcript timing from the start of the call: 15100 -> "0:15". */
+export function formatCallOffset(ms: number | undefined): string {
+  return ms === undefined || !Number.isFinite(ms) ? "" : formatClock(ms / 1000);
+}
+
+/** Latency as people read it: 830 -> "830 ms", 8700 -> "8.70 s". */
+export function formatLatency(ms: number | undefined): string | undefined {
+  if (ms === undefined || !Number.isFinite(ms)) return undefined;
+  return ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(ms < 10_000 ? 2 : 1)} s`;
+}
+
+const RAILS: Record<string, string> = { imessage: "iMessage", whatsapp: "WhatsApp", dial: "Dial", sms: "SMS" };
+
+/** The owner's text rail as its product name. */
+export function formatRail(rail: string | undefined): string | undefined {
+  if (!rail) return undefined;
+  return RAILS[rail.toLowerCase()] ?? rail;
+}
+
+/** "auto_repair" -> "Auto repair". */
+export function formatTrade(trade: string | undefined): string {
+  if (!trade) return "";
+  const words = trade.replace(/[_-]+/g, " ").trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/** Two-letter initials for an avatar: "Sal's Auto" -> "SA". */
+export function initials(name: string): string {
+  const parts = name.replace(/[^\p{L}\p{N}\s]/gu, "").split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
+}

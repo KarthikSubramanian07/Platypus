@@ -1,5 +1,40 @@
 import { describe, expect, it } from "vitest";
-import { formatConfidence, GOLDEN_STEPS, stepFor, summarize, type StreamEvent } from "./format";
+import { formatCallOffset, formatClock, formatConfidence, formatLatency, formatMoney, formatRail, formatSlot, formatTrade, GOLDEN_STEPS, initials, stepFor, summarize, type StreamEvent } from "./format";
+
+describe("live dashboard formatters", () => {
+  it("formats money from cents, and nothing for a missing price", () => {
+    expect(formatMoney(8900)).toBe("$89");
+    expect(formatMoney(8950)).toBe("$89.50");
+    expect(formatMoney(120000)).toBe("$1,200");
+    expect(formatMoney(null)).toBeUndefined();
+  });
+
+  it("shows slots in the shop's time zone", () => {
+    expect(formatSlot("2026-10-12T21:00:00.000Z")).toBe("Mon 2:00 PM");
+    expect(formatSlot("2026-10-13T17:00:00.000Z")).toBe("Tue 10:00 AM");
+    expect(formatSlot("garbage")).toBeUndefined();
+  });
+
+  it("formats clocks, call offsets and latency", () => {
+    expect(formatClock(7)).toBe("0:07");
+    expect(formatClock(125)).toBe("2:05");
+    expect(formatClock(-3)).toBe("0:00");
+    expect(formatCallOffset(15100)).toBe("0:15");
+    expect(formatCallOffset(undefined)).toBe("");
+    expect(formatLatency(830)).toBe("830 ms");
+    expect(formatLatency(1050)).toBe("1.05 s");
+    expect(formatLatency(21000)).toBe("21.0 s");
+  });
+
+  it("names rails, trades and initials", () => {
+    expect(formatRail("imessage")).toBe("iMessage");
+    expect(formatRail("whatsapp")).toBe("WhatsApp");
+    expect(formatRail("dial")).toBe("Dial");
+    expect(formatTrade("dog_groomer")).toBe("Dog groomer");
+    expect(initials("Sal's Auto")).toBe("SA");
+    expect(initials("")).toBe("?");
+  });
+});
 
 const base: StreamEvent = { id: "evt_1", type: "x", actor: "system", refs: {}, payload: {}, reason: null, confidence: 1, created_at: "2026-10-12T02:00:00.000Z" };
 

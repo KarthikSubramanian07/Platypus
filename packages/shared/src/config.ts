@@ -13,6 +13,8 @@ export const ENV_VARS = [
   { name: "DARWIN_API_BASE_URL", required: "optional", secret: false, purpose: "Darwin API origin (default https://api.darwin.so/api)" },
   { name: "DARWIN_IMPL", required: "optional", secret: false, purpose: "fake | real; overrides DEMO_MODE for Darwin only" },
   { name: "ANTHROPIC_API_KEY", required: "live", secret: true, purpose: "Claude for reply understanding and transcript mining" },
+  { name: "CONTEXT_MCP_SECRET", required: "live", secret: true, purpose: "Unguessable path segment of the Context MCP URL" },
+  { name: "CONTEXT_MCP_TOKEN", required: "live", secret: true, purpose: "Bearer token Dial sends to the Context MCP" },
   { name: "PUBLIC_BASE_URL", required: "live", secret: false, purpose: "Public HTTPS origin for webhooks and the Context MCP" },
   { name: "GATEWAY_TOKEN", required: "optional", secret: true, purpose: "Bearer token for /mcp; required when PUBLIC_BASE_URL is set" },
   { name: "ALLOWED_NUMBERS", required: "always", secret: true, purpose: "Only numbers Platypus may call or message (E.164, comma-separated)" },

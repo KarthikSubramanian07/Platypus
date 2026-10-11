@@ -2,18 +2,17 @@ import "@fontsource/source-serif-4/400.css";
 import "@fontsource-variable/dm-sans";
 import "@fontsource-variable/jetbrains-mono";
 import "./styles.css";
+import { el } from "./dom";
+import { connectLive, CONNECTION_LABELS, requestReplay, resolveSource } from "./events";
 import { GOLDEN_PATH, playRecording } from "./fixture";
 import { formatConfidence, formatTime, GOLDEN_STEPS, stepFor, summarize, type StepKey, type StreamEvent } from "./format";
 
-/**
- * Where the event stream lives. In dev it is same-origin (Vite proxies to the server).
- * A static deploy has no server, so it plays the recorded golden path instead,
- * unless VITE_EVENTS_URL or ?events=<url> points it at a live one.
- */
-const fromQuery = new URLSearchParams(location.search).get("events");
-const configured = fromQuery ?? (import.meta.env.VITE_EVENTS_URL as string | undefined);
-const RECORDING = import.meta.env.PROD && !configured;
-const BASE = (configured ?? "").replace(/\/$/, "");
+const source = resolveSource(location.search, { PROD: import.meta.env.PROD, VITE_EVENTS_URL: import.meta.env.VITE_EVENTS_URL as string | undefined });
+const RECORDING = source.mode === "recording";
+const BASE = source.base;
+
+// The live dashboard keeps ?events= so it follows the same server as this page.
+for (const link of document.querySelectorAll<HTMLAnchorElement>("a[data-live-link]")) link.href = `/live${location.search}`;
 
 const list = document.querySelector<HTMLOListElement>("#events")!;
 const empty = document.querySelector<HTMLParagraphElement>("#empty")!;
@@ -24,13 +23,6 @@ const stepsEl = document.querySelector<HTMLOListElement>("#steps")!;
 const caption = document.querySelector<HTMLParagraphElement>("#caption")!;
 const seen = new Set<string>();
 const reached = new Set<StepKey>();
-
-function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text?: string): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text !== undefined) node.textContent = text; // textContent only: event text is untrusted
-  return node;
-}
 
 const stepNodes = new Map<StepKey, HTMLLIElement>();
 for (const [i, step] of GOLDEN_STEPS.entries()) {
@@ -90,17 +82,13 @@ function render(event: StreamEvent): void {
 }
 
 function connect(): void {
-  // EventSource reconnects on its own and sends Last-Event-ID, so the server replays only what was missed.
-  const source = new EventSource(`${BASE}/events/stream`);
-  source.addEventListener("open", () => {
-    conn.dataset.state = "live";
-    conn.textContent = "Live";
+  connectLive(BASE, {
+    onEvent: render,
+    onState: (state) => {
+      conn.dataset.state = state;
+      conn.textContent = CONNECTION_LABELS[state];
+    },
   });
-  source.addEventListener("error", () => {
-    conn.dataset.state = "reconnecting";
-    conn.textContent = "Reconnecting";
-  });
-  source.addEventListener("platypus", (message) => render(JSON.parse((message as MessageEvent<string>).data) as StreamEvent));
 }
 
 let playing: AbortController | undefined;
@@ -118,7 +106,7 @@ replay.addEventListener("click", async () => {
     if (RECORDING) void playLocal();
     else {
       resetView();
-      await fetch(`${BASE}/demo/replay`, { method: "POST" });
+      await requestReplay(BASE);
     }
   } finally {
     setTimeout(() => (replay.disabled = false), 1500);
@@ -127,7 +115,7 @@ replay.addEventListener("click", async () => {
 
 if (RECORDING) {
   conn.dataset.state = "recording";
-  conn.textContent = "Recorded run";
+  conn.textContent = CONNECTION_LABELS.recording;
   conn.title = "No server behind this page: it replays the golden path recorded against the test fakes.";
   // Start when the log scrolls into view, so a visitor sees it from the first event.
   const observer = new IntersectionObserver((entries) => {
