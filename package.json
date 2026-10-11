@@ -28,6 +28,7 @@
     "dial:register-mcp": "tsx packages/voice/scripts/register-mcp.ts",
     "dial:mcp-status": "tsx packages/voice/scripts/mcp-status.ts",
     "live": "tsx scripts/live.ts",
+    "ci:hygiene": "tsx scripts/ci/repo-hygiene.ts",
     "ci:coverage-summary": "tsx scripts/ci/coverage-summary.ts"
   },
   "devDependencies": {

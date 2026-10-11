@@ -2,7 +2,8 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    projects: ["packages/*"],
+    // Each package is a project; "ci" covers the scripts under scripts/ci that the pipeline runs.
+    projects: ["packages/*", { test: { name: "ci", include: ["scripts/ci/**/*.test.ts"] } }],
     coverage: {
       // Off unless `--coverage` is passed (`pnpm test:coverage`), so `pnpm test` stays fast.
       provider: "v8",
