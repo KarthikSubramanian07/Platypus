@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { GOLDEN_PATH } from "./fixture";
 import type { StreamEvent } from "./format";
-import { DWELL_MS, liveScene, MAX_CAPTION_WORDS, pace, PAYOFF, quoteCaption, SCENES, screenAt, threadAt, wordCount } from "./scenes";
-import { initialState, reduceAll } from "./state";
+import { darwinCaption, DWELL_MS, liveScene, MAX_CAPTION_WORDS, pace, PAYOFF, quoteCaption, SCENES, screenAt, threadAt, wordCount } from "./scenes";
+import { initialState, reduceAll, type DarwinView } from "./state";
 
 const upTo = (predicate: (e: StreamEvent) => boolean) => reduceAll(GOLDEN_PATH.slice(0, GOLDEN_PATH.findIndex(predicate) + 1));
 
@@ -60,6 +60,16 @@ describe("screenAt", () => {
 describe("captions", () => {
   it("keeps every scripted caption to six words", () => {
     for (const scene of SCENES) expect(wordCount(scene.caption)).toBeLessThanOrEqual(MAX_CAPTION_WORDS);
+  });
+
+  it("says only what Darwin's answer supports", () => {
+    const answer = (status: DarwinView["status"], agents: DarwinView["agents"] = []) => ({ status, cached: false, agents }) as DarwinView;
+    expect(darwinCaption(undefined)).toBe("Darwin first.");
+    expect(darwinCaption(answer("error"))).toBe("Darwin didn't answer. We call.");
+    expect(darwinCaption(answer("no_match"))).toBe("Darwin: no agent can book it.");
+    expect(darwinCaption(answer("completed"))).toBe("Darwin: no agent ready.");
+    expect(darwinCaption(answer("completed", [{ id: "a1", canStartThread: true } as DarwinView["agents"][number]]))).toBe("Darwin first. An agent is ready.");
+    for (const status of ["error", "disabled", "no_match", "needs_input", "completed"] as const) expect(wordCount(darwinCaption(answer(status)))).toBeLessThanOrEqual(MAX_CAPTION_WORDS);
   });
 
   it("quotes the shop's yes only when it fits a caption", () => {
