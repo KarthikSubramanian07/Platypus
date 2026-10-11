@@ -191,6 +191,11 @@ export function confirm(ctx: BookingContext, bookingId: string, evidence: Confir
     expireHoldsInTx(ctx, record, now);
     const actor = verifyEvidence(ctx, booking, evidence);
     const iso = now.toISOString();
+    // A yes that arrived before it was matched to a booking is bound to this one, so it cannot confirm a second.
+    if (evidence.kind === "text") {
+      const message = getRow(ctx.db, "messages", evidence.messageId);
+      if (message && !message.booking_id) updateRow(ctx.db, "messages", message.id, { booking_id: booking.id });
+    }
     for (const hold of selectRows(ctx.db, "holds", "booking_id = ? AND status = 'active'", [booking.id])) {
       updateRow(ctx.db, "holds", hold.id, { status: "converted", updated_at: iso });
       record({ type: "hold.converted", actor, refs: { hold_id: hold.id, booking_id: booking.id, business_id: booking.business_id }, reason: "booking confirmed" });
@@ -226,6 +231,8 @@ function verifyEvidence(ctx: BookingContext, booking: Booking, evidence: Confirm
       if (message.direction !== "inbound") return fail("the message was not from the owner");
       if (message.business_id !== booking.business_id) return fail("the message came from a different business");
       if (message.reply_class !== "accept") return fail("the reply was not classified as a yes");
+      // One yes confirms one booking: the reply the owner sent about another job is not a yes to this one.
+      if (message.booking_id && message.booking_id !== booking.id) return fail("the owner's reply was about a different booking");
       return "owner";
     }
     case "rule": {
