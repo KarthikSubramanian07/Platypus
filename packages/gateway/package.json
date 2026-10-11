@@ -12,6 +12,8 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@platypus/shared": "workspace:*"
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "@platypus/shared": "workspace:*",
+    "hono": "^4.13.13"
   }
 }

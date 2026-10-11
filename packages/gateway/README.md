@@ -10,4 +10,12 @@ The front door for customer agents (Claude, Muse, Dots, Instinct, anything that 
 
 Also owns `docs/video.md` and `docs/submission.md`. Flags: `DIAL_IMPL=fake|real`, `DARWIN_ENABLED`, `DARWIN_ACT_ENABLED`.
 
-Status: shell. Built on the agent side; see [docs/workstreams.md](../../docs/workstreams.md).
+## Connect Claude Desktop
+
+`pnpm dev` must be running first: it serves the gateway at `http://localhost:8787/mcp`. Then add this to `~/Library/Application Support/Claude/claude_desktop_config.json` and restart Claude Desktop:
+
+```json
+{ "mcpServers": { "platypus": { "command": "npx", "args": ["-y", "mcp-remote", "http://localhost:8787/mcp"] } } }
+```
+
+Other agents can name themselves with `--header "x-platypus-agent: <name>"`; the default is `claude-desktop`.
