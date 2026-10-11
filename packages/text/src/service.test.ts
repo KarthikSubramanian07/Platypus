@@ -7,7 +7,7 @@ import type { ReplyModel } from "./model";
 import { RoutingUnavailableError } from "./outbound";
 import { LookupUnavailableError, SendOutcomeUnknownError } from "./dial-messaging";
 import { harness, OUR_NUMBER } from "./test-helpers";
-import { verifyDialSignature } from "./webhook";
+import { MAX_WEBHOOK_BYTES, verifyDialSignature } from "./webhook";
 
 const GOLDEN_COPY = "New job via Platypus (AI-assisted): brake inspection, Tue 10am, 2019 Civic. From Alex's assistant. Reply Y, N, or a time.";
 
@@ -102,6 +102,23 @@ describe("the text golden path", () => {
 
     const open = harness({ overrides: { webhookSecret: undefined } });
     expect((await open.post(open.inbound("Y"))).status).toBe(503);
+  });
+
+  it("dedupes a replayed signed event even when the unsigned event-id header changes", async () => {
+    const seen: string[] = [];
+    const h = harness({ overrides: { onDialEvent: (e) => void seen.push(e.id) } });
+    const ended = { id: "evt_end_1", object: "event", type: "call.ended", version: 1, createdAt: h.clock.now().toISOString(), relatedObject: null, data: { callId: "call_1" } };
+    expect((await h.post(ended)).status).toBe(200);
+    expect((await h.post(ended, { eventId: "evt_forged_fresh_id" })).status).toBe(200);
+    await h.service.drain();
+    expect(seen).toEqual(["evt_end_1"]);
+  });
+
+  it("refuses an oversized body before reading it", async () => {
+    const h = harness();
+    const huge = "x".repeat(MAX_WEBHOOK_BYTES + 1);
+    const res = await h.app.request("/webhooks/dial", { method: "POST", body: huge, headers: { "content-type": "application/json", "content-length": String(huge.length) } });
+    expect(res.status).toBe(413);
   });
 
   it("matches Dial's published signature test vector (the whole whsec_ string is the key)", () => {
