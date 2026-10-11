@@ -22,7 +22,17 @@ export function assertAllowedNumber(
 /** Maximum length of any agent- or owner-supplied text we store or forward. */
 export const UNTRUSTED_TEXT_MAX = 500;
 
-const URL_PATTERN = /\b(?:https?:\/\/|www\.)\S+/gi;
+const COMMON_TLDS = "com|net|org|io|co|ly|me|app|dev|info|biz|xyz|link|site|online|ai|gg|tv|us|uk|ca";
+
+/**
+ * Anything that reads as a link: a `scheme:` token (https://, ftp://, tel:, sms:, mailto:,
+ * javascript:), www., a bare domain with a path (bit.ly/3xYz) or on a common TLD (example.org).
+ * A scheme must start with a letter and be followed by a non-space, so "2:00pm" and "Notes: x" survive.
+ */
+const URL_PATTERN = new RegExp(
+  String.raw`\b(?:[a-z][a-z\d+.-]*:\S+|www\.\S+|(?:[a-z\d-]+\.)+[a-z]{2,63}\/\S*|(?:[a-z\d-]+\.)+(?:${COMMON_TLDS})\b)`,
+  "gi",
+);
 
 /**
  * Non-negotiable 5: agent- and owner-supplied text is data. Strip links,
