@@ -9,6 +9,7 @@ import {
 } from "@platypus/shared/booking";
 import {
   GATEWAY_TOOLS,
+  WAIT_DEFAULT_SECONDS,
   type BookingView,
   type GatewayContext,
   type GatewayToolName,
@@ -83,6 +84,10 @@ export const STATE_TTL_MS = 60 * 60_000;
 /** A business is never asked about more than this many open requests at once, across all agents. */
 export const MAX_OPEN_PER_BUSINESS = 3;
 const OPEN_STATUSES = ["pending", "countered", "quote_pending"] as const;
+/** wait_for_booking only waits while the owner owes an answer; any other status returns at once. */
+const AWAITING_OWNER: ReadonlySet<string> = new Set(["pending", "quote_pending", "rescheduled"]);
+/** wait_for_booking re-reads the row this often in case a change arrived without a bus event (another process). */
+export const WAIT_RECHECK_MS = 2_000;
 /** What the agent hears when the owner channel or Darwin fails; the raw error stays in the event log. */
 export const DISPATCH_FAILED_REASON = "could not reach the owner yet; still pending";
 const DEFAULT_SLOT_MINUTES = 30;
@@ -302,6 +307,36 @@ export function createGatewayTools(deps: GatewayDeps): GatewayTools {
     };
   }
 
+  /**
+   * Resolves with the booking once `settled` holds, or with its latest row after `timeoutMs`.
+   * The bus wakes it on the booking's own events; a periodic re-read covers writes that never
+   * reach this process's bus. Nothing awaits between the caller's read and the subscribe, so no
+   * change slips through the gap.
+   */
+  function waitForBooking(first: Booking, settled: (b: Booking) => boolean, timeoutMs: number): Promise<Booking> {
+    return new Promise((resolve) => {
+      let latest = first;
+      const finish = () => {
+        unsubscribe();
+        clearInterval(recheck);
+        clearTimeout(deadline);
+        resolve(latest);
+      };
+      const check = () => {
+        latest = getRow(db, "bookings", first.id) ?? latest;
+        if (settled(latest)) finish();
+      };
+      const unsubscribe = bus.subscribe((e) => {
+        if (e.refs.booking_id === first.id && e.type.startsWith("booking.")) check();
+      });
+      const recheck = setInterval(check, WAIT_RECHECK_MS);
+      const deadline = setTimeout(() => {
+        latest = getRow(db, "bookings", first.id) ?? latest;
+        finish();
+      }, timeoutMs);
+    });
+  }
+
   /** Route text: hold the requested start so nobody else takes it while the owner reads the text. */
   function holdRequestedStart(booking: Booking, business: Business, window: Slot): { hold: Hold | null; reasons: string[] } {
     const start = new Date(window.start);
@@ -483,7 +518,7 @@ export function createGatewayTools(deps: GatewayDeps): GatewayTools {
             b.window_end > windowStart,
         );
         if (same) {
-          const reason = `already requested as ${same.short_code} (${same.status}); the owner is not contacted again. Poll get_booking`;
+          const reason = `already requested as ${same.short_code} (${same.status}); the owner is not contacted again. Call wait_for_booking`;
           return { booking_id: same.id, status: "pending" as const, route: same.route ?? decision.route, short_code: same.short_code, reasons: [reason] };
         }
         if (open.length >= MAX_OPEN_PER_BUSINESS) {
@@ -516,6 +551,16 @@ export function createGatewayTools(deps: GatewayDeps): GatewayTools {
 
     get_booking: wrap("get_booking", async (input, ctx) => toView(ownedBooking(input.booking_id, ctx))),
 
+    // ponytail: the wait is not cancelled when the MCP client hangs up; it ends at its own timeout (120 s at most).
+    wait_for_booking: wrap("wait_for_booking", async (input, ctx) => {
+      const first = ownedBooking(input.booking_id, ctx);
+      const since = input.since_status ?? first.status;
+      const settled = (b: Booking) => b.status !== since || !AWAITING_OWNER.has(b.status);
+      const started = Date.now();
+      const booking = settled(first) ? first : await waitForBooking(first, settled, (input.timeout_seconds ?? WAIT_DEFAULT_SECONDS) * 1000);
+      return { ...toView(booking), changed: booking.status !== since, waited_seconds: Math.round((Date.now() - started) / 1000) };
+    }),
+
     confirm_booking: wrap("confirm_booking", async (input, ctx) => {
       const booking = ownedBooking(input.booking_id, ctx);
       const sameSlot = booking.slot_start === new Date(input.slot.start).toISOString() && booking.slot_end === new Date(input.slot.end).toISOString();
@@ -524,7 +569,7 @@ export function createGatewayTools(deps: GatewayDeps): GatewayTools {
       if (booking.status === "countered") {
         throw new GatewayError(
           "owner_confirmation_required",
-          `Booking ${booking.short_code} stays countered: Platypus confirms only on the owner's own yes (on a call, by text, or by a rule they confirmed), never on an agent's word. Poll get_booking.`,
+          `Booking ${booking.short_code} stays countered: Platypus confirms only on the owner's own yes (on a call, by text, or by a rule they confirmed), never on an agent's word. Call wait_for_booking.`,
         );
       }
       throw new GatewayError(

@@ -19,3 +19,5 @@ Also owns `docs/video.md` and `docs/submission.md`. Flags: `DIAL_IMPL=fake|real`
 ```
 
 Other agents can name themselves with `--header "x-platypus-agent: <name>"`; the default is `claude-desktop`.
+
+After `request_booking`, agents call `wait_for_booking`, which holds the call open until the status changes (55 s by default, under Claude Desktop's ~60 s tool-call limit; 120 s at most), so Claude reports "Booked" without being asked again.

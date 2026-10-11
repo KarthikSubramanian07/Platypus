@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BookingError, transition } from "@platypus/shared/booking";
-import type { OwnerChannels } from "@platypus/shared/contracts";
+import { WAIT_DEFAULT_SECONDS, type OwnerChannels } from "@platypus/shared/contracts";
 import { createDarwin, type Darwin } from "@platypus/shared/darwin";
 import { getBusinessBySlug, getRow, openDb, seed, selectRows, updateRow, type Business, type Db } from "@platypus/shared/db";
 import { EventBus, listEvents } from "@platypus/shared/events";
 import { DARWIN_FIXTURES, ScriptedDarwin, searchWith, startableAgent } from "@platypus/shared/testing";
-import { createGatewayTools, DISPATCH_FAILED_REASON, GatewayError, MAX_OPEN_PER_BUSINESS, RATE_LIMIT, STATE_TTL_MS, type GatewayDeps } from "./tools";
+import { createGatewayTools, DISPATCH_FAILED_REASON, GatewayError, MAX_OPEN_PER_BUSINESS, RATE_LIMIT, STATE_TTL_MS, WAIT_RECHECK_MS, type GatewayDeps } from "./tools";
 
 // Sunday 7pm in San Francisco; the window is Monday noon to 5pm Pacific.
 const NOW = "2026-10-12T02:00:00.000Z";
@@ -280,5 +280,69 @@ describe("booking tools", () => {
     await expect(tools.get_provider({ provider_id: sal.id }, { agent_id: "another-agent" })).resolves.toMatchObject({ display_name: "Sal's Auto" });
     now += RATE_LIMIT.windowMs;
     await expect(tools.get_provider({ provider_id: sal.id }, agent)).resolves.toMatchObject({ next_step: "call" });
+  });
+});
+
+describe("wait_for_booking", () => {
+  const slot = { slot_start: "2026-10-12T21:00:00.000Z", slot_end: "2026-10-12T21:45:00.000Z" };
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  async function pendingBooking() {
+    const bus = new EventBus();
+    const { tools } = gateway({ darwin: null, bus });
+    const { booking_id } = await tools.request_booking(request(), agent);
+    return { tools, bus, booking_id };
+  }
+
+  it("returns the moment the owner answers", async () => {
+    const { tools, bus, booking_id } = await pendingBooking();
+    const waiting = tools.wait_for_booking({ booking_id }, agent);
+    await vi.advanceTimersByTimeAsync(1_000);
+    transition({ db, bus, clock }, booking_id, "countered", { actor: "owner", reason: "owner proposed 2pm", patch: slot });
+
+    await expect(waiting).resolves.toMatchObject({ booking_id, status: "countered", changed: true, waited_seconds: 1, slot: { start: slot.slot_start } });
+    expect(bus.listenerCount()).toBe(0);
+  });
+
+  it("notices a change that never reached its bus on the next re-read", async () => {
+    const { tools, booking_id } = await pendingBooking();
+    const waiting = tools.wait_for_booking({ booking_id, timeout_seconds: 30 }, agent);
+    updateRow(db, "bookings", booking_id, { status: "declined" });
+    await vi.advanceTimersByTimeAsync(WAIT_RECHECK_MS);
+    await expect(waiting).resolves.toMatchObject({ status: "declined", changed: true, waited_seconds: WAIT_RECHECK_MS / 1000 });
+  });
+
+  it("times out with changed false, counting once against the rate limit", async () => {
+    const { tools, bus, booking_id } = await pendingBooking();
+    let settled = false;
+    const waiting = tools.wait_for_booking({ booking_id }, agent).finally(() => (settled = true));
+    await vi.advanceTimersByTimeAsync(WAIT_DEFAULT_SECONDS * 1000 - 1);
+    expect(settled).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+
+    await expect(waiting).resolves.toMatchObject({ booking_id, status: "pending", changed: false, waited_seconds: WAIT_DEFAULT_SECONDS });
+    expect(bus.listenerCount()).toBe(0);
+    expect(listEvents(db, { type: "agent.tool_called" }).filter((e) => e.payload.tool === "wait_for_booking")).toHaveLength(1);
+  });
+
+  it("returns at once when the booking already moved past since_status or is final", async () => {
+    const { tools, bus, booking_id } = await pendingBooking();
+    transition({ db, bus, clock }, booking_id, "countered", { actor: "owner", reason: "owner proposed 2pm", patch: slot });
+
+    await expect(tools.wait_for_booking({ booking_id, since_status: "pending" }, agent)).resolves.toMatchObject({ status: "countered", changed: true, waited_seconds: 0 });
+    await expect(tools.wait_for_booking({ booking_id }, agent)).resolves.toMatchObject({ status: "countered", changed: false, waited_seconds: 0 });
+  });
+
+  it("hides another agent's booking and enforces its bounds", async () => {
+    const { tools, booking_id } = await pendingBooking();
+    await expect(tools.wait_for_booking({ booking_id }, { agent_id: "someone-else" })).rejects.toMatchObject({ code: "not_found" });
+    for (const bad of [{ timeout_seconds: 4 }, { timeout_seconds: 121 }, { since_status: "maybe" }]) {
+      await expect(tools.wait_for_booking({ booking_id, ...bad } as never, agent)).rejects.toMatchObject({ name: "ZodError" });
+    }
   });
 });

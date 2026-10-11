@@ -27,6 +27,7 @@ describe("tool registries", () => {
       "get_availability",
       "request_booking",
       "get_booking",
+      "wait_for_booking",
       "confirm_booking",
       "reschedule_booking",
       "cancel_booking",

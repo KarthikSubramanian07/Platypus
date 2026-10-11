@@ -20,12 +20,11 @@ const BOOKING: BookingView = {
   updated_at: "2026-10-11T12:00:00Z",
 };
 
-function stubTools(requests: unknown[], agents: GatewayContext[]): GatewayTools {
+function stubTools(requests: unknown[], agents: GatewayContext[], waits: unknown[] = [], answer = true): GatewayTools {
   const notImplemented = async (): Promise<never> => {
     throw new Error("not implemented in the stub");
   };
   const stub = Object.fromEntries(GATEWAY_TOOL_NAMES.map((name) => [name, notImplemented])) as unknown as GatewayTools;
-  let polls = 0;
   return {
     ...stub,
     search_providers: async () => ({
@@ -48,10 +47,12 @@ function stubTools(requests: unknown[], agents: GatewayContext[]): GatewayTools 
       agents.push(ctx);
       return { booking_id: "bk_1", status: "pending", route: "call", short_code: "SAL-4K2", reasons: ["phone-only business"] };
     },
-    get_booking: async () =>
-      ++polls < 2
-        ? BOOKING
-        : { ...BOOKING, status: "confirmed", slot: { start: SLOT_START, end: SLOT_START }, price_cents: 8900, confirmed_by: "call" },
+    wait_for_booking: async (input) => {
+      waits.push(input);
+      return answer
+        ? { ...BOOKING, status: "confirmed", slot: { start: SLOT_START, end: SLOT_START }, price_cents: 8900, confirmed_by: "call", changed: true, waited_seconds: 40 }
+        : { ...BOOKING, changed: false, waited_seconds: 55 };
+    },
   };
 }
 
@@ -61,14 +62,16 @@ const fetchInto = (tools: GatewayTools) => {
 };
 
 describe("demo CLI", () => {
-  it("drives search, request and polling to a Booked line over MCP", async () => {
+  it("drives search, request and wait_for_booking to a Booked line over MCP", async () => {
     const requests: unknown[] = [];
     const agents: GatewayContext[] = [];
+    const waits: unknown[] = [];
     const lines: string[] = [];
 
-    const code = await run(["oil"], { fetch: fetchInto(stubTools(requests, agents)), token: "s3cret", print: (l) => lines.push(l), pollMs: 0 });
+    const code = await run(["oil"], { fetch: fetchInto(stubTools(requests, agents, waits)), token: "s3cret", print: (l) => lines.push(l) });
 
     expect(code).toBe(0);
+    expect(waits).toEqual([{ booking_id: "bk_1", since_status: "pending" }]);
     expect(lines).toContain("Darwin: no_match, no agent covers this shop");
     expect(lines.filter((l) => l.startsWith("Status:")).map((l) => l.split(" ")[1])).toEqual(["pending", "confirmed"]);
     expect(lines.at(-1)).toBe("Booked: Sal's Auto, Tue 2:00pm, $89, code SAL-4K2");
@@ -95,6 +98,13 @@ describe("demo CLI", () => {
     expect(searches).toEqual([expect.objectContaining({ service: "oil change", location: "1025 Sansome St, San Francisco", budget_cents: 12000 })]);
     expect(requests).toEqual([]);
     expect(await run(["warm"], { fetch: fetchInto(answer("error")), token: "s3cret", print: () => {} })).toBe(1);
+  });
+
+  it("gives up with a Still line once its own timeout passes", async () => {
+    const lines: string[] = [];
+    const code = await run(["oil"], { fetch: fetchInto(stubTools([], [], [], false)), token: "s3cret", print: (l) => lines.push(l), timeoutMs: 0 });
+    expect(code).toBe(1);
+    expect(lines.slice(-2)).toEqual(["Status: pending (0s)", "Still pending after 0s, code SAL-4K2"]);
   });
 
   it("prints one line and exits 1 when a call fails", async () => {
