@@ -1,0 +1,31 @@
+name: Darwin smoke
+
+# Live check that Darwin Search and MCP still answer the way the gateway expects.
+# Anonymous, read-only, six searches at most twelve requests. Never part of PR CI.
+on:
+  schedule:
+    - cron: "17 15 * * *"
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    name: Live Darwin Search and MCP
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm darwin:smoke
+        env:
+          DARWIN_API_KEY: ${{ secrets.DARWIN_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: darwin-smoke-report
+          path: darwin-cache/
+          retention-days: 14
