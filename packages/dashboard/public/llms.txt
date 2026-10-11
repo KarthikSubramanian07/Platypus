@@ -1,0 +1,33 @@
+# Platypus
+
+> Platypus is AI booking for phone-only businesses, exposed to AI agents as an MCP server. One honest AI phone call books the job and earns the owner's consent to text; after that, every agent books that business by text, and the owner answers with one letter.
+
+Platypus routes each booking request the cheapest way: to an existing agent found through Darwin Search, to a text if the owner already opted in, or to one AI voice call placed through Dial that discloses it is an AI in its first sentence. A booking is confirmed only when the owner says yes, on the call or by text. Every response is a typed outcome: pending, confirmed, countered, declined, expired or cancelled.
+
+Platypus is a working prototype built at SpeedHacks (San Francisco, October 11, 2026). It runs locally in a no-key sandbox; there is no hosted API yet. Every page on this site is also available as Markdown: request it with `Accept: text/markdown`, or append `.md` to the path (the home page is `/index.md`).
+
+## When to use Platypus
+
+- [Book a local service at a phone-only business](https://tryplatypus.pages.dev/developers.md): use when a user asks to book, quote or schedule auto repair, plumbing, HVAC, locksmiths, salons, clinics or movers at a business with no online booking. Call `search_providers`, then `request_booking`, then poll `get_booking`.
+- [Rebook a business that already opted in to texts](https://tryplatypus.pages.dev/developers.md): `request_booking` routes to a text automatically; the owner replies Y, N or a time.
+- [Check whether an agent already covers a job](https://tryplatypus.pages.dev/developers.md): `search_providers` searches Darwin's agent index first and reports readiness.
+- [When not to use Platypus](https://tryplatypus.pages.dev/developers.md): businesses that already have online booking or their own agent, restaurant reservations on a booking platform, or anything that needs payment today.
+
+## Docs
+
+- [Developer guide](https://tryplatypus.pages.dev/developers.md): quickstart, MCP endpoint and headers, the nine tools, booking outcomes, API keys.
+- [Home page](https://tryplatypus.pages.dev/index.md): the product, time saved, how it works, guarantees.
+- [Live dashboard](https://tryplatypus.pages.dev/live): the operator view of a booking, from the event stream (HTML only).
+- [Gateway tool JSON Schemas](https://github.com/KarthikSubramanian07/Platypus/blob/main/packages/shared/schemas/gateway-tools.json): input and output contracts for every tool.
+- [README](https://github.com/KarthikSubramanian07/Platypus/blob/main/README.md): architecture, golden path, what is real and what is mocked.
+
+## Company
+
+- [About](https://tryplatypus.pages.dev/about.md): what Platypus is and who built it.
+- [Contact](https://tryplatypus.pages.dev/contact.md): GitHub issues, opt-out, security.
+- [Privacy](https://tryplatypus.pages.dev/privacy.md): what the site and the service store.
+
+## Optional
+
+- [Darwin integration](https://github.com/KarthikSubramanian07/Platypus/blob/main/docs/darwin.md): search ladder, routing, known Darwin behavior.
+- [Decisions log](https://github.com/KarthikSubramanian07/Platypus/blob/main/DECISIONS.md): every design decision and why.

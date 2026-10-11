@@ -15,6 +15,7 @@ export default defineConfig({
         // Entry points that only start a process or a browser page; exercised by the e2e and smoke jobs.
         "packages/dashboard/src/main.ts",
         "packages/dashboard/src/live.ts",
+        "packages/dashboard/src/page.ts",
       ],
       reporter: ["text-summary", "json-summary", "json", "html", "lcov"],
       reportsDirectory: "coverage",

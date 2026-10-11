@@ -10,6 +10,7 @@ on:
     paths:
       - "packages/dashboard/**"
       - "packages/shared/src/testing/fixtures/golden-path.jsonl"
+      - "pnpm-lock.yaml"
       - ".github/workflows/deploy-dashboard.yml"
       - ".github/actions/setup/**"
   workflow_dispatch:
@@ -56,7 +57,9 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy packages/dashboard/dist --project-name tryplatypus --branch main
+          # Run from the package so wrangler bundles packages/dashboard/functions (Markdown negotiation, 404s).
+          workingDirectory: packages/dashboard
+          command: pages deploy dist --project-name tryplatypus --branch main
       - name: Smoke-test the live site
         if: env.HAS_TOKEN == 'true'
         env:
@@ -71,6 +74,11 @@ jobs:
           }
           if [ -n "$DEPLOYMENT_URL" ]; then check "$DEPLOYMENT_URL"; fi
           check "$SITE_URL"
+          # The agent-facing behavior lives in functions/; check it survived the deploy.
+          md="$(curl -fsS -D - -o /dev/null -H 'Accept: text/markdown' "${SITE_URL%/}/")"
+          grep -qi '^content-type: text/markdown' <<<"$md" || { echo "::error title=Smoke::$SITE_URL did not negotiate Markdown"; exit 1; }
+          code="$(curl -s -o /dev/null -w '%{http_code}' "${SITE_URL%/}/smoke-test-path-that-does-not-exist")"
+          [ "$code" = "404" ] || { echo "::error title=Smoke::unknown paths returned $code, not 404"; exit 1; }
           {
             echo "### Deployed"
             echo ""

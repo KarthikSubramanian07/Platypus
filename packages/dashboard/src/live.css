@@ -8,8 +8,8 @@
 :root {
   --rust: #b4532a;
   --rust-wash: rgba(180, 83, 42, 0.1);
-  --bubble-grey: #ecece6;
-  --cell: #fcfcf8;
+  --bubble-grey: #ebe7dd;
+  --cell: #fbfaf6;
 }
 
 body.live {

@@ -1,27 +1,33 @@
 /*
- * Platypus design tokens and shared primitives, used by the landing page and /live.
- * Granola's palette (white, warm off-white, near-black ink, lime and olive),
- * with the structure of a developer tool page: a faint grid, mono eyebrows, window chrome.
+ * Platypus design tokens and shared primitives, used by the landing page, the content pages and /live.
+ * The pitch deck's palette: warm cream, near-black ink and one deep green. The old token names
+ * stay so every page keeps working: --lime is now the mint highlight, --olive the deep green.
  */
 :root {
-  --bg: #ffffff;
-  --panel: #f7f7f2;
-  --panel-2: #fcfcf8;
-  --ink: #0e0f0c;
-  --ink-2: #292929;
-  --ink-3: #4e4d4b;
-  --muted: #72726e;
-  --faint: #acada8;
-  --line: #e3e3e3;
-  --line-warm: rgba(71, 67, 42, 0.18);
-  --lime: #b2c248;
-  --lime-wash: rgba(178, 194, 72, 0.18);
-  --olive: #788c15;
+  --bg: #f4f1ea;
+  --panel: #f9f8f3;
+  --panel-2: #fbfaf6;
+  --ink: #22231f;
+  --ink-2: #2b2c28;
+  --ink-3: #4d4d47;
+  --muted: #6a6962;
+  --faint: #aeaba1;
+  --line: #e1ddd2;
+  --line-warm: rgba(28, 84, 73, 0.2);
+  --lime: #cfe6dc;
+  --lime-wash: rgba(28, 84, 73, 0.08);
+  --olive: #1c5449;
+  --green: #1c5449;
+  --green-deep: #153f37;
+  --mint: #9fd3c1;
+  --teal: #1c5449;
+  --teal-wash: rgba(28, 84, 73, 0.1);
   --serif: "Source Serif 4", "Iowan Old Style", Georgia, serif;
   --sans: "DM Sans Variable", "DM Sans", -apple-system, system-ui, sans-serif;
   --mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
-  --radius: 14px;
-  --shadow: 0 1px 0 rgba(14, 15, 12, 0.04), 0 12px 40px -18px rgba(14, 15, 12, 0.18);
+  --radius: 18px;
+  --shadow: 0 1px 0 rgba(34, 35, 31, 0.04), 0 14px 40px -20px rgba(28, 84, 73, 0.28);
+  --wrap: min(1240px, calc(100% - 48px));
 }
 
 * { box-sizing: border-box; }
@@ -48,11 +54,9 @@ code {
 
 /* ---- Shared primitives --------------------------------------------------------- */
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
-.brand-mark {
-  width: 20px; height: 20px; border-radius: 6px; background: var(--ink-2);
-  display: grid; place-items: center;
-}
-.brand-mark::after { content: ""; width: 9px; height: 9px; border-radius: 3px; background: var(--lime); }
+/* The logo is a switch flipped on: a phone-only business becoming text-enabled. */
+.brand-mark { position: relative; width: 30px; height: 17px; border-radius: 999px; background: var(--green); flex-shrink: 0; }
+.brand-mark::after { content: ""; position: absolute; top: 3px; right: 3px; width: 11px; height: 11px; border-radius: 50%; background: #fff; }
 .brand-word { font-weight: 600; letter-spacing: -0.02em; font-size: 17px; color: var(--ink); }
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
@@ -63,10 +67,10 @@ code {
 }
 .btn:active { transform: translateY(1px); }
 .btn:focus-visible { outline: 2px solid var(--olive); outline-offset: 3px; }
-.btn-primary { background: var(--ink-2); color: #fcfcf8; border: 1px solid var(--ink-2); box-shadow: var(--shadow); }
-.btn-primary:hover { background: var(--ink); }
+.btn-primary { background: var(--green); color: #fbfaf6; border: 1px solid var(--green); box-shadow: var(--shadow); }
+.btn-primary:hover { background: var(--green-deep); }
 .btn-primary:disabled { opacity: 0.6; cursor: default; }
-.btn-ghost { background: var(--bg); color: var(--ink-2); border: 1px solid var(--line); }
+.btn-ghost { background: var(--panel-2); color: var(--ink-2); border: 1px solid var(--line); }
 .btn-ghost:hover { background: var(--panel); }
 .conn { display: inline-flex; align-items: center; gap: 7px; }
 .conn::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }

@@ -37,7 +37,7 @@ if (!existsSync(join(DIST, "index.html"))) {
 }
 mkdirSync(SHOTS, { recursive: true });
 
-const routes: Route[] = [{ path: "/", events: "#events > li", scrollTo: "#log" }];
+const routes: Route[] = [{ path: "/", events: "#events > li", scrollTo: "#demo" }];
 if (existsSync(join(DIST, "live", "index.html")) || existsSync(join(DIST, "live.html"))) routes.push({ path: "/live", events: "#stream > li" });
 
 async function startPreview(): Promise<ChildProcess> {
