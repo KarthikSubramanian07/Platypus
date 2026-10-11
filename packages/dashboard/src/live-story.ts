@@ -207,7 +207,7 @@ function renderDarwin(): void {
   const first = state.bookingOrder[0] ? state.bookings[state.bookingOrder[0]] : undefined;
   const route = $("#route");
   route.hidden = !first?.route;
-  setText(route, first?.route ? (ROUTES[first.route] ?? `Routed by ${first.route}`) : "");
+  setText(route, first?.route ? (Object.hasOwn(ROUTES, first.route) ? ROUTES[first.route]! : `Routed by ${first.route}`) : "");
 }
 
 function renderShop(): void {
@@ -391,7 +391,8 @@ function dispatch(event: StreamEvent): void {
   const before = liveScene(state);
   const waiting = !state.reached.length;
   state = next;
-  firstAsk ??= state.ask;
+  // Only a search is the ask scene 1 tells; a bare request_booking would freeze a thinner one.
+  if (state.ask?.tool === "search_providers") firstAsk ??= state.ask;
   firstDarwin ??= state.darwin;
   // Scene 1 waited empty until now: its dwell starts when the ask lands, not when the page opened.
   if (waiting && state.reached.length && story.shown === 0) story.shownAt = performance.now();
@@ -408,7 +409,7 @@ function dispatch(event: StreamEvent): void {
 function resetTo(next: DashboardState): void {
   body.dataset.hydrating = "true";
   state = next;
-  firstAsk = next.ask;
+  firstAsk = next.ask?.tool === "search_providers" ? next.ask : undefined;
   firstDarwin = next.darwin;
   story.shown = 0;
   story.shownAt = performance.now();
@@ -429,7 +430,7 @@ function resetTo(next: DashboardState): void {
 
 /** About 1.6x real time; the call plays at exactly this speed so its timer reads true. */
 const PLAN = planRecording(GOLDEN_PATH, { speed: 1.6, maxGapMs: 2_400 });
-const run = { tag: 0, epoch: 0, start: 0 };
+const run = { tag: 0, epoch: 0, start: 0, autoplay: undefined as ReturnType<typeof setTimeout> | undefined };
 
 /** The call timer's clock: the recording's own in recorded mode, the wall's when live. */
 function clockNow(): number {
@@ -437,6 +438,7 @@ function clockNow(): number {
 }
 
 function playRecording(): void {
+  clearTimeout(run.autoplay);
   const tag = ++run.tag;
   resetTo(initialState());
   run.epoch = Date.now();
@@ -481,7 +483,7 @@ if (RECORDING) {
   conn.title = "No server behind this page: it plays the golden path recorded against the test fakes.";
   body.dataset.hydrating = "false";
   // Autoplay once the page is actually visible, so nobody misses the first scene.
-  const start = () => setTimeout(playRecording, 700);
+  const start = () => (run.autoplay = setTimeout(playRecording, 700));
   if (document.visibilityState === "visible") start();
   else {
     const onVisible = () => {
@@ -496,7 +498,7 @@ if (RECORDING) {
   const settle = () => {
     if (!catchingUp) return;
     catchingUp = false;
-    goTo(story.shown, true);
+    if (story.following) goTo(story.shown, true);
     requestAnimationFrame(() => requestAnimationFrame(() => (body.dataset.hydrating = "false")));
     advance();
   };
