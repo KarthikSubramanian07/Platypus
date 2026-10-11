@@ -1,15 +1,18 @@
 import { serve, type ServerType } from "@hono/node-server";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
-import { getBooking } from "@platypus/shared/booking";
+import { BookingError, getBooking } from "@platypus/shared/booking";
+import { VoiceAuthorizationError } from "@platypus/shared/contracts";
 import { getRow, selectRows } from "@platypus/shared/db";
 import { Hono } from "hono";
 import type { AddressInfo } from "node:net";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { callFixture, TOMORROW_AFTERNOON, AGENT_NUMBER, type CallFixture } from "../tools/call-fixture";
+import { VoiceToolInputError } from "../tools/errors";
 import { createVoiceTools } from "../tools/voice-tools";
 import { createContextMcpRoutes } from "./routes";
 import { generateContextMcpSecret, generateContextMcpToken } from "./secret";
 import type { ToolCallLog } from "./server";
+import { spokenError } from "./spoken";
 
 const SECRET = generateContextMcpSecret();
 const TOKEN = generateContextMcpToken();
@@ -75,21 +78,24 @@ describe.each(["legacy", "auto"] as const)("Context MCP over HTTP, version negot
     const checked = await client.callTool({ name: "check_slot", arguments: { business_id: f.sal.id, window: TOMORROW_AFTERNOON } });
     expect(checked.isError).toBeFalsy();
     expect(structured<{ slots: unknown[] }>(checked).slots).toHaveLength(5);
-    expect(text(checked)).toMatch(/^Open: Mon, Oct 12, 12:00 PM; 1:00 PM; 2:00 PM; 3:00 PM\./);
+    // Success text is just "OK." so the voice agent has nothing to read aloud.
+    expect(text(checked)).toBe("OK.");
 
     const held = await client.callTool({ name: "hold_slot", arguments: { business_id: f.sal.id, slot: TWO_PM } });
     const { hold_id } = structured<{ hold_id: string }>(held);
-    expect(text(held)).toMatch(/^Held Mon, Oct 12, 2:00 PM for 10 minutes/);
+    // hold_slot alone carries its hold_id in the text, as JSON, for create_booking.
+    expect(text(held)).toBe(`OK.\n${JSON.stringify({ hold_id })}`);
 
     const booked = await client.callTool({ name: "create_booking", arguments: { hold_id, price_cents: 8900, verbal_confirmation: "Yep, booked." } });
     const { booking_id, short_code } = structured<{ booking_id: string; short_code: string }>(booked);
-    expect(text(booked)).toContain(`Reference ${short_code}`);
-    expect(JSON.parse(text(booked).split("\n")[1]!)).toEqual({ booking_id, short_code });
+    expect(short_code).toBeTruthy();
+    expect(text(booked)).toBe("OK.");
 
     const consent = await client.callTool({ name: "record_consent", arguments: { business_id: f.sal.id, channel: "imessage", quote: "Yeah, text me." } });
     const number = await client.callTool({ name: "set_text_number", arguments: { business_id: f.sal.id, e164: f.sal.phone_e164 } });
     expect(consent.isError).toBeFalsy();
     expect(number.isError).toBeFalsy();
+    expect([text(consent), text(number)]).toEqual(["OK.", "OK."]);
 
     const booking = getBooking({ db: f.db }, booking_id);
     expect(booking).toMatchObject({ status: "confirmed", price_cents: 8900, slot_start: TWO_PM.start });
@@ -151,14 +157,14 @@ describe.each(["legacy", "auto"] as const)("Context MCP over HTTP, version negot
     expect(f.events().filter((e) => e.type !== "voice.tool_called").map((e) => e.type)).not.toContain("hold.placed");
   });
 
-  it("tells the agent to offer another slot when the time is taken", async () => {
+  it("tells the agent to ask for another time when the time is taken", async () => {
     const client = await connect(dialHeaders(f.sal.phone_e164), mode);
     const held = await client.callTool({ name: "hold_slot", arguments: { business_id: f.sal.id, slot: TWO_PM } });
     await client.callTool({ name: "create_booking", arguments: { hold_id: structured<{ hold_id: string }>(held).hold_id, price_cents: 8900, verbal_confirmation: "Yes" } });
     // The same call now tries a time that overlaps the confirmed booking.
     const clash = await client.callTool({ name: "hold_slot", arguments: { business_id: f.sal.id, slot: { start: "2026-10-12T21:30:00.000Z", end: "2026-10-12T22:15:00.000Z" } } });
     expect(clash.isError).toBe(true);
-    expect(text(clash)).toBe("That time is taken. Offer the next open slot from check_slot.");
+    expect(text(clash)).toBe("That time is taken, so ask the owner for another time.");
   });
 
   it("refuses every tool once the call has ended, and on inbound calls", async () => {
@@ -182,8 +188,26 @@ describe.each(["legacy", "auto"] as const)("Context MCP over HTTP, version negot
     const client = await connect(dialHeaders(f.sal.phone_e164), mode);
     const res2 = await client.callTool({ name: "set_text_number", arguments: { business_id: f.sal.id, e164: "555" } });
     expect(res2.isError).toBe(true);
-    expect(text(res2)).toBe("Some details were missing or malformed. Check the tool's fields and try once more.");
+    expect(text(res2)).toBe("Some details were missing or malformed, so check the tool's fields and try once more.");
     expect(f.events("voice.tool_called").at(-1)!.payload).toMatchObject({ code: "invalid_input" });
+  });
+});
+
+describe("spoken failure replies", () => {
+  const bookingCodes = ["not_found", "invalid_transition", "confirm_requires_evidence", "invalid_evidence", "slot_unavailable", "hold_not_active", "invalid_slot"] as const;
+  const errors = [
+    new VoiceAuthorizationError("No live call with this number"),
+    new VoiceAuthorizationError("The live call is with a different business"),
+    new VoiceAuthorizationError("Only outbound calls"),
+    new VoiceToolInputError(["e164"]),
+    ...bookingCodes.map((code) => new BookingError(code, "x")),
+    new Error("SQLITE_BUSY"),
+  ];
+
+  it.each(errors)("is one short sentence: %s", (error) => {
+    const reply = spokenError(error);
+    expect(reply.split(/(?<=[.?!])\s+/)).toHaveLength(1);
+    expect(reply.length).toBeLessThanOrEqual(160);
   });
 });
 
