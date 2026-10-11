@@ -10,7 +10,7 @@ import { defineTools, type ToolImplementation } from "./tool";
  */
 export const VOICE_TOOLS = defineTools({
   check_slot: {
-    description: "Find open times for this business in a window. Call before offering or accepting a time.",
+    description: "Find open times for this business in a window. Only when the owner has no time in mind; hold_slot already refuses a taken slot.",
     input: z.object({ business_id: z.string(), window: TimeWindow }),
     output: z.object({ slots: z.array(Slot) }),
   },
