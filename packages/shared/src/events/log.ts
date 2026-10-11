@@ -130,6 +130,21 @@ export function listEvents(db: Db, query: ListEventsQuery = {}): PlatypusEvent[]
   return (db.prepare(sql).all(...params) as Record<string, unknown>[]).map((r) => rowToEvent(decode("events", r)!));
 }
 
+/**
+ * Every matching event, oldest first, read one MAX_EVENTS_PAGE page at a time. listEvents
+ * stops at a page, so a reader that must see the whole log (the audit, the JSONL export,
+ * a fresh stream's backlog) uses this instead, or it silently judges only the oldest page.
+ */
+export function* allEvents(db: Db, query: Omit<ListEventsQuery, "limit"> = {}): Generator<PlatypusEvent> {
+  let afterId = query.afterId;
+  for (;;) {
+    const page = listEvents(db, { ...query, ...(afterId ? { afterId } : {}), limit: MAX_EVENTS_PAGE });
+    yield* page;
+    if (page.length < MAX_EVENTS_PAGE) return;
+    afterId = page[page.length - 1]!.id;
+  }
+}
+
 /** One JSON object per line, oldest first. Used to cut fixtures from a real run. */
 export function exportJsonl(events: PlatypusEvent[]): string {
   return events.map((e) => JSON.stringify(e)).join("\n") + (events.length ? "\n" : "");

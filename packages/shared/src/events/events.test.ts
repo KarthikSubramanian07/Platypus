@@ -3,7 +3,7 @@ import { manualClock } from "../clock";
 import { openDb, seed } from "../db/index";
 import { EventBus } from "./bus";
 import { createEventsApp } from "./sse";
-import { clampLimit, emit, exportJsonl, listEvents, MAX_EVENTS_PAGE, parseJsonl } from "./log";
+import { allEvents, clampLimit, emit, exportJsonl, listEvents, MAX_EVENTS_PAGE, parseJsonl } from "./log";
 import { emitSeedEvents } from "./seed-events";
 import type { PlatypusEvent } from "./types";
 
@@ -139,6 +139,25 @@ describe("GET /events/stream", () => {
     expect(clampLimit(Number.NaN)).toBe(1000);
     expect(clampLimit(1e12)).toBe(MAX_EVENTS_PAGE);
   });
+
+  it("serves the whole log past one page to the JSONL export and a fresh stream", async () => {
+    const { db, bus } = setup();
+    const total = MAX_EVENTS_PAGE + 3;
+    db.exec("BEGIN");
+    for (let i = 0; i < total; i++) emit(db, { type: "t", actor: "system", payload: { i } }, { bus });
+    db.exec("COMMIT");
+    expect([...allEvents(db)]).toHaveLength(total);
+    expect([...allEvents(db, { type: "t", afterId: listEvents(db, { limit: 2 })[1]!.id })]).toHaveLength(total - 2);
+
+    const app = createEventsApp({ db, bus, heartbeatMs: 50 });
+    const lines = parseJsonl(await (await app.request("/events.jsonl")).text());
+    expect(lines).toHaveLength(total);
+    expect(lines.at(-1)!.payload).toEqual({ i: total - 1 });
+
+    const messages = (await readSse(await app.request("/events/stream"), total + 1)).filter((m) => m.event === "platypus");
+    expect(messages).toHaveLength(total);
+    expect((JSON.parse(messages.at(-1)!.data) as PlatypusEvent).payload).toEqual({ i: total - 1 });
+  }, 30_000);
 
   it("serves the log as JSON and JSONL", async () => {
     const { db, bus } = setup();
