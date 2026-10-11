@@ -1,6 +1,7 @@
 name: Deploy dashboard
 
-# Publishes packages/dashboard to Cloudflare Pages (https://tryplatypus.pages.dev) on every push to main.
+# Publishes packages/dashboard to Cloudflare Pages (https://tryplatypus.pages.dev) on every push to main
+# that touches the site. Tests must pass first, and the live URL is checked after the deploy.
 # Needs repository secrets CLOUDFLARE_API_TOKEN (Pages: Edit) and CLOUDFLARE_ACCOUNT_ID; skips cleanly without them.
 
 on:
@@ -10,34 +11,72 @@ on:
       - "packages/dashboard/**"
       - "packages/shared/src/testing/fixtures/golden-path.jsonl"
       - ".github/workflows/deploy-dashboard.yml"
+      - ".github/actions/setup/**"
   workflow_dispatch:
 
+# Never cancel a deploy halfway; queue the next one behind it instead.
 concurrency:
   group: deploy-dashboard
-  cancel-in-progress: true
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  SITE_URL: https://tryplatypus.pages.dev/
 
 jobs:
-  deploy:
+  test:
+    name: Test before deploying
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: pnpm test
+
+  deploy:
+    name: Deploy to Cloudflare Pages
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+      url: ${{ env.SITE_URL }}
     env:
       HAS_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
       - run: pnpm --filter @platypus/dashboard build
       - name: Deploy to Cloudflare Pages
+        id: pages
         if: env.HAS_TOKEN == 'true'
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy packages/dashboard/dist --project-name tryplatypus --branch main
+      - name: Smoke-test the live site
+        if: env.HAS_TOKEN == 'true'
+        env:
+          DEPLOYMENT_URL: ${{ steps.pages.outputs.deployment-url }}
+        run: |
+          check() {
+            local url="$1"
+            local body
+            body="$(curl -fsSL --retry 6 --retry-delay 5 --retry-all-errors --max-time 20 "$url")"
+            grep -q "<title>Platypus" <<<"$body" || { echo "::error title=Smoke::$url did not serve the Platypus page"; return 1; }
+            echo "OK $url"
+          }
+          if [ -n "$DEPLOYMENT_URL" ]; then check "$DEPLOYMENT_URL"; fi
+          check "$SITE_URL"
+          {
+            echo "### Deployed"
+            echo ""
+            echo "- Production: $SITE_URL"
+            if [ -n "$DEPLOYMENT_URL" ]; then echo "- This deployment: $DEPLOYMENT_URL"; fi
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Explain the skipped deploy
         if: env.HAS_TOKEN != 'true'
         run: echo "CLOUDFLARE_API_TOKEN is not set; built the dashboard but did not deploy."
