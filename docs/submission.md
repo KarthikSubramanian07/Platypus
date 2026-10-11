@@ -74,6 +74,11 @@ All figures are **estimates**, not measurements.
 - **Dial** places the AI voice call. Its Context MCP lets the voice agent call our booking tools during the call, authorized per call by the caller's number. It also carries the follow-up messages to the owner and tells us which number can receive them.
 - **Darwin** runs Search v3 before every call, with the trade, the service, the area, the budget and the deadline as context. It tells us whether an agent already covers the job, so we phone a business only when none does.
 
+## The gap we hit with Darwin, and what would fix it
+
+- **Coverage.** For local trades, Darwin lists agents but none is ready to act. For the demo's auto shop it returned one listed agent and zero that could start a thread, so a booking falls back to the phone. Platypus is our answer to that gap: one call turns a phone-only business into supply an agent can book. What would close it on Darwin's side: a way to list or host businesses (Darwin's "Publish", marked "Soon"), so every shop Platypus onboards shows up as a ready agent.
+- **Reliability.** Search v3 returned HTTP 500 for specific phrasings that include a service or location (for example "auto repair shop: oil change" with context), while the bare trade succeeded. We handle it with a fallback ladder, specific query first, then the bare trade, and log the `x-request-id` of every failure. One trade (moving) failed on every rung in our live check. The first answer for the demo shop took about 10 seconds (a 500, then a 200), so we cache answers per trade and warm the cache on start. What would fix it: consistent handling of those phrasings and faster first answers.
+
 ## Technologies
 
 TypeScript, Node 22, Hono, MCP (streamable HTTP), SQLite, Zod, Vite, Vitest, pnpm workspaces, Dial, Darwin, Claude. Claude Desktop is the customer's agent in the demo, and Claude classifies the owner's text replies.
