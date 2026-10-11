@@ -7,7 +7,7 @@ export const ENV_VARS = [
   { name: "DIAL_FROM_NUMBER_ID", required: "live", secret: false, purpose: "Dial number id calls are placed from" },
   { name: "DIAL_NUMBER", required: "live", secret: false, purpose: "That Dial number in E.164" },
   { name: "DIAL_WEBHOOK_SECRET", required: "live", secret: true, purpose: "Verifies Dial webhook signatures" },
-  { name: "DIAL_OWNER_LINE", required: "optional", secret: false, purpose: "Dial-to-Dial: the Dial number standing in for the demo shop's texting line" },
+  { name: "DIAL_OWNER_LINE", required: "optional", secret: false, purpose: "The demo shop's texting line when it is not the number we call (a Dial number, or an iPhone on iMessage)" },
   { name: "DIAL_OWNER_LINE_ID", required: "optional", secret: false, purpose: "Dial-to-Dial: that number's id, for owner replies from the dashboard" },
   { name: "TEXT_CHANNEL", required: "always", secret: false, purpose: "Owner text rail: imessage | whatsapp | dial" },
   { name: "DARWIN_API_KEY", required: "optional", secret: true, purpose: "Darwin application Search key (anonymous search works without it)" },
