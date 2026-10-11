@@ -19,8 +19,13 @@ const port = Number(process.env.PORT ?? 8787);
 const apiKey = process.env.DIAL_API_KEY?.trim();
 
 const missing = ["DIAL_API_KEY", "DIAL_FROM_NUMBER_ID", "ALLOWED_NUMBERS", "CONTEXT_MCP_SECRET", "CONTEXT_MCP_TOKEN", "GATEWAY_TOKEN"].filter((k) => !process.env[k]?.trim());
+// Dial-to-Dial can only text Dial numbers: without the owner line every text request
+// silently falls back to a second call, and the dashboard's owner phone cannot reply.
+if (process.env.TEXT_CHANNEL === "dial") {
+  for (const k of ["DIAL_OWNER_LINE", "DIAL_OWNER_LINE_ID"]) if (!process.env[k]?.trim()) missing.push(k);
+}
 if (missing.length) {
-  console.error(`pnpm live needs ${missing.join(", ")} in .env. Run pnpm run doctor for details.`);
+  console.error(`pnpm live needs ${missing.join(", ")} in .env${process.env.TEXT_CHANNEL === "dial" ? " (TEXT_CHANNEL=dial texts only the owner line, DIAL_OWNER_LINE)" : ""}. Run pnpm run doctor for details.`);
   process.exit(2);
 }
 

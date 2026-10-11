@@ -97,6 +97,10 @@ export function createTextService(deps: TextServiceDeps): TextService {
     if (envelope.type === "message.received") {
       const input = toInboundInput(envelope, { textChannel: deps.textChannel, ...(deps.ourNumber ? { ourNumber: deps.ourNumber } : {}) });
       if (!input) return;
+      // Every number on the Dial account reports its inbound texts to the same webhook. On the
+      // Dial-to-Dial rail that includes the owner line receiving our own requests, which is not
+      // the owner speaking: only messages addressed to our number, from someone else, count.
+      if (deps.ourNumber && (input.from === deps.ourNumber || (input.to && input.to !== deps.ourNumber))) return;
       if (!seen.add(`msg:${input.provider_message_id}`)) return;
       enqueue(`inbound from ${source}`, () => handleInbound(deps, input));
       return;

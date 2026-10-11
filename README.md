@@ -68,6 +68,7 @@ Agents can book Delta and Walmart, and nothing in between. Websites are shutting
 This is the demo, and the only thing that must work end to end.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#1c5449', 'actorTextColor': '#ffffff', 'actorBorder': '#1c5449', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
 sequenceDiagram
     autonumber
     actor C as Customer
@@ -117,6 +118,7 @@ sequenceDiagram
 These are **transparent estimates**, not measurements. The rubric asks for setup, review and corrections to be counted, so they are.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#1c5449', 'actorTextColor': '#ffffff', 'actorBorder': '#1c5449', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
 xychart-beta
     title "Minutes of a person's attention per booking (estimate)"
     x-axis ["Calling around today", "With Platypus"]
@@ -150,6 +152,7 @@ xychart-beta
 Every agent that calls a business starts from zero, and the next agent calls it again. Every yes Platypus collects is supply that no other agent can reach without making that call itself.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#1c5449', 'actorTextColor': '#ffffff', 'actorBorder': '#1c5449', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
 flowchart LR
     A[Agent asks for a booking] --> B{Owner already<br/>said yes?}
     B -- no --> C[One honest call<br/>books a paying job]
@@ -211,6 +214,7 @@ With `DEMO_MODE=fakes` (the default), `pnpm dev` starts from an empty event log 
 ![Architecture: customer agents, gateway, Darwin, voice and text on Dial, and the shared core](docs/site-architecture.png)
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#1c5449', 'actorTextColor': '#ffffff', 'actorBorder': '#1c5449', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
 flowchart TB
     subgraph Agents["Customer agents"]
         CL[Claude] & MU[Muse] & ANY[any MCP client]
@@ -244,6 +248,7 @@ flowchart TB
 ### How a request is routed
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#1c5449', 'actorTextColor': '#ffffff', 'actorBorder': '#1c5449', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
 flowchart TD
     A[request_booking] --> B{Business paused,<br/>unlisted or do-not-call?}
     B -- yes --> X[No route: never contacted]
@@ -261,6 +266,7 @@ flowchart TD
 `confirmed` can be entered only through `confirm()`, and only from the states below that allow it. `transition()` refuses it outright. This diagram is [`TRANSITIONS`](packages/shared/src/booking/machine.ts), drawn.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#1c5449', 'actorTextColor': '#ffffff', 'actorBorder': '#1c5449', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
 stateDiagram-v2
     [*] --> quote_pending
     quote_pending --> quoted
@@ -433,17 +439,16 @@ One foundation, then two sides in parallel: the **phone side** (`voice` and `tex
 
 ## Repository map
 
-```
-packages/
-  shared/      contracts, db (migrations/*.sql), events, booking, darwin, testing (fakes + fixtures), schemas/
-  gateway/     MCP server, routing, demo CLI
-  voice/       Dial calls and the Context MCP server
-  text/        owner messaging
-  dashboard/   the public site (Vite): content/*.md pages, functions/ middleware, deployed to Cloudflare Pages
-scripts/       dev server, doctor, Darwin smoke
-docs/          workstreams, Darwin, screenshots, pitch deck, video run sheet, submission text
-DECISIONS.md   every decision we made and why, for readers outside the team
-```
+| Path | What lives there |
+| --- | --- |
+| [`packages/shared`](packages/shared) | Contracts, database migrations, events, booking engine, Darwin client, fakes and fixtures, exported JSON Schemas |
+| [`packages/gateway`](packages/gateway) | The MCP server, routing and the demo CLI |
+| [`packages/voice`](packages/voice) | Dial calls and the Context MCP server |
+| [`packages/text`](packages/text) | Owner messaging |
+| [`packages/dashboard`](packages/dashboard) | The public site: landing page, `/live`, `content/*.md` pages, the `functions/` middleware |
+| [`scripts`](scripts) | Dev server, doctor, live mode, Darwin smoke, CI helpers |
+| [`docs`](docs) | Workstreams, Darwin, screenshots, pitch deck, video run sheet, submission text |
+| [`DECISIONS.md`](DECISIONS.md) | Every decision we made and why, for readers outside the team |
 
 ## License
 

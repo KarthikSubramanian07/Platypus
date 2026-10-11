@@ -121,7 +121,7 @@ function renderAsk(): HTMLElement | undefined {
   const box = el("div", "ask");
   box.append(el("p", "eyebrow-sm", ask.agentId ? `${ask.agentId} asked` : "The agent asked"));
   if (ask.utterance) box.append(el("p", "ask-quote", `“${ask.utterance}”`));
-  const window = ask.windowStart ? [formatSlot(ask.windowStart), ask.windowEnd ? formatSlot(ask.windowEnd)?.replace(/^\w+ /, "") : undefined].filter(Boolean).join("–") : undefined;
+  const window = ask.windowStart ? [formatSlot(ask.windowStart), ask.windowEnd ? formatSlot(ask.windowEnd)?.replace(/^\w+ /, "") : undefined].filter(Boolean).join(" to ") : undefined;
   const chips = [ask.service, ask.budgetCents !== undefined ? `under ${formatMoney(ask.budgetCents)}` : undefined, window, ask.location].filter((x): x is string => Boolean(x));
   if (chips.length) {
     const row = el("p", "ask-chips");
@@ -195,7 +195,7 @@ function renderDarwinResult(d: DarwinView): HTMLElement[] {
     for (const a of d.attempts) {
       const li = el("li", "rung");
       li.dataset.ok = String(a.ok);
-      li.append(el("span", "rung-status", a.status !== undefined ? String(a.status) : (a.errorKind ?? "—")), el("span", "rung-query", a.query ?? ""), el("span", "rung-ms", formatLatency(a.latencyMs) ?? ""));
+      li.append(el("span", "rung-status", a.status !== undefined ? String(a.status) : (a.errorKind ?? "none")), el("span", "rung-query", a.query ?? ""), el("span", "rung-ms", formatLatency(a.latencyMs) ?? ""));
       ladder.append(li);
     }
     nodes.push(ladder);
@@ -466,11 +466,11 @@ function renderSupply(): void {
     name.append(el("span", "", r.name), el("span", "supply-trade", formatTrade(r.trade)));
     const channel = el("td");
     channel.append(el("span", `channel-chip ${r.channel === "text_enabled" ? "channel-text" : "channel-phone"}`, r.channel === "text_enabled" ? (formatRail(r.rail) ?? "Text") : "Phone"));
-    const reply = el("td", "num", r.medianReplySeconds !== undefined ? `${r.medianReplySeconds < 10 ? r.medianReplySeconds.toFixed(r.medianReplySeconds % 1 ? 1 : 0) : Math.round(r.medianReplySeconds)} s` : "—");
+    const reply = el("td", "num", r.medianReplySeconds !== undefined ? `${r.medianReplySeconds < 10 ? r.medianReplySeconds.toFixed(r.medianReplySeconds % 1 ? 1 : 0) : Math.round(r.medianReplySeconds)} s` : "none");
     if (r.replyCount) reply.title = `${r.replyCount} repl${r.replyCount === 1 ? "y" : "ies"}`;
-    const price = el("td", "num", formatMoney(r.lastPriceCents) ?? "—");
+    const price = el("td", "num", formatMoney(r.lastPriceCents) ?? "none");
     const optIn = el("td", "num");
-    if (r.optIn.length === 0) optIn.textContent = "—";
+    if (r.optIn.length === 0) optIn.textContent = "none";
     for (const v of r.optIn) {
       const span = el("span", "optin", `${Math.round(v.rate * 100)}%`);
       span.append(el("small", "", ` ${v.version} · ${v.consents}/${v.calls}`));

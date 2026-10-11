@@ -373,3 +373,22 @@ describe("outbound routing and safety", () => {
     expect(h.events("message.sent")[0]!.payload).toMatchObject({ reconciled: true });
   });
 });
+
+describe("one Dial account, two numbers", () => {
+  it("ignores the owner line's copy of our own request, and still hears the owner's reply", async () => {
+    const h = harness();
+    await h.service.sendBookingRequest({ booking_id: h.booking.id, business_id: h.sal.id });
+    // Dial reports every number's inbound texts to the account webhook, including the owner
+    // line receiving what we just sent. That is not the owner speaking.
+    await h.post(h.inbound(GOLDEN_COPY, { from: OUR_NUMBER, to: h.sal.phone_e164 }));
+    await h.post(h.inbound("Y", { to: "+14155550999" }));
+    await h.service.drain();
+    expect(h.events("message.received")).toHaveLength(0);
+    expect(getRow(h.db, "bookings", h.booking.id)!.status).toBe("pending");
+
+    await h.post(h.inbound("Y"));
+    await h.service.drain();
+    expect(h.events("message.received")).toHaveLength(1);
+    expect(getRow(h.db, "bookings", h.booking.id)!.status).toBe("confirmed");
+  });
+});
