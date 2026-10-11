@@ -6,13 +6,15 @@
 
 ![CI](https://github.com/KarthikSubramanian07/Platypus/actions/workflows/ci.yml/badge.svg)
 
+**Live:** [tryplatypus.pages.dev](https://tryplatypus.pages.dev) replays the golden path in your browser.
+
 Your agent can book a flight. It can't book Main Street. Most of the 33 million small businesses in the US will never build an API, a website with a booking widget, or an agent of their own. They have a phone. Platypus meets them there, exactly once.
 
 A customer's agent (Claude, Muse, Dots, Instinct, anything that speaks MCP) calls our MCP tools. We search Darwin for an existing agent that can do the job. If there is none, we place an AI voice call through Dial to the business. The call discloses that it is an AI in its first sentence, gets a price and an opening, and books the job through our own tools while the owner is still on the line. Then it asks one more thing: *"Next time a customer's agent needs you, can I text you instead of calling?"* A yes becomes stored consent, quoted word for word, and from then on that business is bookable by every agent with a text the owner answers in one word.
 
 > One call. Agent-native forever.
 
-![The dashboard shell replaying the golden path: mid-call tools firing, the booking confirmed, consent recorded](docs/dashboard-shell.png)
+![The live page replaying the golden path: each step lights up as its event arrives](docs/dashboard-shell.png)
 
 ## The golden path
 
@@ -82,7 +84,7 @@ With `DEMO_MODE=fakes` (the default), `pnpm dev` starts from an empty event log 
 | [`gateway`](packages/gateway) | The MCP server customer agents talk to, Darwin routing, and the `request_booking` route decision. |
 | [`voice`](packages/voice) | Dial outbound calls, with the disclosure hard-coded as the first sentence, and the Context MCP server that exposes the booking tools during the call. |
 | [`text`](packages/text) | Owner messages on iMessage, WhatsApp or Dial: signed webhooks, deduplication, STOP/HELP/PAUSE handled before any model call, and reply classification. |
-| [`dashboard`](packages/dashboard) | The live view of the event log, served by Vite. The Cloudflare Pages deployment comes with the full dashboard. |
+| [`dashboard`](packages/dashboard) | The live view of the event log. Deployed to [tryplatypus.pages.dev](https://tryplatypus.pages.dev) on every push to `main`; with no server behind it, it replays the recorded golden path. |
 
 ### The rules the code enforces
 
