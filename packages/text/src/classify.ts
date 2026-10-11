@@ -159,6 +159,8 @@ export function classifyDeterministic(text: string, ctx: ReplyContext): Classify
 
   const lexicon = words || emojiOnly(text);
   if (ACCEPT_WORDS.has(lexicon) || ACCEPT_EMOJI.has(lexicon)) {
+    // "okay?" and "Y?" are the owner asking, not agreeing. Normalizing strips the "?", so check the raw text.
+    if (/[?？¿]/.test(text)) return result("question", 0.5, "clarify", `a yes asked as a question (${text.trim().slice(0, 20)}); asking for an explicit Y`);
     return result("accept", EXPLICIT_YES.test(lexicon) ? 1 : 0.98, "confirm", `exact match: ${text.trim().slice(0, 20)}`);
   }
   if (DECLINE_WORDS.has(lexicon) || DECLINE_EMOJI.has(lexicon)) {
