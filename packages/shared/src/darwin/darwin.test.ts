@@ -1,0 +1,335 @@
+import { describe, expect, it, vi } from "vitest";
+import { manualClock } from "../clock";
+import {
+  createDarwin,
+  DARWIN_FIXTURES,
+  DarwinLookupCache,
+  darwinEventPayload,
+  DarwinError,
+  darwinFailures,
+  FakeDarwin,
+  HttpDarwin,
+  lookupDarwin,
+  parseRetryAfter,
+  probeDarwinMcp,
+  searchLadder,
+  searchWith,
+  startableAgent,
+  tradeQuery,
+} from "./index";
+
+function jsonResponse(status: number, body: unknown, headers: Record<string, string> = {}): Response {
+  return new Response(typeof body === "string" ? body : JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json", "x-request-id": `req-${status}`, ...headers },
+  });
+}
+
+function http(responses: Array<Response | Error>, options: ConstructorParameters<typeof HttpDarwin>[0] = {}) {
+  const queue = [...responses];
+  const fetch = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) => {
+    const next = queue.shift();
+    if (!next) throw new Error("no more responses");
+    if (next instanceof Error) throw next;
+    return next;
+  });
+  const sleep = vi.fn(async (_ms: number) => {});
+  const darwin = new HttpDarwin({ fetch: fetch as unknown as typeof globalThis.fetch, sleep, random: () => 0, ...options });
+  return { darwin, fetch, sleep };
+}
+
+const sentHeaders = (init: RequestInit | undefined) => init?.headers as Record<string, string>;
+
+describe("recorded Darwin responses", () => {
+  it("match the v3 contract Platypus reads", () => {
+    expect(DARWIN_FIXTURES.hairSalon.status).toBe("completed");
+    expect(DARWIN_FIXTURES.hairSalon.response.agents.length).toBeGreaterThan(0);
+    expect(DARWIN_FIXTURES.needsInput.status).toBe("needs_input");
+    expect(DARWIN_FIXTURES.needsInput.response.question).toBeTruthy();
+  });
+
+  it("never carry a live search token", () => {
+    for (const fixture of Object.values(DARWIN_FIXTURES)) {
+      expect(fixture.searchToken ?? "REDACTED_SEARCH_TOKEN").toBe("REDACTED_SEARCH_TOKEN");
+    }
+  });
+});
+
+describe("HttpDarwin.search", () => {
+  it("posts the request to /v3/search anonymously when no key is set", async () => {
+    const { darwin, fetch } = http([jsonResponse(200, DARWIN_FIXTURES.hairSalon)]);
+    const result = await darwin.search({ query: "hair salon", maxResults: 5 });
+    const [url, init] = fetch.mock.calls[0]!;
+    expect(url).toBe("https://api.darwin.so/api/v3/search");
+    expect(JSON.parse(init!.body as string)).toEqual({ query: "hair salon", maxResults: 5 });
+    expect(sentHeaders(init).authorization).toBeUndefined();
+    expect(result.requestId).toBe("req-200");
+    expect(result.search.searchId).toMatch(/^srch_/);
+  });
+
+  it("sends the application key as a bearer token", async () => {
+    const { darwin, fetch } = http([jsonResponse(200, DARWIN_FIXTURES.hairSalon)], { apiKey: "dk_test" });
+    await darwin.search({ query: "hair salon" });
+    expect(sentHeaders(fetch.mock.calls[0]![1]).authorization).toBe("Bearer dk_test");
+  });
+
+  it("does not retry a 500, because Darwin's 500s repeat for the same query", async () => {
+    const { darwin, fetch } = http([jsonResponse(500, { statusCode: 500, message: "Internal server error" })]);
+    const error = await darwin.search({ query: "hair salon in San Francisco" }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(DarwinError);
+    expect((error as DarwinError).kind).toBe("server");
+    expect((error as DarwinError).retryable).toBe(false);
+    expect((error as DarwinError).details.requestId).toBe("req-500");
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries a 503 once with backoff, then succeeds", async () => {
+    const { darwin, fetch, sleep } = http([jsonResponse(503, { message: "busy" }), jsonResponse(200, DARWIN_FIXTURES.hairSalon)]);
+    await darwin.search({ query: "hair salon" });
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledWith(250);
+  });
+
+  it("honors Retry-After on 429, capped at maxBackoffMs", async () => {
+    const { darwin, sleep } = http(
+      [jsonResponse(429, { message: "slow down" }, { "retry-after": "60" }), jsonResponse(200, DARWIN_FIXTURES.hairSalon)],
+      { maxBackoffMs: 2000 },
+    );
+    await darwin.search({ query: "hair salon" });
+    expect(sleep).toHaveBeenCalledWith(2000);
+  });
+
+  it("stops after maxRetries", async () => {
+    const { darwin, fetch } = http([new TypeError("fetch failed"), new TypeError("fetch failed"), new TypeError("fetch failed")], {
+      maxRetries: 1,
+    });
+    await expect(darwin.search({ query: "x" })).rejects.toMatchObject({ kind: "network" });
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("reports a rejected key as unauthorized instead of falling back to anonymous", async () => {
+    const { darwin, fetch } = http([jsonResponse(401, { message: "Supply a Darwin API key" })], { apiKey: "bad" });
+    await expect(darwin.search({ query: "x" })).rejects.toMatchObject({ kind: "unauthorized", details: { status: 401 } });
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a 200 that breaks the contract", async () => {
+    const { darwin } = http([jsonResponse(200, { searchId: "srch_x", response: {} })]);
+    await expect(darwin.search({ query: "x" })).rejects.toMatchObject({ kind: "invalid_response" });
+  });
+
+  it("validates the request before it leaves Platypus", async () => {
+    const { darwin, fetch } = http([]);
+    await expect(darwin.search({ query: "x", maxResults: 50 })).rejects.toThrow();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe("HttpDarwin.act", () => {
+  it("refuses without a pilot token and makes no request", async () => {
+    const { darwin, fetch } = http([]);
+    expect(darwin.canAct).toBe(false);
+    await expect(
+      darwin.act({ searchId: DARWIN_FIXTURES.hairSalon.searchId, message: "hi" }, { idempotencyKey: "k1" }),
+    ).rejects.toMatchObject({ kind: "act_not_configured" });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("sends the token, idempotency key and search token", async () => {
+    const ack = { type: "request", actRequestId: "act_1", status: "completed", threads: [{ agentId: "a1", threadId: "t1" }] };
+    const { darwin, fetch } = http([jsonResponse(200, ack)], { actToken: "oauth_test" });
+    const result = await darwin.act(
+      { searchId: DARWIN_FIXTURES.hairSalon.searchId, agentIds: ["a1"], message: "Book a haircut" },
+      { idempotencyKey: "bkg_1", searchToken: "tok" },
+    );
+    const [url, init] = fetch.mock.calls[0]!;
+    expect(url).toBe("https://api.darwin.so/api/v3/act");
+    expect(sentHeaders(init)).toMatchObject({ authorization: "Bearer oauth_test", "idempotency-key": "bkg_1", "x-search-token": "tok" });
+    expect(result.actRequestId).toBe("act_1");
+  });
+
+  it("surfaces the pilot gate as forbidden", async () => {
+    const { darwin } = http([jsonResponse(403, { code: "ACT_PREVIEW_ACCESS_REQUIRED", message: "pilot" })], { actToken: "t" });
+    await expect(
+      darwin.act({ threadId: "t1", message: { type: "text", text: "hi" } }, { idempotencyKey: "k" }),
+    ).rejects.toMatchObject({ kind: "forbidden", details: { code: "ACT_PREVIEW_ACCESS_REQUIRED" } });
+  });
+});
+
+describe("parseRetryAfter", () => {
+  it("reads seconds and HTTP dates", () => {
+    expect(parseRetryAfter("3")).toBe(3000);
+    expect(parseRetryAfter("Sun, 11 Oct 2026 18:00:05 GMT", Date.parse("2026-10-11T18:00:00Z"))).toBe(5000);
+    expect(parseRetryAfter(null)).toBeUndefined();
+    expect(parseRetryAfter("soon")).toBeUndefined();
+  });
+});
+
+describe("searchLadder", () => {
+  it("tries trade, service and area first, then the bare trade", () => {
+    expect(searchLadder({ trade: "salon", service: "Haircut", area: "San Francisco" })).toEqual([
+      { query: "hair salon: Haircut", maxResults: 5, context: [{ type: "text", text: "San Francisco" }] },
+      { query: "hair salon", maxResults: 5 },
+    ]);
+  });
+
+  it("has one rung when there is nothing to add", () => {
+    expect(searchLadder({ trade: "dog_groomer" })).toEqual([{ query: "dog groomer", maxResults: 5 }]);
+  });
+
+  it("sanitizes the agent-supplied service before it reaches Darwin", () => {
+    const [first] = searchLadder({ trade: "auto_repair", service: "oil change\n see https://evil.example now" });
+    expect(first!.query).toBe("auto repair shop: oil change see [link removed] now");
+  });
+
+  it("phrases unknown trades from their slug", () => {
+    expect(tradeQuery("piano_tuner")).toBe("piano tuner");
+  });
+});
+
+describe("lookupDarwin", () => {
+  const input = { trade: "salon", service: "Haircut", area: "San Francisco" };
+
+  it("falls back to the bare trade when the specific query returns 500", async () => {
+    const darwin = new FakeDarwin({ script: [darwinFailures.server500("r-1")] });
+    const lookup = await lookupDarwin(darwin, input);
+    expect(lookup.outcome).toBe("listed_only");
+    expect(lookup.candidate).toBeNull();
+    expect(lookup.attempts.map((a) => [a.query, a.ok, a.status])).toEqual([
+      ["hair salon: Haircut", false, 500],
+      ["hair salon", true, 200],
+    ]);
+    expect(darwin.searches[1]).toEqual({ query: "hair salon", maxResults: 5 });
+  });
+
+  it("picks the first startable result in Darwin's order", async () => {
+    const listed = DARWIN_FIXTURES.hairSalon.response.agents[0]!;
+    const ready = startableAgent(DARWIN_FIXTURES.hairSalon.response.agents[1]);
+    const lookup = await lookupDarwin(new FakeDarwin({ script: [searchWith([listed, ready])] }), input);
+    expect(lookup.outcome).toBe("startable");
+    expect(lookup.candidate?.agentId).toBe(ready.agentId);
+  });
+
+  it("does not treat canStartThread without readiness as startable", async () => {
+    const odd = { ...startableAgent(), readiness: "recheck_required" as const };
+    const lookup = await lookupDarwin(new FakeDarwin({ script: [searchWith([odd])] }), input);
+    expect(lookup.outcome).toBe("listed_only");
+  });
+
+  it("reports needs_input and no_match", async () => {
+    expect((await lookupDarwin(new FakeDarwin({ script: [DARWIN_FIXTURES.needsInput] }), { trade: "x" })).outcome).toBe(
+      "listed_only",
+    );
+    const asking = searchWith([], DARWIN_FIXTURES.needsInput);
+    expect((await lookupDarwin(new FakeDarwin({ script: [asking] }), { trade: "x" })).outcome).toBe("needs_input");
+    const empty = { ...searchWith([]), status: "no_match" as const };
+    expect((await lookupDarwin(new FakeDarwin({ script: [empty] }), { trade: "x" })).outcome).toBe("no_match");
+  });
+
+  it("returns unavailable instead of throwing when every rung fails", async () => {
+    const darwin = new FakeDarwin({ script: [darwinFailures.server500(), darwinFailures.network()] });
+    const lookup = await lookupDarwin(darwin, input);
+    expect(lookup.outcome).toBe("unavailable");
+    expect(lookup.attempts).toHaveLength(2);
+    expect(lookup.configError).toBeNull();
+  });
+
+  it("stops early and flags a rejected key", async () => {
+    const darwin = new FakeDarwin({ script: [darwinFailures.unauthorized()] });
+    const lookup = await lookupDarwin(darwin, input);
+    expect(lookup).toMatchObject({ outcome: "unavailable", configError: "unauthorized" });
+    expect(darwin.searches).toHaveLength(1);
+  });
+
+  it("rethrows bugs that are not Darwin failures", async () => {
+    const darwin = new FakeDarwin({
+      script: [
+        () => {
+          throw new RangeError("bug");
+        },
+      ],
+    });
+    await expect(lookupDarwin(darwin, input)).rejects.toThrow(RangeError);
+  });
+});
+
+describe("DarwinLookupCache", () => {
+  const input = { trade: "salon", service: "Haircut", area: "San Francisco" };
+
+  it("answers a repeated lookup without calling Darwin, until the TTL passes", async () => {
+    const clock = manualClock();
+    const cache = new DarwinLookupCache(60_000, clock);
+    const darwin = new FakeDarwin();
+    const first = await lookupDarwin(darwin, input, { cache });
+    expect(await lookupDarwin(darwin, input, { cache })).toBe(first);
+    expect(darwin.searches).toHaveLength(1);
+    clock.advance(60_001);
+    await lookupDarwin(darwin, input, { cache });
+    expect(darwin.searches).toHaveLength(2);
+  });
+
+  it("never caches an outage", async () => {
+    const cache = new DarwinLookupCache();
+    const darwin = new FakeDarwin({ script: [darwinFailures.server500(), darwinFailures.server500()] });
+    expect((await lookupDarwin(darwin, input, { cache })).outcome).toBe("unavailable");
+    expect((await lookupDarwin(darwin, input, { cache })).outcome).toBe("listed_only");
+  });
+});
+
+describe("darwinEventPayload", () => {
+  it("keeps ids and counts, and drops provider text and the search token", async () => {
+    const search = { ...searchWith([startableAgent()]), searchToken: "secret-token" };
+    const lookup = await lookupDarwin(new FakeDarwin({ script: [search] }), { trade: "salon" });
+    const payload = darwinEventPayload(lookup);
+    const text = JSON.stringify(payload);
+    expect(payload).toMatchObject({ outcome: "startable", search_id: search.searchId, agent_count: 1 });
+    expect(text).not.toContain("secret-token");
+    expect(text).not.toContain("connectionPrompt");
+    expect(text).not.toContain(lookup.candidate!.connectionPrompt.slice(0, 40));
+  });
+});
+
+describe("createDarwin", () => {
+  it("uses the fake in fakes mode and the real client in live mode", () => {
+    expect(createDarwin({ DEMO_MODE: "fakes" })).toBeInstanceOf(FakeDarwin);
+    expect(createDarwin({ DEMO_MODE: "live" })).toBeInstanceOf(HttpDarwin);
+    expect(createDarwin({ DEMO_MODE: "fakes", DARWIN_IMPL: "real" })).toBeInstanceOf(HttpDarwin);
+    expect(() => createDarwin({ DARWIN_IMPL: "mock" })).toThrow(/fake or real/);
+  });
+
+  it("enables Act only with a pilot token", () => {
+    expect(createDarwin({ DARWIN_IMPL: "real" }).canAct).toBe(false);
+    expect(createDarwin({ DARWIN_IMPL: "real", DARWIN_ACT_TOKEN: "t" }).canAct).toBe(true);
+  });
+});
+
+describe("probeDarwinMcp", () => {
+  const sse = (message: unknown) => new Response(`event: message\ndata: ${JSON.stringify(message)}\n\n`, { status: 200 });
+
+  it("initializes, lists tools and checks the ones Platypus needs", async () => {
+    const fetch = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const { id, method } = JSON.parse(init!.body as string) as { id: number; method: string };
+      if (method === "initialize") return sse({ jsonrpc: "2.0", id, result: { protocolVersion: "2025-06-18", serverInfo: { version: "0.11.0" } } });
+      return sse({ jsonrpc: "2.0", id, result: { tools: [{ name: "search" }, { name: "act" }, { name: "get_thread" }] } });
+    });
+    const probe = await probeDarwinMcp({ fetch: fetch as unknown as typeof globalThis.fetch });
+    expect(probe).toMatchObject({ ok: true, serverVersion: "0.11.0", missingTools: [] });
+    expect((fetch.mock.calls[1]![1]!.headers as Record<string, string>)["mcp-protocol-version"]).toBe("2025-06-18");
+  });
+
+  it("reports missing tools and transport failures without throwing", async () => {
+    const partial = vi.fn(async (_u: string | URL | Request, init?: RequestInit) => {
+      const { id } = JSON.parse(init!.body as string) as { id: number };
+      return new Response(JSON.stringify({ jsonrpc: "2.0", id, result: id === 1 ? {} : { tools: [{ name: "search" }] } }));
+    });
+    expect(await probeDarwinMcp({ fetch: partial as unknown as typeof globalThis.fetch })).toMatchObject({
+      ok: false,
+      missingTools: ["act", "get_thread"],
+    });
+    const down = vi.fn(async () => new Response("bad gateway", { status: 502 }));
+    expect(await probeDarwinMcp({ fetch: down as unknown as typeof globalThis.fetch })).toMatchObject({
+      ok: false,
+      error: "initialize returned HTTP 502",
+    });
+  });
+});
