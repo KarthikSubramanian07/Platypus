@@ -18,6 +18,17 @@ export const SCENES = [
 
 export const PAYOFF = SCENES.length - 1;
 
+/** A caption is read from across a room, on a projector: six words at most. */
+export const MAX_CAPTION_WORDS = 6;
+
+export const wordCount = (text: string) => text.split(/\s+/).filter(Boolean).length;
+
+/** The shop's own yes as the "Yes" caption when it fits; a longer one stays in the call screen. */
+export function quoteCaption(quote: string | undefined): string | undefined {
+  const said = quote?.trim();
+  return said && wordCount(said) <= MAX_CAPTION_WORDS ? `“${said}”` : undefined;
+}
+
 const SCENE_OF: Record<StepKey, number> = { ask: 0, darwin: 1, call: 2, tools: 2, consent: 3, text: 4, confirmed: 5 };
 
 /** The furthest scene the events reached. The confirmed Y leads straight on to the payoff. */

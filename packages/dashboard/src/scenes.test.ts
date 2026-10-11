@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GOLDEN_PATH } from "./fixture";
 import type { StreamEvent } from "./format";
-import { DWELL_MS, liveScene, pace, PAYOFF, screenAt, threadAt } from "./scenes";
+import { DWELL_MS, liveScene, MAX_CAPTION_WORDS, pace, PAYOFF, quoteCaption, SCENES, screenAt, threadAt, wordCount } from "./scenes";
 import { initialState, reduceAll } from "./state";
 
 const upTo = (predicate: (e: StreamEvent) => boolean) => reduceAll(GOLDEN_PATH.slice(0, GOLDEN_PATH.findIndex(predicate) + 1));
@@ -54,5 +54,18 @@ describe("screenAt", () => {
   it("keeps the request alone in the text scene and adds the Y after it", () => {
     expect(threadAt(all, 4).map((m) => m.body.slice(0, 7))).toEqual(["New job"]);
     expect(threadAt(all, 5).map((m) => m.body.slice(0, 7))).toEqual(["New job", "Y"]);
+  });
+});
+
+describe("captions", () => {
+  it("keeps every scripted caption to six words", () => {
+    for (const scene of SCENES) expect(wordCount(scene.caption)).toBeLessThanOrEqual(MAX_CAPTION_WORDS);
+  });
+
+  it("quotes the shop's yes only when it fits a caption", () => {
+    expect(quoteCaption("Yeah, text me.")).toBe("“Yeah, text me.”");
+    expect(quoteCaption("Sure, you can text me on this number any time")).toBeUndefined();
+    expect(quoteCaption("  ")).toBeUndefined();
+    expect(quoteCaption(undefined)).toBeUndefined();
   });
 });
