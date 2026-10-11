@@ -1,0 +1,24 @@
+{
+  "_provenance": {
+    "source": "SYNTHETIC test double, shaped from the Darwin Search v3 schema. NOT a real Darwin response.",
+    "note": "The real oil-change query returned HTTP 500 on 2026-10-11 (see darwin-error-500.recorded.json). Replace this file with a recorded no_match as soon as Darwin returns one. Never show this on the dashboard or in the video as a Darwin result."
+  },
+  "status": 200,
+  "body": {
+    "searchId": "srch_synthetic-no-match",
+    "responseId": "sresp_synthetic-no-match",
+    "previousResponseId": null,
+    "contractVersion": "search-v3.0",
+    "status": "no_match",
+    "response": {
+      "agents": [],
+      "assessment": { "outcome": "no_match", "explanation": "SYNTHETIC" },
+      "relatedSearches": [],
+      "plan": null,
+      "question": null,
+      "noMatchReason": "SYNTHETIC test value: no indexed agent books local auto repair appointments.",
+      "overview": null
+    },
+    "searchToken": "synthetic-token"
+  }
+}
