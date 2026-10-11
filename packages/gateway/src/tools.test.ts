@@ -4,8 +4,8 @@ import type { OwnerChannels } from "@platypus/shared/contracts";
 import { createDarwin, type Darwin } from "@platypus/shared/darwin";
 import { getBusinessBySlug, getRow, openDb, seed, selectRows, updateRow, type Business, type Db } from "@platypus/shared/db";
 import { EventBus, listEvents } from "@platypus/shared/events";
-import { ScriptedDarwin } from "@platypus/shared/testing";
-import { createGatewayTools, GatewayError, RATE_LIMIT, type GatewayDeps } from "./tools";
+import { ScriptedDarwin, searchWith, startableAgent } from "@platypus/shared/testing";
+import { createGatewayTools, DISPATCH_FAILED_REASON, GatewayError, MAX_OPEN_PER_BUSINESS, RATE_LIMIT, STATE_TTL_MS, type GatewayDeps } from "./tools";
 
 // Sunday 7pm in San Francisco; the window is Monday noon to 5pm Pacific.
 const NOW = "2026-10-12T02:00:00.000Z";
@@ -161,8 +161,50 @@ describe("request_booking", () => {
     const tools = createGatewayTools({ db, bus: new EventBus(), owner: stub.owner, darwin: null, clock });
     const out = await tools.request_booking(request(), agent);
     expect(out.status).toBe("pending");
-    expect(out.reasons.at(-1)).toBe("could not reach the owner yet: Dial is down");
-    expect(listEvents(db, { type: "booking.dispatch_failed" })).toHaveLength(1);
+    expect(out.reasons.at(-1)).toBe(DISPATCH_FAILED_REASON);
+    expect(JSON.stringify(out)).not.toContain("Dial is down");
+    expect(listEvents(db, { type: "booking.dispatch_failed" })[0]!.payload.error).toBe("Dial is down");
+  });
+
+  it("returns the agent's open booking on a retry with a fresh key, contacting the owner once", async () => {
+    const { tools, calls } = gateway({ darwin: null });
+    const first = await tools.request_booking(request(), agent);
+    const overlapping = { start: "2026-10-12T20:00:00.000Z", end: "2026-10-13T01:00:00.000Z" };
+    const retry = await tools.request_booking(request({ idempotency_key: "key-0000002", service: "Oil Change", window: overlapping }), agent);
+
+    expect(retry).toMatchObject({ booking_id: first.booking_id, status: "pending", route: first.route, short_code: first.short_code });
+    expect(selectRows(db, "bookings")).toHaveLength(1);
+    expect(calls).toHaveLength(1);
+    // Another agent, another service, or a window that does not overlap is a new request.
+    await tools.request_booking(request({ idempotency_key: "key-0000003" }), { agent_id: "another-agent" });
+    await tools.request_booking(request({ idempotency_key: "key-0000004", service: "tire rotation" }), agent);
+    expect(selectRows(db, "bookings")).toHaveLength(3);
+  });
+
+  it("refuses a request once a business has the most open requests it takes", async () => {
+    const { tools, calls } = gateway({ darwin: null });
+    for (let i = 0; i < MAX_OPEN_PER_BUSINESS; i++) await tools.request_booking(request({ idempotency_key: `key-open-${i}` }), { agent_id: `agent-${i}` });
+    await expect(tools.request_booking(request({ idempotency_key: "key-open-x" }), { agent_id: "agent-x" })).rejects.toMatchObject({ code: "too_many_open_requests" });
+    expect(calls).toHaveLength(MAX_OPEN_PER_BUSINESS);
+  });
+
+  it("forgets idempotency keys after an hour", async () => {
+    const { tools } = gateway({ darwin: null });
+    await tools.request_booking(request(), agent);
+    await expect(tools.request_booking(request({ service: "tire rotation" }), agent)).rejects.toMatchObject({ code: "idempotency_conflict" });
+    now += STATE_TTL_MS + 1;
+    await expect(tools.request_booking(request({ service: "tire rotation" }), agent)).resolves.toMatchObject({ status: "pending" });
+  });
+
+  it("keeps the agent id out of the request sent to a Darwin agent", async () => {
+    const darwin = new ScriptedDarwin({ script: [searchWith([startableAgent()])], canAct: true });
+    const { tools } = gateway({ darwin, canAct: true });
+    const out = await tools.request_booking(request(), { agent_id: "agent-id-xyz" });
+
+    expect(out.route).toBe("darwin_act");
+    const sent = darwin.acts[0]!.request as { message: string };
+    expect(JSON.parse(sent.message)).toMatchObject({ requested_by: "Alex's assistant" });
+    expect(sent.message).not.toContain("agent-id-xyz");
   });
 });
 

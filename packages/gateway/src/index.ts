@@ -4,7 +4,7 @@ import { createDarwin, darwinCacheKey, DarwinLookupCache, isDarwinEnabled, looku
 import { listBusinesses, seed, type Business } from "@platypus/shared/db";
 import { emitSeedEvents } from "@platypus/shared/events";
 import { createFakeGateway, createFakeOwnerChannels, FakeDial } from "@platypus/shared/testing";
-import { createMcpApp } from "./mcp";
+import { createMcpApp, gatewayToken } from "./mcp";
 import { createGatewayTools } from "./tools";
 
 /**
@@ -40,11 +40,18 @@ function fakeOwner({ db, bus }: SideDeps, env: NodeJS.ProcessEnv): OwnerChannels
   return createFakeOwnerChannels({ dial, db, bus, textChannel });
 }
 
-/** AgentSide.mount: the gateway's MCP endpoint at /mcp inside `pnpm dev` (contracts/seams.ts). */
+/**
+ * AgentSide.mount: the gateway's MCP endpoint at /mcp inside `pnpm dev` (contracts/seams.ts).
+ * Throws on a configuration that would silently fake the phone or serve a public /mcp open.
+ */
 export function mount(app: Hono, deps: SideDeps & { owner?: OwnerChannels }, env: NodeJS.ProcessEnv = process.env): void {
   const { db, bus } = deps;
-  const { n } = db.prepare("SELECT count(*) AS n FROM businesses").get() as { n: number };
-  if (n === 0) seed(db, { allowedNumbers: allowedNumbers(env), onSeeded: emitSeedEvents(db, { bus }) });
+  if (env.DIAL_IMPL === "real" && !deps.owner) {
+    throw new Error("DIAL_IMPL=real, but the phone side does not export createOwnerChannels yet; unset DIAL_IMPL to use the fake owner");
+  }
+  const token = gatewayToken(env);
+  // Idempotent: creates missing businesses and moves the auto shop to ALLOWED_NUMBERS[0] when it changed.
+  seed(db, { allowedNumbers: allowedNumbers(env), onSeeded: emitSeedEvents(db, { bus }) });
 
   const darwin = isDarwinEnabled(env) ? createDarwin(env) : null;
   const darwinCache = new DarwinLookupCache();
@@ -57,7 +64,7 @@ export function mount(app: Hono, deps: SideDeps & { owner?: OwnerChannels }, env
     canAct: env.DARWIN_ACT_ENABLED === "true" && Boolean(darwin?.canAct),
     darwinCache,
   });
-  app.route("/", createMcpApp(tools));
+  app.route("/", createMcpApp(tools, { token: token ?? "" }));
 }
 
 /**

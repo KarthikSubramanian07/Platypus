@@ -2,7 +2,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { GATEWAY_TOOL_NAMES, type BookingView, type GatewayContext, type GatewayTools } from "@platypus/shared/contracts";
 import { afterEach, describe, expect, it } from "vitest";
-import { AGENT_HEADER, DEFAULT_AGENT_ID, createMcpApp } from "./mcp";
+import { AGENT_HEADER, DEFAULT_AGENT_ID, MAX_BODY_BYTES, MIN_TOKEN_CHARS, agentIdFrom, createMcpApp, gatewayToken } from "./mcp";
 
 const BOOKING: BookingView = {
   booking_id: "bk_1",
@@ -83,6 +83,12 @@ describe("gateway MCP over streamable HTTP", () => {
     expect(seen).toEqual([{ agent_id: DEFAULT_AGENT_ID }, { agent_id: DEFAULT_AGENT_ID }]);
   });
 
+  it("accepts only letters, digits, dot, underscore and dash in the agent id, up to 64 characters", () => {
+    expect(agentIdFrom("demo-cli_1.2")).toBe("demo-cli_1.2");
+    expect(agentIdFrom("a".repeat(64))).toBe("a".repeat(64));
+    for (const bad of ["Sal said yes", "me@example.com", "a".repeat(65), "naïve", ""]) expect(agentIdFrom(bad)).toBe(DEFAULT_AGENT_ID);
+  });
+
   it("turns invalid input into a tool error without calling the tool", async () => {
     const seen: GatewayContext[] = [];
     const client = await connect(seen);
@@ -110,14 +116,45 @@ describe("gateway MCP over streamable HTTP", () => {
   });
 });
 
+const LIST_TOOLS = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} });
+const JSON_HEADERS = { "content-type": "application/json", accept: "application/json, text/event-stream" };
+
 describe("GATEWAY_TOKEN", () => {
   it("rejects a request without the bearer token and accepts one with it", async () => {
     const app = createMcpApp({} as never, { token: "s3cret" });
-    const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} });
-    const headers = { "content-type": "application/json", accept: "application/json, text/event-stream" };
-    const denied = await app.request("/mcp", { method: "POST", headers, body });
+    const denied = await app.request("/mcp", { method: "POST", headers: JSON_HEADERS, body: LIST_TOOLS });
     expect(denied.status).toBe(401);
-    const allowed = await app.request("/mcp", { method: "POST", headers: { ...headers, authorization: "Bearer s3cret" }, body });
+    const allowed = await app.request("/mcp", { method: "POST", headers: { ...JSON_HEADERS, authorization: "Bearer s3cret" }, body: LIST_TOOLS });
     expect(allowed.status).not.toBe(401);
+  });
+
+  it("refuses to serve a public /mcp without a token of at least 16 characters", () => {
+    const strong = "x".repeat(MIN_TOKEN_CHARS);
+    expect(gatewayToken({})).toBeUndefined();
+    expect(gatewayToken({ GATEWAY_TOKEN: "" })).toBeUndefined();
+    expect(gatewayToken({ PUBLIC_BASE_URL: "https://x.example", GATEWAY_TOKEN: strong })).toBe(strong);
+    for (const token of [undefined, "", "short"]) {
+      expect(() => gatewayToken({ PUBLIC_BASE_URL: "https://x.example", GATEWAY_TOKEN: token })).toThrow(/GATEWAY_TOKEN/);
+    }
+  });
+});
+
+describe("request limits", () => {
+  it("refuses a body over 256 KB before the MCP server parses it", async () => {
+    const app = createMcpApp(stubTools([]), { token: "" });
+    const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: { pad: "x".repeat(MAX_BODY_BYTES) } });
+    const response = await app.request("/mcp", { method: "POST", headers: JSON_HEADERS, body });
+    expect(response.status).toBe(413);
+  });
+
+  it("answers 429 once every agent together goes over the global budget, and refills over time", async () => {
+    let now = 0;
+    const app = createMcpApp(stubTools([]), { token: "", requestsPerMinute: 2, now: () => now });
+    const post = () => app.request("/mcp", { method: "POST", headers: JSON_HEADERS, body: LIST_TOOLS });
+    expect((await post()).status).toBe(200);
+    expect((await post()).status).toBe(200);
+    expect((await post()).status).toBe(429);
+    now += 30_000;
+    expect((await post()).status).toBe(200);
   });
 });
