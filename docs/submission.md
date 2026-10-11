@@ -40,7 +40,15 @@ Two people use Platypus.
 
 ## Time saved
 
-All figures are **estimates**, not measurements.
+All Platypus figures are **estimates** or measured in our own demo, as marked.
+
+**Why the phone baseline is slow** (published figures; all three are vendor data, labeled as such):
+
+- Only 52% of inbound calls to home-services businesses reach a person (Invoca, Home Services Benchmarks Report 2026, from its customers' 70M+ calls): https://invoca.com/reports/the-invoca-home-services-lead-conversion-benchmarks-report-2026
+- 41% of consumers hang up after 1 to 2 minutes on hold, and 78% have abandoned a business after an unanswered call (CallRail survey of 1,000 US consumers, Sep 2025): https://www.callrail.com/blog/missed-calls-cost-businesses-more-than-ever
+- Only 31% of missed calls to small businesses get a callback at all (Quo, from 16.7M missed calls, Aug 2026): https://www.quo.com/blog/small-business-callback-statistics/
+
+We found no credible published figure for minutes per booking, so the customer baseline below is our estimate. The owner's side is measured live in the demo: call seconds and reply seconds come from the event log.
 
 - **Today, customer:** call about 3 shops, 15 to 25 minutes per booking, including hold time, repeating the job and callbacks.
 - **With Platypus, customer:** one sentence to the agent they already use, then review a typed result. Under 1 minute, including review and corrections (a correction is one more sentence). One-time setup to connect the agent: about 2 minutes.
