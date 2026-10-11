@@ -12,10 +12,12 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.133.0",
     "@hono/node-server": "^2.1.4",
     "@modelcontextprotocol/server": "^2.3.1",
     "@platypus/shared": "workspace:*",
     "hono": "^4.13.13",
+    "ulid": "^3.0.2",
     "zod": "^4.6.6"
   },
   "devDependencies": {
