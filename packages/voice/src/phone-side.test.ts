@@ -3,9 +3,10 @@ import { Hono } from "hono";
 import { createBooking, getBooking, placeHold } from "@platypus/shared/booking";
 import { getActiveConsent, getBusinessBySlug, openDb } from "@platypus/shared/db";
 import { EventBus, listEvents } from "@platypus/shared/events";
+import { generateContextMcpSecret, generateContextMcpToken } from "./context-mcp/secret";
 import { createPhoneSide } from "./phone-side";
 
-const ENV = { DEMO_MODE: "fakes", TEXT_CHANNEL: "imessage", CONTEXT_MCP_SECRET: "s".repeat(40), CONTEXT_MCP_TOKEN: "t".repeat(48) } as NodeJS.ProcessEnv;
+const ENV = { DEMO_MODE: "fakes", TEXT_CHANNEL: "imessage", CONTEXT_MCP_SECRET: generateContextMcpSecret(), CONTEXT_MCP_TOKEN: generateContextMcpToken() } as NodeJS.ProcessEnv;
 
 async function until<T>(read: () => T, ok: (v: T) => boolean, ms = 10_000): Promise<T> {
   const start = Date.now();
