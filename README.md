@@ -230,6 +230,15 @@ stateDiagram-v2
 - **Only allowlisted numbers can ring**, checked immediately before any network request, including in the fakes.
 - Agent and owner text is data, not instructions. Mid-call tools are authorized per request. Darwin is never simulated in live mode.
 
+**The audit checks all of this twice.** `pnpm audit:log` replays the append-only event log and checks the non-negotiables as rules R1 to R8 (owner's yes, AI disclosure, consent, one live call, well-formed events, no sms to non-Dial numbers, no double booking, no transcript confirmations). A second auditor, written independently in Rust ([`crates/platypus-audit`](crates/platypus-audit/README.md)), reads the same rules from scratch, and CI runs both on more than a thousand logs (the golden path, single corruptions of it, and seeded random logs). Any disagreement fails the build, so a misreading in either auditor shows up as a diff.
+
+```bash
+pnpm audit:log packages/shared/src/testing/fixtures/golden-path.jsonl         # TypeScript auditor
+cargo run --release --manifest-path crates/platypus-audit/Cargo.toml -- \
+  packages/shared/src/testing/fixtures/golden-path.jsonl                      # Rust auditor
+pnpm ci:audit-diff                                                            # both, on every log
+```
+
 ---
 
 ## Partners
