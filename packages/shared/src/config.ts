@@ -14,6 +14,7 @@ export const ENV_VARS = [
   { name: "DARWIN_IMPL", required: "optional", secret: false, purpose: "fake | real; overrides DEMO_MODE for Darwin only" },
   { name: "ANTHROPIC_API_KEY", required: "live", secret: true, purpose: "Claude for reply understanding and transcript mining" },
   { name: "PUBLIC_BASE_URL", required: "live", secret: false, purpose: "Public HTTPS origin for webhooks and the Context MCP" },
+  { name: "GATEWAY_TOKEN", required: "optional", secret: true, purpose: "Bearer token for /mcp; required when PUBLIC_BASE_URL is set" },
   { name: "ALLOWED_NUMBERS", required: "always", secret: true, purpose: "Only numbers Platypus may call or message (E.164, comma-separated)" },
   { name: "DEMO_MODE", required: "always", secret: false, purpose: "fakes | live" },
   { name: "GATEWAY_IMPL", required: "optional", secret: false, purpose: "fake | real: VoiceTools used by the phone side" },

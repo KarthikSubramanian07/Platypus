@@ -44,4 +44,17 @@ describe("sanitizeUntrustedText", () => {
     expect(out).toContain("[link removed]");
     expect(out.length).toBeLessThanOrEqual(60);
   });
+
+  it("strips bare domains and scheme tokens", () => {
+    const out = sanitizeUntrustedText(
+      "see bit.ly/3xYz or evil.com/pay or example.org, call tel:+15550100001, sms:+15550100002, ftp://files.example/x, mailto:a@b.example, javascript:alert(1)",
+    );
+    expect(out).not.toMatch(/bit\.ly|evil|example|tel:|sms:|ftp|mailto|javascript|\+1555/);
+    expect(out.match(/\[link removed\]/g)).toHaveLength(8);
+  });
+
+  it("keeps prices, times and ordinary words", () => {
+    const text = "Brake inspection Tue 10am or 2:00pm, about $89. Notes: 2019 Civic, 2.5 hrs, e.g. pads.";
+    expect(sanitizeUntrustedText(text)).toBe(text);
+  });
 });
