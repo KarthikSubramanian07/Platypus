@@ -36,7 +36,7 @@ Two people use Platypus.
 3. Dial places one outbound AI call. Its first sentence says it is an AI. It asks for a price and an opening, and books through our `check_slot`, `hold_slot` and `create_booking` tools while the owner is still on the line (Dial Context MCP).
 4. It then asks: "Next time a customer's agent needs you, can I text you instead of calling?" A yes is stored with the owner's exact words and the call id, and the shop switches from phone-only to text-enabled.
 5. The agent gets a typed result: shop, time, price, short code. A booking is confirmed only when the owner says yes, on the call or by text, never because the AI said so.
-6. Every later request to that shop goes by text on [TEXT RAIL: iMessage | WhatsApp | Dial-to-Dial]. The owner replies Y, N or a time, and the booking is confirmed within seconds.
+6. Every later request to that shop goes by text, Dial to Dial today: the request arrives on a second Dial number that stands in for Sal's Auto's line, and the owner replies Y, N or a time from the dashboard's owner-phone panel. The booking is confirmed within seconds.
 
 ## Time saved
 
@@ -55,17 +55,17 @@ All figures are **estimates**, not measurements.
 **Real**
 
 - The foundation: contracts (Zod, exported as JSON Schema), a booking state machine where `confirm()` is the only way into `confirmed`, a database that refuses a consent row without the quoted sentence and call id, an append-only event log with a live stream, and CI.
-- A live Dial outbound call to a real phone, with the AI disclosure as the first sentence and the booking made through our tools during the call.
+- A live Dial outbound call, placed from our Dial number to a second Dial number that stands in for Sal's Auto's line, with the AI disclosure as the first sentence and the booking made through our tools during the call.
 - Darwin Search v3, queried live before the call. The dashboard shows what Darwin returned.
-- The owner's text and Y reply on [TEXT RAIL: iMessage | WhatsApp | Dial-to-Dial].
+- Real Dial texts between two Dial numbers: the booking request, and the owner's Y that confirms it (sent from the dashboard's owner-phone panel, see below).
 
 **Mocked or not yet built**
 
-- Sal's Auto is not a business. Karthik, who is not a mechanic, plays the owner on his own phone, and no oil change is booked at any real shop.
+- Sal's Auto is not a business: its line is a second Dial number, the owner on the call is [confirm: who answers the shop line — Dial's inbound AI playing the owner, or Karthik through Dial], and no oil change is booked at any real shop.
 - The other five shops on the dashboard are fictional, with phone numbers reserved for fiction.
-- Texts to regular phones need 10DLC registration, which we file after the event. Until then the text rail is the one named above, not plain SMS.
+- No real phone number is involved yet: calls and texts run between two Dial numbers until Dial approves a real number. Dial approves real numbers after review, for messaging (SMS and iMessage) after a review on their backend, and plain SMS also needs 10DLC registration. The owner replies to texts from the dashboard's owner-phone panel, not from a phone.
 - Darwin has never returned `no_match` for our trades. It answers with a completed search and no ready agent, and we report exactly that. We do not use Darwin Act or Publish, and Darwin is never simulated.
-- Only our own phones can be called or texted; an allow-list in the code enforces it.
+- Only our own Dial numbers can be called or texted; an allow-list in the code enforces it.
 - The public page replays a recording of the golden path.
 - The time-saved numbers are estimates.
 
@@ -87,7 +87,7 @@ TypeScript, Node 22, Hono, MCP (streamable HTTP), SQLite, Zod, Vite, Vitest, pnp
 ## What's next
 
 - Call ten real shop owners and measure the real opt-in rate and reply time.
-- Register for 10DLC so the text rail is plain SMS to regular phones.
+- Get Dial's approval for real numbers (messaging review, and 10DLC registration for plain SMS), so calls and texts reach the owner's own phone.
 - List Platypus businesses through Darwin Publish when it ships, so each onboarded shop becomes executable local supply in Darwin.
 - Build a Personal Agent Protocol adapter, so agents on that standard can reach these shops too.
 

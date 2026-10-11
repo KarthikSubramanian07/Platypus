@@ -7,14 +7,14 @@ So this is a run sheet for one continuous take, not a shot list. It follows Hack
 ## Who does what
 
 - **Eddy** drives Claude Desktop as the customer. He presents the deck, types both requests, and does the problem, the tech stack, the time-saved numbers and the close.
-- **Karthik** plays the owner of "Sal's Auto". His phone is the one that rings. He speaks only as the owner and in the "what is real, what is mocked" beat.
+- **Karthik** plays the owner of "Sal's Auto". Sal's Auto's line is a second Dial number, so no personal phone rings. The owner's voice on the call is [confirm: who answers the shop line — Dial's inbound AI playing the owner, or Karthik through Dial]. Karthik also answers texts on the owner-phone panel and speaks in the "what is real, what is mocked" beat.
 - The joke budget is one: "Our shop owner today is Karthik. Karthik is not a mechanic."
 
-The camera points at Karthik's phone for the whole take. Nobody talks over the call.
+The camera points at Karthik for the whole take. Nobody talks over the call.
 
 ## Run sheet
 
-Times are cumulative targets and assume a 60-second call. Slide titles are the deck's; the numbers are from deck v2 and shift if slides are removed, so go by title. `[TEXT RAIL]` stands for whichever of iMessage, WhatsApp or Dial-to-Dial Dial enabled (see "Variants" below).
+Times are cumulative targets and assume a 60-second call. Slide titles are the deck's; the numbers are from deck v2 and shift if slides are removed, so go by title. Both ends of every call and text are Dial numbers (see "Dial-to-Dial" under "Variants" below). Wherever a row has Karthik speaking on the call, the speaker is [confirm: who answers the shop line — Dial's inbound AI playing the owner, or Karthik through Dial].
 
 | Time | Beat | On screen | Who speaks | The exact line |
 | --- | --- | --- | --- | --- |
@@ -23,27 +23,27 @@ Times are cumulative targets and assume a 60-second call. Slide titles are the d
 | 0:26 | Tech stack | Deck: How it works (9) | Eddy | "Platypus is an MCP server, written in TypeScript with Hono and SQLite. An agent sends it a request. Platypus asks Darwin whether an agent already covers the job. If none does, Dial places one AI voice call, and the voice agent books through our tools during the call. Every step is an event in an append-only log, and a booking is confirmed only when the owner says yes." |
 | 0:53 | The ask | Switch to the split screen: Claude Desktop on the left (fresh chat), the dashboard on the right. Sal's card reads PHONE-ONLY | Eddy | "This is Claude Desktop with Platypus connected. I'm the customer." He types, while talking: "Oil change tomorrow afternoon, under $120, near 1025 Sansome." |
 | 1:03 | Darwin | Dashboard: the Darwin panel with Darwin's result and the reason line | Eddy | "Platypus asks Darwin Search first. Darwin returned no ready agent, so we go to the phone." |
-| 1:12 | The owner picks up | Dashboard: booking pending, route call. Camera: the phone lights up and rings | Eddy, then Karthik | Eddy: "Our shop owner today is Karthik. Karthik is not a mechanic." Karthik answers on the second ring, on speaker: "Sal's Auto, this is Karthik." |
+| 1:12 | The owner picks up | Dashboard: booking pending, route call. The call panel shows the shop line ringing | Eddy, then Karthik | Eddy: "Our shop owner today is Karthik. Karthik is not a mechanic." The shop line answers on the second ring: "Sal's Auto, this is Karthik." [confirm: who answers the shop line — Dial's inbound AI playing the owner, or Karthik through Dial] |
 | 1:20 | Disclosure | Dashboard: call panel, transcript turns appearing | AI voice, then Karthik | AI: "Hi, this is an AI assistant calling on behalf of a customer's agent through Platypus. Is this Sal's Auto?" Karthik: "It is." |
 | 1:28 | Price and slot | Call panel tool timeline: `check_slot`, then `hold_slot` | AI voice, then Karthik | AI: "A customer needs an oil change tomorrow afternoon. Do you have an opening, and what's the price?" Karthik: "Two o'clock works. Eighty-nine bucks." |
 | 1:42 | Booking through the tools | Timeline: `create_booking`. The booking shows as confirmed, with the owner's quoted words and a short code | AI voice, then Karthik | AI: "Tomorrow at 2pm for eighty-nine dollars. I'll book that. Can I confirm it's a 2019 Civic?" Karthik: "Yep, booked." |
-| 1:52 | The consent ask | Call panel; the camera still on the phone | AI voice, then Karthik | AI: "Last thing. Next time a customer's agent needs you, can I text you instead of calling? Just a yes or no." Karthik: "Yeah, text me." |
+| 1:52 | The consent ask | Call panel | AI voice, then Karthik | AI: "Last thing. Next time a customer's agent needs you, can I text you instead of calling? Just a yes or no." Karthik: "Yeah, text me." |
 | 2:04 | Consent stored | Timeline: `record_consent`, `set_text_number`. The consent shows with the quoted sentence. Sal's card flips from PHONE-ONLY to TEXT-ENABLED | AI voice, then Karthik | AI: "Perfect. What's the best cell to text?" Karthik: "This one." AI: "Thanks, Karthik." The call ends. |
 | 2:12 | Why that worked | Dashboard: call panel with the transcript and the price | Karthik | "That's the only call Sal's ever takes from an agent. After this, just texts." |
 | 2:18 | Typed result | Claude Desktop: the typed booking (shop, time, price, short code) | Eddy | "And my agent got back a booking, not a transcript." Hold on the result for two seconds. The code differs on every run, so read it only if you read it off the screen. |
-| 2:25 | Second request | Claude Desktop, then the dashboard's owner-phone panel. Camera: the phone | Eddy, then Karthik | Eddy types "Also book a brake inspection there next week." and says: "Second request. No call this time." The phone buzzes on `[TEXT RAIL]`. Karthik reads the message aloud as it appears, then types: "Y". If `[TEXT RAIL]` is Dial-to-Dial, Eddy adds: "Texts to regular phones need 10DLC registration, which we file after today. Today Sal's line is a second Dial number, and the owner-phone panel shows the message." |
+| 2:25 | Second request | Claude Desktop, then the dashboard's owner-phone panel, where the text appears (no phone buzzes) | Eddy, then Karthik | Eddy types "Also book a brake inspection there next week." and says: "Second request. No call this time." The text appears on the dashboard's owner-phone panel. Karthik reads it aloud as it appears, then taps or types: "Y". Eddy adds: "Dial approves real numbers after review; today both ends are Dial numbers. The owner answers texts from this panel." |
 | 2:49 | Confirmed | Dashboard: the booking confirmed from the owner's text. Claude Desktop: the second typed booking | Eddy | "No call. A text, and one letter. A booking is confirmed when the owner says yes, never because the AI said so." |
 | 2:58 | Time saved | Deck: Time saved (7) | Eddy | "Time saved, as estimates. Today a customer calls about three shops: fifteen to twenty-five minutes per booking. With Platypus it is one sentence and a typed result, under a minute with review and corrections. The owner spends about seventy-five seconds once, then five to ten seconds per job by text, not a three-to-five-minute call. We measure opt-in rate and reply seconds live." |
-| 3:24 | What is real, what is mocked | Browser: the repository README at "What is real today and what is mocked" | Karthik | "What is real: a live Dial call to my own phone, a live Darwin search, the booking tools during the call, and consent stored with my exact words. What is mocked: Sal's Auto is me, the other five shops are fictional, and texts to regular phones need 10DLC, so today we text over `[TEXT RAIL]`." |
+| 3:24 | What is real, what is mocked | Browser: the repository README at "What is real today and what is mocked" | Karthik | "What is real: a live Dial call, a live Darwin search, the booking tools during the call, and consent stored with the owner's exact words. What is mocked: Sal's Auto is not a business, the other five shops are fictional, and no real phone number is involved yet. Dial approves real numbers after review, so today calls and texts run between two Dial numbers." |
 | 3:46 | Close | Deck: Close (17), with the repository, the demo link and both names | Eddy | "Businesses live on the phone. Agents live online. Platypus lives in both. Next, ten real shop owners. We're Eddy and Karthik, and the code is on GitHub." Stop talking, count two seconds, stop the recording. |
 
-The sheet ends at about 3:57. Checkpoints: the phone is ringing by 1:15, consent is stored by 2:15, and the second booking is confirmed by 3:00. If the take is running long, shorten the tech-stack sentence about TypeScript and the last sentence of the time-saved beat. Do not rush the call.
+The sheet ends at about 3:57. Checkpoints: the shop line is ringing by 1:15, consent is stored by 2:15, and the second booking is confirmed by 3:00. If the take is running long, shorten the tech-stack sentence about TypeScript and the last sentence of the time-saved beat. Do not rush the call.
 
 ### Variants
 
 Say only what the screen shows.
 
-- **Text rail.** `[TEXT RAIL]` in the table stands for `[TEXT RAIL: iMessage | WhatsApp | Dial-to-Dial]`. Before recording, pick the one Dial actually enabled, say its name in the lines above ("iMessage", "WhatsApp" or "a second Dial number"), and set `TEXT_CHANNEL` to match (`imessage`, `whatsapp` or `dial`). The 10DLC sentence in the second-request row is spoken only for Dial-to-Dial.
+- **Dial-to-Dial.** Dial approves real numbers after review, so both ends are Dial numbers: the call goes from our Dial number to a second Dial number that stands in for Sal's Auto's line, texts use `TEXT_CHANNEL=dial` with `DIAL_OWNER_LINE`, and Karthik replies from the dashboard's owner-phone panel (`POST /demo/owner-reply`), which only ever replies to our own number. Say that on screen; never say a phone rang or received a text.
 - **Darwin.** The 1:03 row works only when the Darwin panel reads "Darwin returned no ready agent". Say "no match" only if the live response says `no_match`; for our trades Darwin has only ever answered with a completed search and no ready agent. If Darwin errors, say what the panel shows, for example: "Darwin did not answer in time. The booking still routes, so we go to the phone." If `DARWIN_ENABLED=false`, delete the 1:03 row and the Darwin sentence in the tech-stack line, and say so in the real-and-mocked beat. Darwin is never simulated.
 - **Anything on a fake.** If any piece ran on its fake (`DIAL_IMPL=fake`, `GATEWAY_IMPL=fake`), the real-and-mocked line names it, and the take does not call it live.
 - **The call script.** The AI lines above are the call script in `packages/voice`. If that script changes, copy the change here before recording. The script closes by addressing the owner by name, so it must say "Thanks, Karthik" and the pickup line must give that name.
@@ -53,23 +53,23 @@ Say only what the screen shows.
 Screen and sound
 
 - [ ] In the HackerSquad project form, start the recorder, share the **entire screen** (not a window or a tab), and allow the camera and the microphone.
-- [ ] The camera preview shows Karthik's phone, screen up, and nothing else. The mic meter moves when someone speaks.
+- [ ] The camera preview shows Karthik and nothing else. The mic meter moves when someone speaks.
 - [ ] Do Not Disturb is on, on the laptop. Quit Slack, Mail and Messages: an iMessage reply would show up on the shared screen.
 - [ ] Three views are ready to switch between: the deck on its Title slide, the split screen (Claude Desktop with a fresh chat and large text on the left, the dashboard on the right with the Darwin, call and owner-phone panels visible without scrolling), and the GitHub README open at "What is real today and what is mocked".
 - [ ] The Close slide has both names, the repository link and the demo link filled in.
 - [ ] A QuickTime screen recording, with the microphone, is running before the form recorder starts. It is a local backup only. HackerSquad has no upload, so it cannot replace the in-form recording.
 
-The phone
+The shop line
 
-- [ ] Karthik's phone is the owner phone (`ALLOWED_NUMBERS[0]`). It is on speaker, face up on the table about 10 cm from the laptop microphone, ringer on, volume at maximum. The camera is aimed at it. Dial's number is allowed through any Focus mode, and every other notification on that phone is off.
-- [ ] Eddy's phone is on silent. Karthik's phone is the only one that may ring.
-- [ ] Karthik answers on the second ring, holds the phone still, and keeps every answer under four words.
+- [ ] Sal's Auto's line is a second Dial number (`DIAL_OWNER_LINE`, also in `ALLOWED_NUMBERS`), so no personal phone rings. Settled before the take: [confirm: who answers the shop line — Dial's inbound AI playing the owner, or Karthik through Dial].
+- [ ] Both phones are on silent, with every other notification off.
+- [ ] If Karthik answers through Dial, he sits about 10 cm from the laptop microphone and keeps every answer under four words.
 
 Network and services
 
 - [ ] The phone hotspot is on and tested as a backup network. If the Wi-Fi drops, switch before a take, not during one.
 - [ ] `pnpm run doctor` is clean and `PUBLIC_BASE_URL` answers.
-- [ ] `.env` has `DEMO_MODE=live`, `DIAL_IMPL=real`, `GATEWAY_IMPL=real`, `TEXT_CHANNEL` set to the rail Dial enabled, and `DARWIN_ENABLED=true` unless Darwin was cut.
+- [ ] `.env` has `DEMO_MODE=live`, `DIAL_IMPL=real`, `GATEWAY_IMPL=real`, `TEXT_CHANNEL=dial` with `DIAL_OWNER_LINE`, `DIAL_OWNER_LINE_ID` and `DIAL_NUMBER` set, and `DARWIN_ENABLED=true` unless Darwin was cut.
 - [ ] `pnpm demo:reset` has run, `pnpm dev` is running, and Sal's card reads PHONE-ONLY with an empty event log. Run `pnpm demo:reset` again before every take.
 - [ ] Claude Desktop is connected through `npx -y mcp-remote http://localhost:8787/mcp` and lists the Platypus tools.
 - [ ] No terminal and no code editor on screen. The repository is shown through the README.
@@ -80,7 +80,7 @@ Timing: record at 4:00 PDT and submit by 4:30 PDT. A take costs about six minute
 
 The rule is to stop and re-record from the top. Never cut inside the call, and never narrate around a failure as if it worked. Say what is on screen.
 
-- **The phone does not ring within 15 seconds of the request.** Stop the take. If a call is live, hit the kill switch first. Check `pnpm run doctor`, run `pnpm demo:reset`, and record again.
+- **The shop line does not ring within 15 seconds of the request.** Stop the take. If a call is live, hit the kill switch first. Check `pnpm run doctor`, run `pnpm demo:reset`, and record again.
 - **The call connects but the audio is bad.** Stop and re-record. The transcript on the dashboard is not a substitute for a take with clear audio.
 - **The mid-call tools do not fire.** Stop and re-record. A booking that was made by the call but not through the tools cannot be confirmed from the transcript, by design, and the video must not claim it.
 - **Darwin is slow or errors.** Keep going if the dashboard shows the failure and the booking still routes to the call. Say what the panel shows (see "Variants"). Do not wait on it more than 15 seconds.
