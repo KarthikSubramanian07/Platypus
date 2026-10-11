@@ -1,3 +1,4 @@
+import { DEMO_SHOP_SLUG } from "@platypus/shared/db";
 import { maskNumber } from "@platypus/shared/config";
 import { getActiveConsent, getRow, insertRow, selectRows, updateRow, type Booking, type Business, type Message } from "@platypus/shared/db";
 import { composeBookingRequest } from "./copy";
@@ -99,9 +100,10 @@ export async function routeNumber(deps: TextDeps, business: Business, number: st
   return { ok: true, to: number, rail, channel: rail };
 }
 
-/** The texting cell from the call first, then the listed line. */
-export function candidateNumbers(business: Business): string[] {
-  return [...new Set([business.text_number_e164, business.phone_e164].filter((n): n is string => Boolean(n)))];
+/** The texting cell from the call first, then the listed line, then (Dial-to-Dial demo only) the owner line. */
+export function candidateNumbers(business: Business, deps?: Pick<TextDeps, "textChannel" | "ownerLine">): string[] {
+  const ownerLine = deps?.textChannel === "dial" && business.slug === DEMO_SHOP_SLUG ? deps.ownerLine : undefined;
+  return [...new Set([business.text_number_e164, business.phone_e164, ownerLine].filter((n): n is string => Boolean(n)))];
 }
 
 /** A PAUSE with a duration ends on its own; the next send checks and resumes. */
@@ -236,7 +238,7 @@ export async function sendBookingRequest(deps: TextDeps, input: { booking_id: st
   if (blocked) return needsCall(deps, business, booking, blocked);
 
   const reasons: string[] = [];
-  for (const number of candidateNumbers(business)) {
+  for (const number of candidateNumbers(business, deps)) {
     const route = await routeNumber(deps, business, number);
     if (!route.ok) {
       reasons.push(route.reason);
@@ -282,7 +284,7 @@ export async function resendLast(deps: TextDeps, bookingId: string, options: { f
 
   const body = last.payload.body as string;
   const lastRow = last.type === "message.sent" && last.message_id ? getRow(deps.db, "messages", last.message_id) : undefined;
-  const to = lastRow?.to_e164 ?? candidateNumbers(business).find((n) => numberRef(n) === last.payload.number_ref);
+  const to = lastRow?.to_e164 ?? candidateNumbers(business, deps).find((n) => numberRef(n) === last.payload.number_ref);
   if (!to) return needsCall(deps, business, booking, "the number the request went to is no longer on file");
 
   const attemptedAt = (last.payload.attempted_at as string | undefined) ?? last.created_at;
