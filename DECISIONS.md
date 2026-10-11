@@ -139,3 +139,49 @@ Darwin's SpeedHacks and Use Search results guides set four rules, and the gatewa
 - **Questions are answered in the same search.** When Darwin asks a question, the calling agent is told to search again with more detail. Platypus sends that detail as a refinement of the same Darwin search (its `previousResponseId`, and the anonymous search token), not as a new search.
 
 Why: the integration should be faithful to Darwin rather than optimistic, and a booking must never go to an agent whose requirements nobody knows. Cost: today no local-service result passes the three checks, so every booking still goes by call or text. A refinement is one more Darwin round trip, so only `search_providers` makes one. `request_booking` reuses that answer, which keeps the demo's phone call as fast as before. If a refinement fails, Darwin's earlier question stands.
+
+### Phone side
+
+**The server is exposed through a tunnel during the demo, so every route has an owner and a guard.**
+`pnpm live` publishes the dev server at a `trycloudflare.com` URL that anyone can find. These are the routes it serves, and what protects each one:
+
+| Route | Who calls it | Guard |
+|---|---|---|
+| `/health` | Anyone | Says only `ok` and the mode. |
+| `/webhooks/dial` | Dial | HMAC-SHA256 signature, compared in constant time, with a five-minute timestamp window. Dedupe uses the event id inside the signed body, and the body is capped at 1 MB before it is read. |
+| `/mcp/<CONTEXT_MCP_SECRET>` | Dial's voice agent, mid-call | An unguessable path plus a bearer token, both compared in constant time, with a Host allowlist. Bodies are capped at 64 KB and requests at 120 a minute. Every tool call is authorized against the live call. |
+| `/mcp` | Customer agents | `GATEWAY_TOKEN` (agent side). |
+| `/events`, `/events/stream`, `/events.jsonl`, `/audit`, `/demo/*` | The team | This machine only, or `DASHBOARD_TOKEN`. See below. |
+
+**The event log, the audit and the demo controls answer only the team.**
+Events carry call transcripts, owner replies and consent quotes, and `/demo/owner-reply` can text a "Y" that confirms a booking. These operator routes let a request in only when it comes from this machine, or when it presents `DASHBOARD_TOKEN`:
+- **From this machine** means a loopback Host header and a loopback peer, with no Cloudflare tunnel headers. A browser request must also carry a loopback Origin or one listed in `DASHBOARD_ORIGINS` (the deployed site is listed by default).
+- **The token** can come as `Authorization: Bearer` or as `?token=`. EventSource and no-cors POSTs cannot set headers, so `/live?events=<tunnel>&token=<value>` forwards the token to that one server, and the page never stores it.
+
+The Origin check matters even on localhost. Without it, any web page open on the presenter's laptop could POST to `http://localhost:8787/demo/owner-reply`. The server listens on 127.0.0.1 only (set `HOST` to change that), so nobody on the venue Wi-Fi can reach it. Without `DASHBOARD_TOKEN`, the tunnel cannot reach these routes at all.
+
+Why not mask the payloads for public viewers instead: a dashboard that hides the transcript and the consent quote shows nothing worth watching. The log already masks phone numbers (`+1415•••0101`) and replaces them with hashes. Those hashes are pseudonyms, not encryption, so the log as a whole stays private.
+
+**Owners are protected by limits per phone and per business, not only per agent.**
+Agents name themselves in a header, and an agent can cancel a request and make it again. The gateway's per-agent limits therefore cannot stop one agent from ringing an owner in a loop. Two limits sit below them, and both count rows in the database, so a restart does not reset them:
+- One phone number gets at most six calls from us in any hour.
+- One business is texted about at most ten new jobs in any hour.
+
+A refused text never turns into a call. The booking stays pending, and the refusal is recorded as an event. Do-not-call, consent, STOP and PAUSE are checked before either limit.
+
+**Agent and owner text is cleaned the same way at every boundary.**
+`sanitizeUntrustedText` runs on everything an agent or an owner supplies before it is stored, texted to an owner, or placed into a prompt:
+- It folds fullwidth letters to ASCII, so `ｈｔｔｐｓ：／／` reads as `https://`.
+- It removes control characters and invisible characters: zero-width spaces, bidi overrides and the byte-order mark.
+- It strips links, including domains in any script.
+- It caps the length.
+
+The voice agent's instruction also removes quotes, `#`, braces and angle brackets from agent fields, and caps each field at 60 characters, so a field cannot end a quoted line or fake a heading. Claude prompts put untrusted text inside tags after escaping `<` and `>`, including in transcript mining. Without that escaping, an owner who says "`</transcript>`" would escape the data block.
+
+**The site sends a strict Content-Security-Policy.**
+`public/_headers` allows only this origin's scripts and styles, plus inline style attributes for CSS variables. It allows self-hosted fonts, and event streams only to this site, `localhost` or `*.trycloudflare.com`. A named tunnel on another domain must be added to `connect-src`. The dashboard builds DOM only with `textContent`, and a test fails if any source file uses an HTML-parsing sink.
+
+**Accepted risks.**
+- Webhook dedupe is in memory. A signed request replayed within its five-minute window after a restart is processed again. Inbound messages are still deduped by Dial's message id (a UNIQUE column), and call events are idempotent.
+- `DASHBOARD_TOKEN` in a URL can end up in browser history and in the tunnel's logs. Use a fresh token for each event, and do not reuse `GATEWAY_TOKEN`.
+- The gateway compares `GATEWAY_TOKEN` with an early length check, which reveals the token's length but nothing else. The gateway is the agent side's package, and a random token of 16 or more characters makes this harmless.
