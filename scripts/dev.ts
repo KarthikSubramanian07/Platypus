@@ -11,6 +11,9 @@ import { Hono } from "hono";
 import { openDb } from "../packages/shared/src/db/index";
 import { createEventsApp, defaultBus } from "../packages/shared/src/events/index";
 import { loadGoldenPath, replayEvents } from "../packages/shared/src/testing/replay";
+import type { AgentSide, PhoneSide } from "../packages/shared/src/contracts/seams";
+import * as gatewayPackage from "../packages/gateway/src/index";
+import * as voicePackage from "../packages/voice/src/index";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 const mode = process.env.DEMO_MODE ?? "fakes";
@@ -24,6 +27,15 @@ const db = openDb(dbPath);
 const app = new Hono();
 app.get("/health", (c) => c.json({ ok: true, mode }));
 app.route("/", createEventsApp({ db, bus: defaultBus }));
+
+// Both sides plug in here through the exports in contracts/seams.ts, so neither edits this file.
+// Everything runs in this one process: one database, one event bus, one live stream.
+const deps = { db, bus: defaultBus };
+const phone = voicePackage as unknown as Partial<PhoneSide>;
+const agent = gatewayPackage as unknown as Partial<AgentSide>;
+phone.mount?.(app, deps);
+const owner = process.env.DIAL_IMPL === "real" ? phone.createOwnerChannels?.(deps) : undefined;
+agent.mount?.(app, owner ? { ...deps, owner } : deps);
 
 let replaying = false;
 async function playGoldenPath(speed: number) {

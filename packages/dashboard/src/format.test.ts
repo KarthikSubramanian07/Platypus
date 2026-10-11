@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatConfidence, summarize, type StreamEvent } from "./format";
+import { formatConfidence, GOLDEN_STEPS, stepFor, summarize, type StreamEvent } from "./format";
 
 const base: StreamEvent = { id: "evt_1", type: "x", actor: "system", refs: {}, payload: {}, reason: null, confidence: 1, created_at: "2026-10-12T02:00:00.000Z" };
 
@@ -27,5 +27,22 @@ describe("summarize", () => {
 
   it("formats confidence as a percentage", () => {
     expect(formatConfidence(0.873)).toBe("87%");
+  });
+});
+
+describe("stepFor", () => {
+  it("maps the golden-path milestones", () => {
+    expect(stepFor({ ...base, type: "agent.tool_called", payload: { tool: "search_providers" } })).toBe("ask");
+    expect(stepFor({ ...base, type: "call.placed" })).toBe("call");
+    expect(stepFor({ ...base, type: "voice.tool_called", payload: { tool: "create_booking", ok: true } })).toBe("tools");
+    expect(stepFor({ ...base, type: "voice.tool_called", payload: { tool: "create_booking", ok: false } })).toBeUndefined();
+    expect(stepFor({ ...base, type: "booking.confirmed", payload: { evidence: { kind: "call" } } })).toBeUndefined();
+    expect(stepFor({ ...base, type: "booking.confirmed", payload: { evidence: { kind: "text" } } })).toBe("confirmed");
+  });
+
+  it("lights every step when the recorded golden path plays", async () => {
+    const { GOLDEN_PATH } = await import("./fixture");
+    const keys = new Set(GOLDEN_PATH.map(stepFor).filter(Boolean));
+    expect([...keys]).toEqual(GOLDEN_STEPS.map((s) => s.key));
   });
 });

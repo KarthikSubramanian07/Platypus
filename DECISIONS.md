@@ -99,10 +99,21 @@ A live lookup takes 3 to 45 seconds when Darwin errors. `lookupDarwin` takes `bu
 Location in the query or in context is what triggers Darwin's 500s, and a search engine for agents does not rank local supply anyway. Platypus does its own local matching.
   - `DARWIN_ENABLED=false` is implemented. `toDarwinSummary(null)` reports `disabled`. Act needs both `DARWIN_ACT_ENABLED=true` and `DARWIN_ACT_TOKEN`.
 
+## Design
+
+**Granola's palette, developer-tool structure.**
+The public page uses Granola's colors: white and warm off-white surfaces, near-black ink, and lime and olive accents. It borrows its structure from developer-tool pages such as trymarlo.pages.dev and tryvivian.pages.dev: a faint grid, monospace eyebrows, and window-chrome panels. Type stays Source Serif 4 for display and DM Sans for text, with JetBrains Mono for data. This replaces the earlier paper-and-green palette. Why: the page is the first thing a judge opens, and it should read as calm and precise rather than as a generic dashboard.
+
+**The deployed page replays a recording.**
+Cloudflare Pages serves static files, so there is no event server behind tryplatypus.pages.dev. In a production build without `VITE_EVENTS_URL`, the page plays the bundled golden-path fixture and says "Recorded run". `?events=<url>` points it at a live server.
+
+**tryplatypus.pages.dev, not platypus.pages.dev.**
+Another Cloudflare account already holds `platypus`, and Cloudflare would have given us `platypus-9i6.pages.dev`. `tryplatypus` is clean and matches the naming of the reference sites.
+
 ## Team plan
 
 **One foundation, then two parallel sides instead of three.**
-The original plan had three sessions after the foundation: voice and text, gateway, and dashboard plus an analytics partner. It now has two: the phone side (`voice`, `text`) and the agent side (`gateway`, the video shot list and the submission text). Why: two sides that meet only at the contracts are easier to keep in sync in one afternoon, and both still ship against fakes. The full dashboard, beyond the shell, has no named owner yet. See [docs/workstreams.md](docs/workstreams.md).
+The original plan had three sessions after the foundation: voice and text, gateway, and dashboard plus an analytics partner. It now has two: the phone side (`voice`, `text`) and the agent side (`gateway`, the video shot list and the submission text). Why: two sides that meet only at the contracts are easier to keep in sync in one afternoon, and both still ship against fakes. The phone side also owns the full dashboard. The two sides meet only in `packages/shared/src/contracts/seams.ts` and `scripts/dev.ts`; [docs/workstreams.md](docs/workstreams.md) says who edits which files.
 
 **No analytics partner today.**
 The earlier plan forwarded events to Keewano for routing signals. It is removed from the repository entirely. Routing signals are computed from the local event log and labeled `source: "local"`. Why: a partner integration only counts if it is load-bearing, and the time is better spent making the phone ring reliably.
