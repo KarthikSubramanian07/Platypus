@@ -78,6 +78,7 @@ All figures are **estimates**, not measurements.
 
 - **Coverage.** For local trades, Darwin lists agents but none is ready to act. For the demo's auto shop it returned one listed agent and zero that could start a thread, so a booking falls back to the phone. Platypus is our answer to that gap: one call turns a phone-only business into supply an agent can book. What would close it on Darwin's side: a way to list or host businesses (Darwin's "Publish", marked "Soon"), so every shop Platypus onboards shows up as a ready agent.
 - **Reliability.** Search v3 returned HTTP 500 for specific phrasings that include a service or location (for example "auto repair shop: oil change" with context), while the bare trade succeeded. We handle it with a fallback ladder, specific query first, then the bare trade, and log the `x-request-id` of every failure. One trade (moving) failed on every rung in our live check. The first answer for the demo shop took about 10 seconds (a 500, then a 200), so we cache answers per trade and warm the cache on start. What would fix it: consistent handling of those phrasings and faster first answers.
+- **Access.** Creating a Darwin account to get a Search key failed three times with "we can't verify your sign-in", so everything above ran on anonymous Search. What would fix it: a working sign-in for new developer accounts, or a hackathon key handed out at the table.
 
 ## Technologies
 
