@@ -1,4 +1,4 @@
-import type { DarwinLookup } from "@platypus/shared/darwin";
+import { isStartable, type DarwinLookup } from "@platypus/shared/darwin";
 import type { BookingRoute, Business } from "@platypus/shared/db";
 
 export interface RouteDecision {
@@ -10,8 +10,9 @@ export interface RouteDecision {
 
 /**
  * The request_booking route decision. Darwin Act is used only when Darwin itself
- * says a result can start a thread and Platypus holds a pilot credential; every
- * other case is Platypus's own rail: text if the owner opted in, otherwise a call.
+ * says a result is usable (ready, can start a thread, setup declared; see isStartable)
+ * and Platypus holds a pilot credential. Every other case is Platypus's own rail:
+ * text if the owner opted in, otherwise a call.
  */
 export function decideBookingRoute(input: {
   business: Pick<Business, "channel_state" | "do_not_call">;
@@ -30,14 +31,23 @@ export function decideBookingRoute(input: {
   return { route: "call", reasons: [darwinReason, "no text consent on record"] };
 }
 
+/** Ready and able to start, but with no declared setup: Darwin's guide reads that as unknown. */
+function whyNotListed(darwin: DarwinLookup): string {
+  return darwin.search?.response.agents.some((a) => a.readiness === "ready" && a.canStartThread)
+    ? "Darwin has a ready agent, but its setup requirements are unknown"
+    : "Darwin returned no ready agent";
+}
+
 /** null when Darwin Act should take the booking. */
 function whyNotDarwin(darwin: DarwinLookup | null, canAct: boolean): string | null {
   if (!darwin) return "Darwin not consulted (DARWIN_ENABLED=false)";
   switch (darwin.outcome) {
     case "startable":
-      return canAct && darwin.candidate ? null : "Darwin has a ready agent but Darwin Act is not enabled";
+      // A candidate that fails Darwin's own checks is only listed.
+      if (!darwin.candidate || !isStartable(darwin.candidate)) return whyNotListed(darwin);
+      return canAct ? null : "Darwin has a ready agent but Darwin Act is not enabled";
     case "listed_only":
-      return "Darwin returned no ready agent";
+      return whyNotListed(darwin);
     case "needs_input":
       return "Darwin asked for more input";
     case "no_match":

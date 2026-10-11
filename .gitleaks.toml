@@ -1,0 +1,20 @@
+# Secret scanning for CI (`gitleaks git`). Extends the built-in rules; every allowlist entry
+# is narrow (one path AND one pattern) and says why it is not a secret.
+
+title = "Platypus gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Darwin Search v3 returns a per-search pagination token in anonymous, recorded responses; it is not a credential"
+condition = "AND"
+regexTarget = "line"
+paths = ['''packages/shared/src/testing/fixtures/darwin-[a-z-]+\.recorded\.json''']
+regexes = ['''"searchToken":''']
+
+[[allowlists]]
+description = "Obviously fake keys in tests (named *_test_* with a 0123456789abcdef body)"
+condition = "AND"
+paths = ['''\.test\.ts$''']
+regexes = ['''_test_0123456789abcdef''']

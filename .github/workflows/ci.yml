@@ -1,27 +1,223 @@
 name: CI
 
+# Every job runs in parallel and the `ci-ok` gate waits for all of them, so branch protection
+# needs exactly one required check. Each job writes what it measured to the run's summary page.
+
 on:
+  pull_request:
   push:
     branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: "1"
+
 jobs:
-  check:
-    name: Lint, typecheck, test
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
       - run: pnpm lint
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
       - run: pnpm typecheck
-      - run: pnpm test
+
+  test:
+    name: Unit tests (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+        with:
+          node-version: ${{ matrix.node }}
+      # Per-package coverage floors live in vitest.config.ts; falling under one fails this step.
+      - run: pnpm test:coverage
+      - name: Coverage summary
+        if: ${{ !cancelled() }}
+        run: pnpm ci:coverage-summary
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: coverage-node-${{ matrix.node }}
+          path: coverage/
+          retention-days: 14
+
+  build:
+    name: Build dashboard and check bundle budget
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: pnpm --filter @platypus/dashboard build
+      - name: JavaScript budget (120 KB gzipped)
+        run: pnpm ci:bundle-budget
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dashboard-dist
+          path: packages/dashboard/dist/
+          retention-days: 7
+
+  e2e:
+    name: End to end (phone side and golden path)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Phone side against FakeDial, plus every *.e2e.test.ts
+        run: pnpm test:e2e
+      - name: Regenerate the golden-path fixture
+        run: pnpm fixtures:golden-path
+      # Ids and short codes are random, so a diff is expected; the story must still be valid.
+      - name: Validate the regenerated fixture
+        run: pnpm ci:golden-path
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: golden-path-fixture
+          path: packages/shared/src/testing/fixtures/golden-path.jsonl
+          retention-days: 7
+
+  smoke:
+    name: Dashboard smoke (Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        id: browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium-shell
+      - name: Install Chromium
+        if: steps.browsers.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps --only-shell chromium
+      - name: Install Chromium system dependencies
+        if: steps.browsers.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+      - run: pnpm --filter @platypus/dashboard build
+      - name: Load the built site, assert no errors and that events render
+        run: pnpm ci:smoke
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: dashboard-screenshots
+          path: artifacts/screenshots/
+          retention-days: 14
+
+  eval:
+    name: Owner-reply classifier eval
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      # 100% on deterministic rows and zero false accepts, enforced by the test file.
+      - run: pnpm test:eval
+      - name: Confusion matrix
+        if: ${{ !cancelled() }}
+        run: pnpm ci:eval-summary
+
+  security:
+    name: Security and repo hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GITLEAKS_VERSION: 8.30.1
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # gitleaks scans all history; the hygiene check reads the PR's commit messages
+      - uses: ./.github/actions/setup
+
+      - name: Dependency audit (moderate warns)
+        run: |
+          if ! pnpm audit --prod --audit-level moderate; then
+            echo "::warning title=pnpm audit::moderate advisories in production dependencies; see the log"
+          fi
+      - name: Dependency audit (high fails)
+        if: ${{ !cancelled() }}
+        run: pnpm audit --prod --audit-level high
+
+      - name: Install gitleaks ${{ env.GITLEAKS_VERSION }} (checksum verified)
+        if: ${{ !cancelled() }}
+        working-directory: ${{ runner.temp }}
+        run: |
+          base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          tarball="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL -o "$tarball" "$base/$tarball"
+          curl -sSfL -o checksums.txt "$base/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          grep " ${tarball}\$" checksums.txt | sha256sum --check --strict -
+          tar -xzf "$tarball" gitleaks
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Secret scan (gitleaks, full history)
+        if: ${{ !cancelled() }}
+        run: gitleaks git --config .gitleaks.toml --redact --no-banner --verbose .
+
+      - name: Repository hygiene
+        if: ${{ !cancelled() }}
+        env:
+          HYGIENE_RANGE: ${{ github.event_name == 'pull_request' && format('{0}..{1}', github.event.pull_request.base.sha, github.event.pull_request.head.sha) || github.event_name == 'push' && format('{0}..{1}', github.event.before, github.sha) || '' }}
+        run: pnpm ci:hygiene
+
+  contracts:
+    name: Contract schemas are committed and current
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: pnpm contracts:export
+      - name: Fail if the exported schemas differ from the committed ones
+        run: |
+          git add --intent-to-add packages/shared/schemas
+          if ! git diff --exit-code -- packages/shared/schemas; then
+            echo "::error title=Contracts::packages/shared/schemas is stale. Run 'pnpm contracts:export' and commit the result."
+            exit 1
+          fi
+
+  ci-ok:
+    name: ci-ok
+    if: ${{ always() }}
+    needs: [lint, typecheck, test, build, e2e, smoke, eval, security, contracts]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every required job succeeded
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for result in $RESULTS; do
+            if [ "$result" != "success" ]; then
+              echo "::error title=ci-ok::a required job finished with '$result'"
+              exit 1
+            fi
+          done

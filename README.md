@@ -6,8 +6,8 @@
 
 `ai-agents` · `mcp` · `voice-agents` · `ai-booking` · `local-services` · `dial` · `darwin` · `alike` · `speedhacks` · `sf-tech-week` · `typescript`
 
-![CI](https://github.com/KarthikSubramanian07/Platypus/actions/workflows/ci.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-353%20passing-1c5449)
+[![CI](https://github.com/KarthikSubramanian07/Platypus/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/KarthikSubramanian07/Platypus/actions/workflows/ci.yml) [![CodeQL](https://github.com/KarthikSubramanian07/Platypus/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/KarthikSubramanian07/Platypus/actions/workflows/codeql.yml)
+![Tests](https://img.shields.io/badge/tests-777%20passing-1c5449)
 ![License](https://img.shields.io/badge/license-MIT-22231f)
 ![Built on](https://img.shields.io/badge/built%20on-Dial%20·%20Darwin%20·%20Alike-1c5449)
 ![Agent ready](https://img.shields.io/badge/agent--ready-llms.txt%20·%20Markdown-9fd3c1)
@@ -31,7 +31,7 @@ A customer's agent (Claude, Muse, anything that speaks MCP) calls our MCP tools.
 | Criterion | Weight | Where to look |
 | --- | --- | --- |
 | **Problem and impact: time saved** | 40% | [Time saved](#time-saved): 15 to 25 minutes of calling around becomes under a minute of attention, with setup, review and corrections counted. The owner's 3 to 5 minute booking call becomes a 5 to 10 second text, after one 75-second call. |
-| **Technical execution** | 25% | [Guarantees the code enforces](#guarantees-the-code-enforces): an evidence-only `confirm()`, consent rows the database refuses without proof, an append-only event log enforced by triggers, and a phone-number allowlist at the lowest layer. 353 tests run in CI. |
+| **Technical execution** | 25% | [Guarantees the code enforces](#guarantees-the-code-enforces): an evidence-only `confirm()`, consent rows the database refuses without proof, an append-only event log enforced by triggers, and a phone-number allowlist at the lowest layer. 777 tests run in CI. |
 | **Market and path forward** | 15% | [Why now](#why-now), [the moat](#the-moat-consent-compounds-calls-dont) and [the business model](#business-model-and-path-forward): every lab shipped a calling agent in September; we sell to owners per confirmed job; ten real owners on Monday. |
 | **Originality** | 10% | [The insight](#the-insight): everyone else calls a business every time; we call it once. The call books a real job *and* converts the business to agent-native in the same 75 seconds. Nobody installs anything. |
 | **Product quality and demo** | 10% | [The live page](https://tryplatypus.pages.dev) replays the recorded golden path event by event, on desktop, iPad and phone. `pnpm dev` runs it locally with no keys. |

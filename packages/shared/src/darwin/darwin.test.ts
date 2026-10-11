@@ -9,12 +9,14 @@ import {
   DarwinError,
   HttpDarwin,
   isDarwinEnabled,
+  isStartable,
   lookupDarwin,
   parseRetryAfter,
   probeDarwinMcp,
   searchLadder,
   toDarwinSummary,
   tradeQuery,
+  type SearchResponse,
 } from "./index";
 
 function jsonResponse(status: number, body: unknown, headers: Record<string, string> = {}): Response {
@@ -74,6 +76,19 @@ describe("HttpDarwin.search", () => {
     const { darwin, fetch } = http([jsonResponse(200, DARWIN_FIXTURES.hairSalon)], { apiKey: "dk_test" });
     await darwin.search({ query: "hair salon" });
     expect(sentHeaders(fetch.mock.calls[0]![1]).authorization).toBe("Bearer dk_test");
+  });
+
+  it("refines an anonymous search with its token in X-Search-Token, and a keyed one without it", async () => {
+    const refinement = { query: "hair salon: color", previousResponseId: DARWIN_FIXTURES.needsInput.responseId };
+    const anonymous = http([jsonResponse(200, DARWIN_FIXTURES.hairSalon)]);
+    await anonymous.darwin.search(refinement, { searchToken: "tok-anon" });
+    const [, init] = anonymous.fetch.mock.calls[0]!;
+    expect(sentHeaders(init)["x-search-token"]).toBe("tok-anon");
+    expect(JSON.parse(init!.body as string)).toEqual(refinement);
+
+    const keyed = http([jsonResponse(200, DARWIN_FIXTURES.hairSalon)], { apiKey: "dk_test" });
+    await keyed.darwin.search(refinement, { searchToken: "tok-anon" });
+    expect(sentHeaders(keyed.fetch.mock.calls[0]![1])["x-search-token"]).toBeUndefined();
   });
 
   it("does not retry a 500, because Darwin's 500s mostly repeat for the same phrasing", async () => {
@@ -228,14 +243,26 @@ describe("lookupDarwin", () => {
     expect(lookup.outcome).toBe("listed_only");
   });
 
-  it("reports needs_input and no_match", async () => {
+  it("treats a missing requiredSetup as unknown, so a ready agent without one is not startable", async () => {
+    const { requiredSetup: _, ...absent } = startableAgent();
+    for (const agent of [{ ...startableAgent(), requiredSetup: null }, absent]) {
+      expect(isStartable(agent)).toBe(false);
+      const lookup = await lookupDarwin(new ScriptedDarwin({ script: [searchWith([agent])] }), input);
+      expect(lookup).toMatchObject({ outcome: "listed_only", candidate: null });
+    }
+    expect(isStartable(startableAgent())).toBe(true);
+  });
+
+  it("checks Darwin's status first: a question or a no_match is never a recommendation", async () => {
+    // The recorded needs_input response also lists an agent; the question still comes first.
     expect((await lookupDarwin(new ScriptedDarwin({ script: [DARWIN_FIXTURES.needsInput] }), { trade: "x" })).outcome).toBe(
-      "listed_only",
+      "needs_input",
     );
-    const asking = searchWith([], DARWIN_FIXTURES.needsInput);
-    expect((await lookupDarwin(new ScriptedDarwin({ script: [asking] }), { trade: "x" })).outcome).toBe("needs_input");
+    const askingWithReady = searchWith([startableAgent()], DARWIN_FIXTURES.needsInput);
+    expect(await lookupDarwin(new ScriptedDarwin({ script: [askingWithReady] }), { trade: "x" })).toMatchObject({ outcome: "needs_input", candidate: null });
     const empty = { ...searchWith([]), status: "no_match" as const };
     expect((await lookupDarwin(new ScriptedDarwin({ script: [empty] }), { trade: "x" })).outcome).toBe("no_match");
+    expect((await lookupDarwin(new ScriptedDarwin({ script: [searchWith([])] }), { trade: "x" })).outcome).toBe("no_match");
   });
 
   it("gives the bare trade a second try, because its 500s are intermittent", async () => {
@@ -314,6 +341,69 @@ describe("DarwinLookupCache", () => {
   });
 });
 
+describe("refining a needs_input search", () => {
+  // Darwin's recorded question, with a token standing in for the private anonymous searchToken.
+  const asking: SearchResponse = { ...DARWIN_FIXTURES.needsInput, searchToken: "tok-anon" };
+  const { searchToken: _, ...answeredWithoutToken } = {
+    ...searchWith([DARWIN_FIXTURES.hairSalon.response.agents[0]!]),
+    searchId: asking.searchId,
+    responseId: "sresp_00000000-0000-4000-8000-000000000002",
+    previousResponseId: asking.responseId,
+  };
+  const answered: SearchResponse = answeredWithoutToken;
+  const first = { trade: "salon", area: "San Francisco" };
+  const detailed = { trade: "salon", service: "color for curly hair", area: "San Francisco", budgetCents: 9000 };
+
+  it("sends the new detail with previousResponseId and the anonymous token instead of a fresh search", async () => {
+    const cache = new DarwinLookupCache();
+    const darwin = new ScriptedDarwin({ script: [asking, answered] });
+    expect((await lookupDarwin(darwin, first, { cache })).outcome).toBe("needs_input");
+
+    const refined = await lookupDarwin(darwin, detailed, { cache, refine: true });
+    expect(darwin.searches[1]).toEqual({ ...searchLadder(detailed)[0], previousResponseId: asking.responseId });
+    expect(darwin.searchOptions[1]).toEqual({ searchToken: "tok-anon" });
+    expect(refined.outcome).toBe("listed_only");
+    expect(refined.cached).toBeUndefined();
+    expect(refined.attempts).toEqual([expect.objectContaining({ ok: true, previousResponseId: asking.responseId })]);
+    // Darwin did not repeat the token, so the one that authorizes this search is kept for Act.
+    expect(refined.search?.searchToken).toBe("tok-anon");
+
+    const payload = darwinEventPayload(refined);
+    expect(payload).toMatchObject({ search_id: asking.searchId, response_id: answered.responseId, previous_response_id: asking.responseId });
+    expect(JSON.stringify(payload)).not.toContain("tok-anon");
+
+    // The refined answer now serves this trade and area, including request_booking's lookup.
+    const after = await lookupDarwin(darwin, { ...detailed, service: "anything" }, { cache });
+    expect(after).toMatchObject({ cached: true, outcome: "listed_only" });
+    expect(darwin.searches).toHaveLength(2);
+  });
+
+  it("replays the question without a Darwin call when the search adds nothing, or when not asked to refine", async () => {
+    const cache = new DarwinLookupCache();
+    const darwin = new ScriptedDarwin({ script: [asking] });
+    await lookupDarwin(darwin, detailed, { cache });
+    // The same detail again, a search with no service, and request_booking (no refine) all replay it.
+    expect(await lookupDarwin(darwin, detailed, { cache, refine: true })).toMatchObject({ cached: true, outcome: "needs_input" });
+    expect(await lookupDarwin(darwin, first, { cache, refine: true })).toMatchObject({ cached: true, outcome: "needs_input" });
+    expect(await lookupDarwin(darwin, { ...detailed, service: "cut" }, { cache })).toMatchObject({ cached: true, outcome: "needs_input" });
+    expect(darwin.searches).toHaveLength(1);
+  });
+
+  it("keeps Darwin's question when the refinement fails, and does not retry the same detail", async () => {
+    const cache = new DarwinLookupCache();
+    const darwin = new ScriptedDarwin({ script: [asking, darwinFailures.server500("r-refine")] });
+    await lookupDarwin(darwin, first, { cache });
+
+    const kept = await lookupDarwin(darwin, detailed, { cache, refine: true });
+    expect(kept).toMatchObject({ outcome: "needs_input", cached: true });
+    expect(kept.search?.responseId).toBe(asking.responseId);
+    expect(kept.attempts).toEqual([expect.objectContaining({ ok: false, status: 500, requestId: "r-refine", previousResponseId: asking.responseId })]);
+
+    expect(await lookupDarwin(darwin, detailed, { cache, refine: true })).toMatchObject({ outcome: "needs_input", cached: true });
+    expect(darwin.searches).toHaveLength(2);
+  });
+});
+
 describe("darwinEventPayload", () => {
   it("matches the golden path's darwin.searched shape and drops provider text and the search token", async () => {
     const search = { ...searchWith([startableAgent()]), searchToken: "secret-token" };
@@ -325,6 +415,8 @@ describe("darwinEventPayload", () => {
       provenance: "live",
       query: "hair salon",
       search_id: search.searchId,
+      response_id: search.responseId,
+      previous_response_id: null,
       outcome: "startable",
       candidate_agent_id: lookup.candidate!.agentId,
     });
@@ -348,6 +440,47 @@ describe("toDarwinSummary", () => {
     expect(summary).toMatchObject({ status: "needs_input", search_id: DARWIN_FIXTURES.needsInput.searchId, cached: false });
     expect(summary.question).toBe(DARWIN_FIXTURES.needsInput.response.question);
     expect(summary.agents[0]).toMatchObject({ readiness: "unavailable", can_start_thread: false });
+  });
+
+  it("explains every agent in Darwin's order and labels the ones that are not usable", async () => {
+    const verified = {
+      protocol: "MCP",
+      environment: "remote_client",
+      endpointUrl: "https://agent.example/mcp",
+      endpointStatus: "verified",
+      documentationUrl: "https://agent.example/docs",
+    };
+    const listed = { ...DARWIN_FIXTURES.hairSalon.response.agents[0]!, reasons: ["a", "b", "c", "d"], uncertainties: ["see https://evil.example"] };
+    const ready = { ...startableAgent(DARWIN_FIXTURES.hairSalon.response.agents[1]), connectionMethods: [verified] };
+    const summary = DarwinSummary.parse(toDarwinSummary(await lookupDarwin(new ScriptedDarwin({ script: [searchWith([listed, ready])] }), { trade: "salon" })));
+
+    expect(summary.agents.map((a) => [a.agent_id, a.label, a.usable])).toEqual([
+      [listed.agentId, "listed, not ready", false],
+      [ready.agentId, "usable", true],
+    ]);
+    expect(summary.agents[0]).toMatchObject({
+      setup: "unknown",
+      connection_methods: 0,
+      verified_connection: false,
+      reasons: ["a", "b", "c"],
+      capability_id: listed.capabilityId,
+      capability_revision: listed.capabilityRevision,
+    });
+    expect(summary.agents[0]!.uncertainties[0]).not.toContain("evil.example");
+    expect(summary.agents[1]).toMatchObject({
+      setup: "provider_configuration supplied by provider: The provider configured its booking route.",
+      connection_methods: 1,
+      verified_connection: true,
+    });
+    expect(summary.note).toBeUndefined();
+  });
+
+  it("says when no listed agent is usable, and tells the calling agent how to answer Darwin's question", async () => {
+    const listedOnly = toDarwinSummary(await lookupDarwin(new ScriptedDarwin(), { trade: "salon" }));
+    expect(listedOnly.agents.every((a) => a.label === "listed, not ready" && a.setup === "unknown")).toBe(true);
+    expect(listedOnly.note).toMatch(/none is usable/);
+    const asking = toDarwinSummary(await lookupDarwin(new ScriptedDarwin({ script: [DARWIN_FIXTURES.needsInput] }), { trade: "x" }));
+    expect(asking.note).toMatch(/search_providers again with a more specific service/);
   });
 
   it("reports a skipped lookup as disabled", () => {

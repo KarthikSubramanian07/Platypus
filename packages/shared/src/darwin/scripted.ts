@@ -1,5 +1,5 @@
 import { loadDarwinRecording, type FakeDarwinMode } from "../testing/fake-darwin";
-import { DarwinError, type ActOptions, type Darwin, type DarwinSearchResult } from "./client";
+import { DarwinError, type ActOptions, type Darwin, type DarwinSearchResult, type SearchOptions } from "./client";
 import { ActResponse, SearchResponse, type ActContinueRequest, type ActStartRequest, type SearchAgent, type SearchRequest } from "./schema";
 
 const recorded = (mode: FakeDarwinMode) => SearchResponse.parse(loadDarwinRecording(mode).body);
@@ -15,9 +15,18 @@ export const DARWIN_FIXTURES = {
   invoiceMatch: recorded("match"),
 } as const;
 
-/** A copy of a recorded result that Darwin says can start a thread. No live result does today. */
+/**
+ * A copy of a recorded result that Darwin says can start a thread, with its setup declared
+ * (an undeclared setup is unknown, so not usable). No live result looks like this today.
+ */
 export function startableAgent(base: SearchAgent = DARWIN_FIXTURES.hairSalon.response.agents[0]!): SearchAgent {
-  return { ...structuredClone(base), readiness: "ready", canStartThread: true, providerCheck: "confirmed" };
+  return {
+    ...structuredClone(base),
+    readiness: "ready",
+    canStartThread: true,
+    providerCheck: "confirmed",
+    requiredSetup: { kind: "provider_configuration", suppliedBy: "provider", description: "The provider configured its booking route." },
+  };
 }
 
 export function searchWith(agents: SearchAgent[], base: SearchResponse = DARWIN_FIXTURES.hairSalon): SearchResponse {
@@ -43,6 +52,8 @@ export interface ScriptedDarwinOptions {
  */
 export class ScriptedDarwin implements Darwin {
   readonly searches: SearchRequest[] = [];
+  /** The options of each search() call, in the same order as `searches`. */
+  readonly searchOptions: SearchOptions[] = [];
   readonly acts: Array<{ request: ActStartRequest | ActContinueRequest; options: ActOptions }> = [];
   readonly canAct: boolean;
   private readonly script: FakeSearchStep[];
@@ -54,8 +65,9 @@ export class ScriptedDarwin implements Darwin {
     this.canAct = options.canAct ?? false;
   }
 
-  async search(request: SearchRequest): Promise<DarwinSearchResult> {
+  async search(request: SearchRequest, options: SearchOptions = {}): Promise<DarwinSearchResult> {
     this.searches.push(structuredClone(request));
+    this.searchOptions.push({ ...options });
     let step = this.script.shift() ?? this.fallback;
     if (typeof step === "function") step = step(request);
     if (step instanceof DarwinError) throw step;

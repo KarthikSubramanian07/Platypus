@@ -1,0 +1,47 @@
+name: CodeQL
+
+# Static analysis of every TypeScript package with GitHub's security-extended query suite.
+# Code scanning is free for public repositories; while the repository is private (without
+# GitHub Advanced Security) the job skips instead of failing.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 6 * * 1" # Mondays, 06:23 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: codeql-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (javascript-typescript)
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+          build-mode: none
+          queries: security-extended
+          config: |
+            paths-ignore:
+              - "**/node_modules"
+              - "**/dist"
+              - "coverage"
+              - "**/*.test.ts"
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:javascript-typescript"
