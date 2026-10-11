@@ -11,7 +11,12 @@ export interface EventsAppOptions {
   bus?: EventBus;
   /** Heartbeat interval; keeps proxies and tunnels from closing an idle stream. */
   heartbeatMs?: number;
+  /** Open /events/stream connections allowed at once; the next one gets 503. Each holds a bus subscriber. */
+  maxStreams?: number;
 }
+
+/** A dashboard or two, a projector and a few judges' laptops; far beyond that is a flood. */
+export const MAX_EVENT_STREAMS = 32;
 
 /**
  * GET /events/stream  Server-Sent Events. Replays everything after the
@@ -21,15 +26,16 @@ export interface EventsAppOptions {
  * GET /events         JSON page of the log (?after, ?booking_id, ?limit).
  * GET /events.jsonl   The whole log as JSONL (fixture export).
  */
-export function createEventsApp({ db, bus = defaultBus, heartbeatMs = 15_000 }: EventsAppOptions): Hono {
+export function createEventsApp({ db, bus = defaultBus, heartbeatMs = 15_000, maxStreams = MAX_EVENT_STREAMS }: EventsAppOptions): Hono {
   const app = new Hono();
+  let openStreams = 0;
   app.use("/events/*", cors());
   app.use("/events", cors());
 
   app.get("/events", (c) => {
     const after = c.req.query("after");
     const bookingId = c.req.query("booking_id");
-    const limit = Number(c.req.query("limit") ?? 500);
+    const limit = Number(c.req.query("limit") ?? 500); // listEvents clamps it to 1..MAX_EVENTS_PAGE
     return c.json({
       events: listEvents(db, {
         ...(after ? { afterId: after } : {}),
@@ -46,7 +52,15 @@ export function createEventsApp({ db, bus = defaultBus, heartbeatMs = 15_000 }: 
 
   app.get("/events/stream", (c) => {
     const lastId = c.req.header("last-event-id") ?? c.req.query("after") ?? undefined;
+    if (openStreams >= maxStreams) return c.json({ error: "too many open event streams" }, 503, { "retry-after": "10" });
+    openStreams += 1;
+    let released = false;
+    const release = () => {
+      if (!released) openStreams -= 1;
+      released = true;
+    };
     return streamSSE(c, async (stream) => {
+      stream.onAbort(release);
       // Buffer live events while the backlog replays, then drain in id order.
       const pending: PlatypusEvent[] = [];
       let replaying = true;
@@ -73,6 +87,7 @@ export function createEventsApp({ db, bus = defaultBus, heartbeatMs = 15_000 }: 
         if (!stream.aborted) await stream.writeSSE({ event: "heartbeat", data: "{}" });
       }
       unsubscribe();
+      release();
     });
   });
 

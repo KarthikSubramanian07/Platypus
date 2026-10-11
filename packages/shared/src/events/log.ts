@@ -93,6 +93,19 @@ export interface ListEventsQuery {
   limit?: number;
 }
 
+export const MAX_EVENTS_PAGE = 10_000;
+const DEFAULT_EVENTS_PAGE = 1000;
+
+/**
+ * A page size SQLite can trust: whole, at least 1, at most MAX_EVENTS_PAGE. NaN or a
+ * missing value means the default; SQLite reads a negative LIMIT as "no limit", so a
+ * caller's ?limit=-1 must never reach it as is.
+ */
+export function clampLimit(limit: number | undefined): number {
+  if (limit === undefined || !Number.isFinite(limit)) return DEFAULT_EVENTS_PAGE;
+  return Math.min(MAX_EVENTS_PAGE, Math.max(1, Math.floor(limit)));
+}
+
 export function listEvents(db: Db, query: ListEventsQuery = {}): PlatypusEvent[] {
   const where: string[] = [];
   const params: unknown[] = [];
@@ -113,7 +126,7 @@ export function listEvents(db: Db, query: ListEventsQuery = {}): PlatypusEvent[]
     params.push(query.type);
   }
   const sql = `SELECT * FROM events ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY id LIMIT ?`;
-  params.push(Math.min(query.limit ?? 1000, 10_000));
+  params.push(clampLimit(query.limit));
   return (db.prepare(sql).all(...params) as Record<string, unknown>[]).map((r) => rowToEvent(decode("events", r)!));
 }
 
