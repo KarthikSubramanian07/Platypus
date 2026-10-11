@@ -33,7 +33,9 @@
     "ci:hygiene": "tsx scripts/ci/repo-hygiene.ts",
     "ci:coverage-summary": "tsx scripts/ci/coverage-summary.ts",
     "ci:golden-path": "tsx scripts/ci/validate-golden-path.ts",
-    "ci:eval-summary": "tsx scripts/ci/eval-summary.ts"
+    "ci:eval-summary": "tsx scripts/ci/eval-summary.ts",
+    "ci:bundle-budget": "tsx scripts/ci/bundle-budget.ts",
+    "ci:smoke": "tsx scripts/ci/dashboard-smoke.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -43,6 +45,7 @@
     "eslint": "^10.12.0",
     "globals": "^16.0.0",
     "hono": "^4.13.13",
+    "playwright": "^1.64.0",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.71.1",
