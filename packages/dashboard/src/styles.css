@@ -56,26 +56,6 @@ code {
   border-radius: 16px;
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
-.brand-mark {
-  position: relative;
-  width: 30px; height: 17px; border-radius: 999px; background: var(--green);
-  flex-shrink: 0;
-}
-.brand-mark::after {
-  content: ""; position: absolute; top: 3px; right: 3px; width: 11px; height: 11px; border-radius: 50%;
-  background: #fff; transition: transform 220ms cubic-bezier(0.3, 1.4, 0.5, 1);
-}
-/* Hover the logo. A fedora appears. Classic. */
-.fedora {
-  position: absolute; left: 50%; top: -8px; z-index: 1; width: 24px; height: 8px;
-  transform: translate(-50%, 6px) rotate(-8deg); opacity: 0;
-  transition: transform 260ms cubic-bezier(0.3, 1.6, 0.5, 1), opacity 160ms;
-  pointer-events: none;
-}
-.fedora::before { content: ""; position: absolute; left: 5px; right: 5px; top: 0; height: 6px; border-radius: 5px 5px 1px 1px; background: #7a5a2e; }
-.fedora::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 3px; background: #6a4c24; }
-.brand:hover .fedora, .brand:focus-visible .fedora { opacity: 1; transform: translate(-50%, 0) rotate(-8deg); }
-.brand:hover .brand-mark::after { transform: translateX(-13px); }
 .brand-word { font-weight: 600; letter-spacing: -0.02em; font-size: 17px; color: var(--ink); }
 .nav-links { display: flex; gap: 2px; min-width: 0; }
 .nav-links a, .nav-source {
