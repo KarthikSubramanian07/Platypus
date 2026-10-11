@@ -1,0 +1,82 @@
+/*
+ * Platypus design tokens and shared primitives, used by the landing page and /live.
+ * Granola's palette (white, warm off-white, near-black ink, lime and olive),
+ * with the structure of a developer tool page: a faint grid, mono eyebrows, window chrome.
+ */
+:root {
+  --bg: #ffffff;
+  --panel: #f7f7f2;
+  --panel-2: #fcfcf8;
+  --ink: #0e0f0c;
+  --ink-2: #292929;
+  --ink-3: #4e4d4b;
+  --muted: #72726e;
+  --faint: #acada8;
+  --line: #e3e3e3;
+  --line-warm: rgba(71, 67, 42, 0.18);
+  --lime: #b2c248;
+  --lime-wash: rgba(178, 194, 72, 0.18);
+  --olive: #788c15;
+  --serif: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+  --sans: "DM Sans Variable", "DM Sans", -apple-system, system-ui, sans-serif;
+  --mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+  --radius: 14px;
+  --shadow: 0 1px 0 rgba(14, 15, 12, 0.04), 0 12px 40px -18px rgba(14, 15, 12, 0.18);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink-2);
+  font: 16px/1.55 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a { color: inherit; }
+code {
+  font: 0.86em var(--mono);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+::selection { background: var(--lime-wash); }
+
+/* ---- Shared primitives --------------------------------------------------------- */
+.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
+.brand-mark {
+  width: 20px; height: 20px; border-radius: 6px; background: var(--ink-2);
+  display: grid; place-items: center;
+}
+.brand-mark::after { content: ""; width: 9px; height: 9px; border-radius: 3px; background: var(--lime); }
+.brand-word { font-weight: 600; letter-spacing: -0.02em; font-size: 17px; color: var(--ink); }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  font: 500 15px/1 var(--sans);
+  padding: 14px 20px; border-radius: 12px;
+  text-decoration: none; cursor: pointer;
+  transition: transform 160ms ease, background 160ms, box-shadow 160ms;
+}
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible { outline: 2px solid var(--olive); outline-offset: 3px; }
+.btn-primary { background: var(--ink-2); color: #fcfcf8; border: 1px solid var(--ink-2); box-shadow: var(--shadow); }
+.btn-primary:hover { background: var(--ink); }
+.btn-primary:disabled { opacity: 0.6; cursor: default; }
+.btn-ghost { background: var(--bg); color: var(--ink-2); border: 1px solid var(--line); }
+.btn-ghost:hover { background: var(--panel); }
+.conn { display: inline-flex; align-items: center; gap: 7px; }
+.conn::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
+.conn[data-state="live"] { color: var(--olive); }
+.conn[data-state="live"]::before { background: var(--lime); box-shadow: 0 0 0 4px var(--lime-wash); animation: pulse 2s ease-in-out infinite; }
+.conn[data-state="recording"]::before { background: var(--ink-2); }
+.conn[data-state="reconnecting"] { color: #a5641b; }
+.conn[data-state="reconnecting"]::before { background: #d39a52; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 7px transparent; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
