@@ -55,7 +55,10 @@ export async function mineWithClaude(
   turns: readonly TimedTurn[],
   client: AnthropicLike,
 ): Promise<{ findings: Finding[]; error?: string }> {
-  const lines = turns.map((t, i) => JSON.stringify({ turn_index: i, speaker: t.speaker, text: sanitizeUntrustedText(t.text) })).join("\n");
+  // JSON keeps each turn one quoted string; escaping < and > means no turn can write "</transcript>" and step outside the data.
+  const lines = turns
+    .map((t, i) => JSON.stringify({ turn_index: i, speaker: t.speaker, text: sanitizeUntrustedText(t.text) }).replace(/</g, "\\u003c").replace(/>/g, "\\u003e"))
+    .join("\n");
   try {
     const message = await client.messages.parse(
       {
