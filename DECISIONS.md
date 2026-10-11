@@ -87,7 +87,16 @@ These were checked on 2026-10-11 against `docs.getdial.ai/openapi.json`, `@getdi
 - Follow-up, later on 2026-10-11 (darwin-integration branch, see `docs/darwin.md`):
   - The 500s depend on the phrasing. Location and booking wording fail consistently, bare trades usually succeed, and some bare trades fail intermittently.
   - `lookupDarwin` tries the specific query once and the bare trade twice. Live, the demo request returned 500 on the specific query and then `completed` on "auto repair shop", with one agent, "Find shops", that is `unavailable` and `canStartThread: false`. The route was `call`, with the golden path's reasons. All six seeded trades get an answer this way.
-  - Darwin still has not returned `no_match` for a seeded trade. It answers `completed` with an assessment of `partial` and agents that are not ready. The honest dashboard beat is therefore "Darwin returned no ready agent", not `no_match`.
+  - Darwin still has not returned `no_match` for a seeded trade. It answers `completed` with an assessment of `partial` and agents that are not ready. Within one minute, it answered "auto repair shop" three different ways: HTTP 500, `needs_input`, and `completed` with "Find shops" not ready.
+
+**Decided: the demo's Darwin beat is "no ready agent", not `no_match`.**
+Every answer Darwin gives for the demo trade means no agent is ready to book, and `no_match` is the one answer it has never given. The golden-path fixture now shows the real sequence: the recorded 500 for the demo phrasing, then the recorded `completed` answer for "auto repair shop". The dashboard says "no ready agent · 1 listed, none can start". The README tells the same story. The video script must too.
+
+**Decided: Darwin gets six seconds, from a warmed cache.**
+A live lookup takes 3 to 45 seconds when Darwin errors. `lookupDarwin` takes `budgetMs`: past the budget, it answers with Darwin's last real answer, labeled cached, or reports that Darwin did not answer in time. The search finishes in the background and refills the cache. `pnpm darwin:warm` saves each trade's live answer to `darwin-cache/lookups.json`, retrying through 500s, and the gateway loads it. Run it before recording the demo. On 2026-10-11, the demo lookup answered from the warmed cache in 1 ms.
+
+**Decided: no location in Darwin searches.**
+Location in the query or in context is what triggers Darwin's 500s, and a search engine for agents does not rank local supply anyway. Platypus does its own local matching.
   - `DARWIN_ENABLED=false` is implemented. `toDarwinSummary(null)` reports `disabled`. Act needs both `DARWIN_ACT_ENABLED=true` and `DARWIN_ACT_TOKEN`.
 
 ## Team plan

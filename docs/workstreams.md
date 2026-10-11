@@ -8,7 +8,7 @@ The build is split so that people can work in parallel without blocking each oth
 | --- | --- | --- | --- | --- |
 | **Foundation** (complete) | Karthik | `shared`, the repository, CI, the dashboard shell | nothing | `pnpm test` is green, `pnpm dev` replays the golden path into the dashboard, and the contracts are on `main` |
 | **Phone side** | Karthik | `voice`, `text` | `FakeGateway` until the real gateway lands (`GATEWAY_IMPL=fake\|real`) | A real call to a teammate's phone books through the mid-call tools, consent and the best cell are stored with the quoted sentence, a real reply of Y confirms within 5 seconds, and STOP unlists with no model call |
-| **Agent side** | Eddy | `gateway`, `docs/video.md`, `docs/submission.md` | `FakeDial` and `FakeDarwin` until the phone side and a live Darwin search land (`DIAL_IMPL=fake\|real`, `DARWIN_ENABLED`) | Claude Desktop runs the golden path end to end against the fakes with every event on the dashboard, the live Darwin search returns in under 6 seconds or is switched off, and the video shot list and submission text are approved |
+| **Agent side** | Eddy | `gateway`, `docs/video.md`, `docs/submission.md` | `FakeDial` and `FakeDarwin` until the phone side and a live Darwin search land (`DIAL_IMPL=fake\|real`, `DARWIN_ENABLED`) | Claude Desktop runs the golden path end to end against the fakes with every event on the dashboard, the Darwin step answers in under 6 seconds (a 6-second budget plus a cache warmed with `pnpm darwin:warm`) or is switched off, and the video shot list and submission text are approved |
 
 Integration comes last: set every flag to real, run `pnpm demo:reset`, and run the golden path three times from Claude Desktop with the real phone. Anything that fails twice goes back to its fake, and the video and the stage both say so.
 
@@ -24,8 +24,8 @@ Integration comes last: set every flag to real, run `pnpm demo:reset`, and run t
 ## The agent side
 
 - **`gateway/mcp`** implements exactly the `GatewayTools` contract over streamable HTTP and stdio. Tool descriptions say that results are asynchronous, tell the client to poll `get_booking`, and spell out the typed outcome vocabulary. Every write carries an idempotency key, rate limits apply per agent, and agent text is untrusted. The README will carry a Claude Desktop config snippet.
-- **`gateway/darwin`** calls Darwin Search v3 with budget and deadline context and `maxResults` 5. It works anonymously and keeps the search token for follow-ups. It branches on the result:
-  - `completed`: show agents in Darwin's order, and route `darwin_act` when one is ready and can start a thread.
+- **`gateway/darwin`** calls Darwin Search v3 through `lookupDarwin` from `@platypus/shared/darwin`, with budget and deadline context, no location, `maxResults` 5 and `budgetMs: 6000`. It loads the cache from `darwin-cache/lookups.json` (`pnpm darwin:warm` fills it before the demo). It works anonymously and keeps the search token for follow-ups. It branches on the result:
+  - `completed`: show agents in Darwin's order, and route `darwin_act` when one is ready and can start a thread. When agents are listed but none is ready (today's answer for every seeded trade), the beat is "no ready agent".
   - `needs_input`: pass Darwin's question back to the calling agent.
   - `no_match`: show the reason, and route to a call or a text depending on consent.
 

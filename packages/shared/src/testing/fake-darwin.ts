@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 
-export type FakeDarwinMode = "match" | "no_match" | "error_500" | "listed" | "listed_context" | "needs_input";
+export type FakeDarwinMode = "match" | "no_match" | "error_500" | "listed" | "listed_context" | "needs_input" | "auto_repair";
 
 interface Recording {
   _provenance: Record<string, unknown>;
@@ -19,6 +19,7 @@ const FILES: Record<FakeDarwinMode, string> = {
   listed: "darwin-listed.recorded.json",
   listed_context: "darwin-listed-context.recorded.json",
   needs_input: "darwin-needs-input.recorded.json",
+  auto_repair: "darwin-auto-repair.recorded.json",
 };
 
 export function loadDarwinRecording(mode: FakeDarwinMode): Recording {
@@ -32,6 +33,7 @@ export function loadDarwinRecording(mode: FakeDarwinMode): Recording {
  *  no_match:  SYNTHETIC until Darwin returns a real one; labeled as such in its body.
  *  listed, listed_context, needs_input: real local-service and clarifying responses
  *             recorded for the Darwin search ladder (see docs/darwin.md).
+ *  auto_repair: the real answer to the demo's fallback query, "auto repair shop".
  * Refuses to run when DEMO_MODE=live: a simulated Darwin answer must never reach a judge.
  */
 export function createFakeDarwinFetch(mode: FakeDarwinMode, env: NodeJS.ProcessEnv = process.env): typeof fetch {

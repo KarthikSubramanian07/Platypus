@@ -14,6 +14,14 @@ describe("summarize", () => {
   });
 
   it("quotes the consent sentence", () => {
+    expect(summarize({ ...base, type: "darwin.searched", payload: { status: "completed", outcome: "listed_only", agents: [{ can_start_thread: false }] } })).toBe(
+      "no ready agent · 1 listed, none can start",
+    );
+    expect(summarize({ ...base, type: "darwin.searched", payload: { status: "completed", outcome: "listed_only", agents: [{}], cached: true } })).toBe(
+      "no ready agent · 1 listed, none can start (cached)",
+    );
+    expect(summarize({ ...base, type: "darwin.searched", payload: { status: "error", http_status: 500, timed_out: true } })).toBe("status error (HTTP 500) (timed out)");
+    expect(summarize({ ...base, type: "darwin.searched", payload: { status: "needs_input" } })).toBe("Darwin asked for more input");
     expect(summarize({ ...base, type: "consent.recorded", payload: { quoted_sentence: "Yeah, text me." } })).toBe('"Yeah, text me."');
   });
 

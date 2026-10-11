@@ -59,12 +59,32 @@ export async function runGoldenPath(options: GoldenPathOptions): Promise<GoldenP
     reason: "Get me an oil change tomorrow afternoon, under $120, near 1025 Sansome.",
   }, emitOpts);
 
-  // 2. Darwin. The fixture carries the real recorded outcome of this query (HTTP 500 on 2026-10-11), never a simulated no_match.
-  const darwin = loadDarwinRecording("error_500");
+  // 2. Darwin, exactly as the gateway's lookup runs it, from real recordings only (never a simulated
+  // no_match): the demo phrasing returned HTTP 500, so the lookup fell back to the bare trade, which
+  // answered with one agent that is not ready to book. That is the beat: Darwin has no ready agent.
+  const failed = loadDarwinRecording("error_500");
+  const answered = loadDarwinRecording("auto_repair");
+  const darwinBody = answered.body as { searchId: string; status: string; response: { agents: Array<{ agentId: string; name: string; readiness: string; canStartThread: boolean }> } };
+  const request = (r: unknown) => (r as { request: { query: string } }).request.query;
   emit(db, {
     type: "darwin.searched",
     actor: "system",
-    payload: { status: "error", http_status: darwin.status, provenance: "recorded", recorded_at: darwin._provenance.recorded_at, latency_ms: darwin._provenance.latency_ms, query: (darwin as unknown as { request: { query: string } }).request.query, agents: [] },
+    payload: {
+      status: darwinBody.status,
+      http_status: answered.status,
+      provenance: "recorded",
+      recorded_at: answered._provenance.recorded_at,
+      latency_ms: Number(failed._provenance.latency_ms) + Number(answered._provenance.latency_ms),
+      query: request(answered),
+      search_id: darwinBody.searchId,
+      outcome: "listed_only",
+      candidate_agent_id: null,
+      agents: darwinBody.response.agents.map((a) => ({ agent_id: a.agentId, name: a.name, readiness: a.readiness, can_start_thread: a.canStartThread })),
+      attempts: [
+        { query: request(failed), withContext: true, ok: false, status: failed.status, requestId: failed._provenance.x_request_id },
+        { query: request(answered), withContext: false, ok: true, status: answered.status, requestId: answered._provenance.x_request_id },
+      ],
+    },
     reason: "Darwin Search v3 consulted before any call",
   }, emitOpts);
 
