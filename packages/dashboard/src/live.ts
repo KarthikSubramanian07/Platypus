@@ -4,7 +4,7 @@ import "@fontsource-variable/dm-sans";
 import "@fontsource-variable/jetbrains-mono";
 import "./live.css";
 import { $, el, setText } from "./dom";
-import { connectLive, CONNECTION_LABELS, requestKillCall, requestOwnerReply, requestReplay, resolveSource, type ConnectionState, type DemoResult } from "./events";
+import { connectLive, CONNECTION_LABELS, requestKillCall, requestOwnerReply, requestReplay, resolveSource, withToken, type ConnectionState, type DemoResult } from "./events";
 import { cuesAt, GOLDEN_PATH, planRecording, recordedAt, type PlannedCue } from "./fixture";
 import { formatCallOffset, formatClock, formatConfidence, formatLatency, formatMoney, formatRail, formatSlot, formatTime, formatTrade, GOLDEN_STEPS, SHOP_TIME_ZONE, summarize, type StepKey, type StreamEvent } from "./format";
 import {
@@ -43,8 +43,8 @@ const source = resolveSource(location.search, { PROD: import.meta.env.PROD, VITE
 const RECORDING = source.mode === "recording";
 
 let state: DashboardState = initialState();
-/** Every event received in live mode, so a failed replay request can be undone. */
-const history: StreamEvent[] = [];
+/** Every event of the current log received in live mode, to undo a failed replay and to spot a fresh log. */
+let history: StreamEvent[] = [];
 
 // ---- The recorded run ------------------------------------------------------------------------
 
@@ -747,6 +747,59 @@ setInterval(() => {
 
 // ---- Data source ---------------------------------------------------------------------------------------------
 
+/**
+ * A restarted gateway in fakes mode begins a fresh log. A reconnecting stream only asks for
+ * events after the last id it saw (and behind the dev proxy a dead stream can look open for
+ * half a minute), so the old run would stay on screen under the new one. So every few seconds,
+ * and after every reconnect, compare the log's first event with ours; when it changed, clear
+ * the page and read the new log from its start.
+ */
+const FRESH_LOG_POLL_MS = 3_000;
+let checking = false;
+async function checkForFreshLog(): Promise<void> {
+  const ours = history[0]?.id;
+  if (!ours || checking) return;
+  checking = true;
+  try {
+    const response = await fetch(withToken(`${source.base}/events?limit=1`, source.token));
+    if (!response.ok) return;
+    const page = (await response.json()) as { events?: { id?: unknown }[] };
+    const first = page.events?.[0]?.id;
+    if (first === ours || history[0]?.id !== ours) return;
+    history = [];
+    resetTo(initialState());
+    say("The server started a fresh event log. Showing the new run.");
+    connect();
+  } catch {
+    // The server is down or restarting; the next poll tries again.
+  } finally {
+    checking = false;
+  }
+}
+
+let disconnect: (() => void) | undefined;
+/** Opens the stream from the start of the log. Its backlog is drawn without motion; "ready" says the rest is live. */
+function connect(): void {
+  disconnect?.();
+  body.dataset.hydrating = "true";
+  const backstop = setTimeout(settle, 2_500);
+  let connections = 0;
+  disconnect = connectLive(
+    source.base,
+    {
+      onEvent: dispatch,
+      onState: setConnection,
+      onReady: () => {
+        connections += 1;
+        if (connections > 1) return void checkForFreshLog();
+        clearTimeout(backstop);
+        settle();
+      },
+    },
+    { token: source.token },
+  );
+}
+
 async function onReplay(): Promise<void> {
   replayButton.disabled = true;
   try {
@@ -787,18 +840,8 @@ if (RECORDING) {
     document.addEventListener("visibilitychange", onVisible);
   }
 } else {
-  // The backlog is drawn without motion; the server's "ready" says everything after it is live.
-  const backstop = setTimeout(settle, 2_500);
-  connectLive(
-    source.base,
-    {
-      onEvent: dispatch,
-      onState: setConnection,
-      onReady: () => {
-        clearTimeout(backstop);
-        settle();
-      },
-    },
-    { token: source.token },
-  );
+  connect();
+  setInterval(() => {
+    if (document.visibilityState === "visible") void checkForFreshLog();
+  }, FRESH_LOG_POLL_MS);
 }
