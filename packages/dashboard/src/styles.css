@@ -321,6 +321,7 @@ h3 { font: 600 18px/1.3 var(--sans); letter-spacing: -0.01em; }
 .ledger-tag { margin: 0; font: 500 12px/1.4 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .ledger-after .ledger-tag { color: var(--mint); }
 .ledger-total { margin: 0; font: 400 20px/1 var(--serif); color: var(--muted); white-space: nowrap; }
+.ledger-after .ledger-total { color: #b8cfc6; }
 .ledger-total span { font-size: clamp(48px, 6vw, 72px); letter-spacing: -0.04em; color: var(--ink); }
 .ledger-after .ledger-total span { color: #fff; }
 .ledger ul { list-style: none; margin: 0; padding: 0; flex: 1; }
@@ -458,7 +459,7 @@ h3 { font: 600 18px/1.3 var(--sans); letter-spacing: -0.01em; }
 }
 .partner-dial { --accent: var(--green); }
 .partner-darwin { --accent: #3d7a6c; }
-.partner-alike { --accent: #6a9c8f; }
+.partner-alike { --accent: #3f6f63; }
 .partner header { margin-bottom: 14px; }
 .partner h3 { font: 400 34px/1 var(--serif); letter-spacing: -0.03em; }
 .partner header p { margin: 6px 0 0; font: 500 12px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
@@ -610,11 +611,12 @@ h3 { font: 600 18px/1.3 var(--sans); letter-spacing: -0.01em; }
 .prose li { margin-bottom: 6px; }
 .prose li::marker { color: var(--green); }
 .prose strong { color: var(--ink); }
-.prose a { color: var(--green); text-underline-offset: 3px; }
+.prose a { color: var(--green); text-underline-offset: 3px; overflow-wrap: anywhere; }
 .prose em { color: var(--ink-2); }
 .prose table { width: 100%; margin: 18px 0 0; border-collapse: collapse; font-size: 15px; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .prose th, .prose td { text-align: left; vertical-align: top; padding: 10px 12px; border-top: 1px solid var(--line); }
 .prose thead th { border-top: 0; font: 500 11px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--green); }
+.prose code { white-space: normal; overflow-wrap: anywhere; }
 .prose td:first-child code { white-space: nowrap; }
 .prose pre {
   margin: 16px 0 0; padding: 16px 18px; overflow-x: auto; -webkit-overflow-scrolling: touch;

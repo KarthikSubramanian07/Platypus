@@ -34,7 +34,7 @@ Platypus calls a phone-only business **once**. The call says it's an AI in its f
 One oil change makes a shop agent-native, then a second booking goes by text.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#1c5449', 'actorTextColor': '#ffffff', 'actorBorder': '#1c5449', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#cfe6dc', 'actorTextColor': '#22231f', 'actorBorder': '#1c5449', 'actorLineColor': '#9fd3c1', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
 sequenceDiagram
     autonumber
     actor C as Customer
@@ -74,9 +74,9 @@ What's real and what's mocked is in [Real vs mocked](#real-vs-mocked).
 Transparent estimates, with setup, review and corrections counted. Opt-in rate and reply seconds are measured live on the dashboard.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#1c5449', 'actorTextColor': '#ffffff', 'actorBorder': '#1c5449', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
-xychart-beta
-    title "Minutes of a person's attention per booking (estimate)"
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#cfe6dc', 'actorTextColor': '#22231f', 'actorBorder': '#1c5449', 'actorLineColor': '#9fd3c1', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
+xychart-beta horizontal
+    title "Minutes of attention per booking (estimate)"
     x-axis ["Calling around today", "With Platypus"]
     y-axis "Minutes" 0 --> 22
     bar [20, 0.8]
@@ -97,7 +97,7 @@ Four bookings a month gives a customer back about 15 hours a year; a property ma
 ## Why it compounds
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#1c5449', 'actorTextColor': '#ffffff', 'actorBorder': '#1c5449', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#cfe6dc', 'actorTextColor': '#22231f', 'actorBorder': '#1c5449', 'actorLineColor': '#9fd3c1', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
 flowchart LR
     A[Agent asks for a booking] --> B{Owner already<br/>said yes?}
     B -- no --> C[One honest call<br/>books a paying job]
@@ -136,35 +136,30 @@ Google's call is a lookup. Ours is onboarding.
 ## How it works
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#1c5449', 'actorTextColor': '#ffffff', 'actorBorder': '#1c5449', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#cfe6dc', 'actorTextColor': '#22231f', 'actorBorder': '#1c5449', 'actorLineColor': '#9fd3c1', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
 flowchart TB
     subgraph Agents["Customer agents"]
-        CL[Claude] & MU[Muse] & ANY[any MCP client]
+        direction LR
+        CL[Claude] ~~~ MU[Muse] ~~~ ANY[any MCP client]
     end
     subgraph GW["gateway"]
-        T["9 MCP tools<br/>idempotency keys<br/>per-agent rate limits"]
-        R{decideBookingRoute}
+        direction LR
+        T["9 MCP tools · idempotency keys · rate limits"] --> R{"decideBookingRoute"} --> DW[("Darwin Search v3")]
     end
-    DW[(Darwin Search v3)]
     subgraph PH["phone side, on Dial"]
-        VO["voice<br/>outbound AI call<br/>Context MCP: 5 tools"]
-        TX["text<br/>signed webhooks<br/>STOP / HELP / PAUSE first"]
+        direction LR
+        VO["voice: outbound AI call, Context MCP with 5 mid-call tools"] ~~~ TX["text: signed webhooks, STOP / HELP / PAUSE first"]
     end
     subgraph SH["shared"]
-        CF["confirm() evidence gate"]
-        SM[booking state machine + holds]
-        EV[(append-only event log)]
-        SSE[[SSE stream]]
+        direction LR
+        CF["confirm() evidence gate"] --> SM["booking state machine"] --> EV[("append-only event log")] --> SSE[["SSE stream"]]
     end
-    DB[dashboard]
+    DB["dashboard and /live"]
 
-    Agents -- MCP --> T --> R
-    R -- search first --> DW
-    R -- call --> VO
-    R -- text --> TX
-    VO --> CF
-    TX --> CF
-    CF --> SM --> EV --> SSE --> DB
+    Agents -- "MCP" --> GW
+    GW -- "call, or text if the owner opted in" --> PH
+    PH -- "every change is an event" --> SH
+    SH --> DB
 ```
 
 | Package | What it owns |
@@ -179,7 +174,7 @@ flowchart TB
 <summary>Routing and the booking state machine</summary>
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#1c5449', 'actorTextColor': '#ffffff', 'actorBorder': '#1c5449', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#cfe6dc', 'actorTextColor': '#22231f', 'actorBorder': '#1c5449', 'actorLineColor': '#9fd3c1', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
 flowchart TD
     A[request_booking] --> B{Business paused,<br/>unlisted or do-not-call?}
     B -- yes --> X[No route: never contacted]
@@ -192,10 +187,10 @@ flowchart TD
     E -- yes --> F[consent stored with quote + call id<br/>business is now text-enabled]
 ```
 
-`confirmed` can be entered only through `confirm()`, with evidence. `transition()` refuses it. This is [`TRANSITIONS`](packages/shared/src/booking/machine.ts), drawn:
+`confirmed` can be entered only through `confirm()`, with evidence; `transition()` refuses it. `completed`, `no_show`, `disputed`, `declined`, `expired` and `cancelled` are terminal. This is [`TRANSITIONS`](packages/shared/src/booking/machine.ts), drawn:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#1c5449', 'actorTextColor': '#ffffff', 'actorBorder': '#1c5449', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'ui-sans-serif, system-ui, sans-serif', 'primaryColor': '#f9f8f3', 'primaryTextColor': '#22231f', 'primaryBorderColor': '#1c5449', 'lineColor': '#1c5449', 'secondaryColor': '#cfe6dc', 'tertiaryColor': '#f4f1ea', 'clusterBkg': '#f4f1ea', 'clusterBorder': '#9fd3c1', 'actorBkg': '#cfe6dc', 'actorTextColor': '#22231f', 'actorBorder': '#1c5449', 'actorLineColor': '#9fd3c1', 'noteBkgColor': '#cfe6dc', 'noteBorderColor': '#1c5449', 'signalColor': '#1c5449', 'labelBoxBkgColor': '#f9f8f3', 'xyChart': {'plotColorPalette': '#1c5449'}}}}%%
 stateDiagram-v2
     [*] --> quote_pending
     quote_pending --> quoted
@@ -218,12 +213,6 @@ stateDiagram-v2
     countered --> cancelled
     confirmed --> cancelled
     rescheduled --> cancelled
-    completed --> [*]
-    no_show --> [*]
-    disputed --> [*]
-    declined --> [*]
-    expired --> [*]
-    cancelled --> [*]
 ```
 </details>
 
