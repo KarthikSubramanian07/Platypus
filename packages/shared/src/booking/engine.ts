@@ -251,6 +251,19 @@ export interface PlaceHoldInput {
 
 const overlaps = "slot_start < ? AND slot_end > ?";
 
+/**
+ * A hold or an agreed slot rewrites a booking's time (and price). That is only
+ * open while the owner has not said yes yet, or after a reschedule. Once a
+ * booking is confirmed or closed, its terms are what the owner agreed to.
+ */
+const SLOT_OPEN_STATUSES: readonly BookingStatus[] = ["quote_pending", "quoted", "pending", "countered", "rescheduled"];
+
+function assertSlotOpen(booking: Booking): void {
+  if (!SLOT_OPEN_STATUSES.includes(booking.status)) {
+    throw new BookingError("invalid_transition", `Booking ${booking.short_code} is ${booking.status}: its time and price change only through a reschedule`);
+  }
+}
+
 /** Places a 10-minute hold. Never double-books: refuses overlap with live holds and confirmed bookings. */
 export function placeHold(ctx: BookingContext, input: PlaceHoldInput): Hold {
   return inTx(ctx, (record, now) => {
@@ -259,6 +272,7 @@ export function placeHold(ctx: BookingContext, input: PlaceHoldInput): Hold {
     if (!(start.getTime() < end.getTime())) throw new BookingError("invalid_slot", "A slot must end after it starts");
     const iso = now.toISOString();
     expireHoldsInTx(ctx, record, now);
+    if (input.booking_id) assertSlotOpen(getBooking(ctx, input.booking_id));
     const s = start.toISOString();
     const e = end.toISOString();
     const clashHold = selectRows(ctx.db, "holds", `business_id = ? AND status = 'active' AND ${overlaps}`, [input.business_id, e, s]);
@@ -306,6 +320,7 @@ export function attachHold(ctx: BookingContext, holdId: string, bookingId: strin
     if (!hold || hold.status !== "active") throw new BookingError("hold_not_active", "The hold has expired or does not exist");
     const booking = getBooking(ctx, bookingId);
     if (hold.business_id !== booking.business_id) throw new BookingError("hold_not_active", "The hold belongs to a different business");
+    assertSlotOpen(booking);
     if (!Number.isInteger(priceCents) || priceCents < 0) throw new BookingError("invalid_slot", "Price must be a non-negative integer of cents");
     const iso = now.toISOString();
     updateRow(ctx.db, "holds", hold.id, { booking_id: booking.id, updated_at: iso });
