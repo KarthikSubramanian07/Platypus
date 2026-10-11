@@ -9,7 +9,8 @@ import { spawn } from "node:child_process";
 import { existsSync, rmSync } from "node:fs";
 import { Hono } from "hono";
 import { openDb } from "../packages/shared/src/db/index";
-import { createEventsApp, defaultBus } from "../packages/shared/src/events/index";
+import { createEventsApp, defaultBus, listEvents } from "../packages/shared/src/events/index";
+import { auditEventLog, formatAuditReport } from "../packages/shared/src/audit/index";
 import { loadGoldenPath, replayEvents } from "../packages/shared/src/testing/replay";
 import type { AgentSide, PhoneSide } from "../packages/shared/src/contracts/seams";
 import * as gatewayPackage from "../packages/gateway/src/index";
@@ -27,6 +28,14 @@ const db = openDb(dbPath);
 const app = new Hono();
 app.get("/health", (c) => c.json({ ok: true, mode }));
 app.route("/", createEventsApp({ db, bus: defaultBus }));
+
+// Replays the whole log against the non-negotiables. 200 when clean, 409 with the violations.
+app.get("/audit", (c) => {
+  const result = auditEventLog(listEvents(db, { limit: 10_000 }));
+  return c.req.query("format") === "text"
+    ? c.text(formatAuditReport(result, { source: "live" }), result.ok ? 200 : 409)
+    : c.json(result, result.ok ? 200 : 409);
+});
 
 // Both sides plug in here through the exports in contracts/seams.ts, so neither edits this file.
 // Everything runs in this one process: one database, one event bus, one live stream.
