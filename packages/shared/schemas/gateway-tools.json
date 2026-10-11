@@ -538,7 +538,7 @@
     }
   },
   "request_booking": {
-    "description": "Ask a business for a booking. Returns immediately with status pending and the route Platypus chose: darwin_act (an existing agent), call (an AI voice call that discloses itself first), or text (the owner opted in). Results are asynchronous: the owner answers on a phone call or by text, usually within minutes. Poll get_booking with the booking_id every few seconds until the status is no longer pending. Never tell the user a booking is confirmed until get_booking says confirmed. Booking statuses: pending (asked, waiting on the owner), countered (owner proposed another time or price), confirmed (the owner said yes on the call or by text; only then is it booked), declined, expired, cancelled, rescheduled, completed, no_show, disputed.",
+    "description": "Ask a business for a booking. Returns immediately with status pending and the route Platypus chose: darwin_act (an existing agent), call (an AI voice call that discloses itself first), or text (the owner opted in). Results are asynchronous: the owner answers on a phone call or by text, usually within minutes. Call wait_for_booking with the booking_id right away and keep calling it until the status is final; it returns the moment the owner answers, so there is no need to poll get_booking. Never tell the user a booking is confirmed until the status says confirmed. Booking statuses: pending (asked, waiting on the owner), countered (owner proposed another time or price), confirmed (the owner said yes on the call or by text; only then is it booked), declined, expired, cancelled, rescheduled, completed, no_show, disputed.",
     "input": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
@@ -646,7 +646,7 @@
     }
   },
   "get_booking": {
-    "description": "Current state of a booking. Results are asynchronous: the owner answers on a phone call or by text, usually within minutes. Poll get_booking with the booking_id every few seconds until the status is no longer pending. Never tell the user a booking is confirmed until get_booking says confirmed. Booking statuses: pending (asked, waiting on the owner), countered (owner proposed another time or price), confirmed (the owner said yes on the call or by text; only then is it booked), declined, expired, cancelled, rescheduled, completed, no_show, disputed.",
+    "description": "Current state of a booking. Results are asynchronous: the owner answers on a phone call or by text, usually within minutes. Call wait_for_booking with the booking_id right away and keep calling it until the status is final; it returns the moment the owner answers, so there is no need to poll get_booking. Never tell the user a booking is confirmed until the status says confirmed. Booking statuses: pending (asked, waiting on the owner), countered (owner proposed another time or price), confirmed (the owner said yes on the call or by text; only then is it booked), declined, expired, cancelled, rescheduled, completed, no_show, disputed.",
     "input": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
@@ -821,6 +821,220 @@
         "price_cents",
         "confirmed_by",
         "updated_at"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "wait_for_booking": {
+    "description": "Wait for the owner's answer. Call it right after request_booking and keep calling it until the status is final (confirmed, declined, expired, cancelled, countered). It returns as soon as the status changes, or after timeout_seconds with changed false; then call it again. Report only the status it returns; never invent a result. Booking statuses: pending (asked, waiting on the owner), countered (owner proposed another time or price), confirmed (the owner said yes on the call or by text; only then is it booked), declined, expired, cancelled, rescheduled, completed, no_show, disputed.",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "booking_id": {
+          "type": "string"
+        },
+        "timeout_seconds": {
+          "description": "Longest wait, 5 to 120 seconds. Default 55, under the 60-second limit many clients put on one tool call",
+          "type": "number",
+          "minimum": 5,
+          "maximum": 120
+        },
+        "since_status": {
+          "description": "The status you last saw. Returns at once if the booking has moved on; defaults to its status when the call starts",
+          "type": "string",
+          "enum": [
+            "quote_pending",
+            "quoted",
+            "pending",
+            "countered",
+            "confirmed",
+            "rescheduled",
+            "completed",
+            "no_show",
+            "disputed",
+            "declined",
+            "expired",
+            "cancelled"
+          ]
+        }
+      },
+      "required": [
+        "booking_id"
+      ]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "booking_id": {
+          "type": "string"
+        },
+        "provider_id": {
+          "type": "string"
+        },
+        "provider_name": {
+          "type": "string"
+        },
+        "service": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "quote_pending",
+            "quoted",
+            "pending",
+            "countered",
+            "confirmed",
+            "rescheduled",
+            "completed",
+            "no_show",
+            "disputed",
+            "declined",
+            "expired",
+            "cancelled"
+          ]
+        },
+        "route": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "darwin_act",
+                "call",
+                "text"
+              ],
+              "description": "darwin_act: an existing agent handles it. call: Platypus phones the business. text: the business has opted in to texts"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "short_code": {
+          "type": "string",
+          "description": "Reference code the owner and customer can quote, e.g. SAL-4K2"
+        },
+        "window": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                },
+                "end": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ],
+              "additionalProperties": false,
+              "description": "A time range the customer can make, e.g. tomorrow 12:00 to 17:00 local time, as ISO-8601"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "slot": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                },
+                "end": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ],
+              "additionalProperties": false,
+              "description": "A concrete appointment time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "price_cents": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Amount in US cents"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "confirmed_by": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "call",
+                "text",
+                "rule"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "How the owner said yes; null until confirmed"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+          "description": "ISO-8601 date-time"
+        },
+        "changed": {
+          "type": "boolean",
+          "description": "True when the status differs from since_status, or from the status when the call started"
+        },
+        "waited_seconds": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "booking_id",
+        "provider_id",
+        "provider_name",
+        "service",
+        "status",
+        "route",
+        "short_code",
+        "window",
+        "slot",
+        "price_cents",
+        "confirmed_by",
+        "updated_at",
+        "changed",
+        "waited_seconds"
       ],
       "additionalProperties": false
     }
@@ -1036,7 +1250,7 @@
     }
   },
   "reschedule_booking": {
-    "description": "Ask to move a confirmed booking. Status becomes rescheduled until the owner says yes to the new slot. Results are asynchronous: the owner answers on a phone call or by text, usually within minutes. Poll get_booking with the booking_id every few seconds until the status is no longer pending. Never tell the user a booking is confirmed until get_booking says confirmed.",
+    "description": "Ask to move a confirmed booking. Status becomes rescheduled until the owner says yes to the new slot. Results are asynchronous: the owner answers on a phone call or by text, usually within minutes. Call wait_for_booking with the booking_id right away and keep calling it until the status is final; it returns the moment the owner answers, so there is no need to poll get_booking. Never tell the user a booking is confirmed until the status says confirmed.",
     "input": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",

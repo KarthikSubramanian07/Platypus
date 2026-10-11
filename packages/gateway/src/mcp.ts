@@ -103,6 +103,14 @@ function tokenBucket(perMinute: number, now: () => number): () => boolean {
  * Streamable HTTP at POST /mcp, stateless: a fresh server and transport per request, so no
  * session map to manage. GET (standalone SSE) and DELETE (session end) get 405, which clients
  * treat as "not supported".
+ *
+ * Long calls (wait_for_booking holds a request up to 120 s): with enableJsonResponse the SDK
+ * transport just awaits the tool's result, with no timer of its own; @hono/node-server sets none;
+ * Node's http server defaults are requestTimeout 300 s and headersTimeout 60 s, both only for
+ * receiving the request, and timeout 0 (no idle limit). So the server never cuts a wait short.
+ * The limit is on the client: the MCP SDK's Client.request defaults to 60 s, and Claude Desktop
+ * (behind mcp-remote, which forwards raw JSON-RPC over fetch with undici's 300 s timeouts)
+ * reportedly cancels a tool call at about 60 s, hence wait_for_booking's 55 s default.
  */
 export function createMcpApp(
   tools: GatewayTools,

@@ -21,7 +21,6 @@ const LOCATION = "1025 Sansome St, San Francisco";
 const BUDGET_CENTS = 12000;
 const REQUESTED_BY = "Alex's assistant";
 const NOTES = "2019 Civic";
-const POLL_MS = 2000;
 const TIMEOUT_MS = 150_000;
 const WAITING = new Set(["pending", "quote_pending"]);
 
@@ -33,7 +32,6 @@ export interface CliOptions {
   token?: string;
   fetch?: (url: string | URL, init?: RequestInit) => Promise<Response>;
   print?: (line: string) => void;
-  pollMs?: number;
   timeoutMs?: number;
   now?: () => Date;
 }
@@ -134,10 +132,12 @@ async function bookGoldenPath(client: Client, scenario: (typeof SCENARIOS)[strin
   });
   print(`Requested: ${requested.short_code} via ${requested.route}${requested.reasons.length ? ` (${requested.reasons.join("; ")})` : ""}`);
 
+  // wait_for_booking returns the moment the status changes, or after its default timeout (under the SDK client's 60 s).
   const started = Date.now();
-  let last = "";
+  let last: Output<"wait_for_booking">["status"] = requested.status;
+  print(`Status: ${last} (0s)`);
   for (;;) {
-    const booking = await call(client, "get_booking", { booking_id: requested.booking_id });
+    const booking: Output<"wait_for_booking"> = await call(client, "wait_for_booking", { booking_id: requested.booking_id, since_status: last });
     const elapsed = Math.round((Date.now() - started) / 1000);
     if (booking.status !== last) print(`Status: ${booking.status} (${elapsed}s)`);
     last = booking.status;
@@ -149,7 +149,6 @@ async function bookGoldenPath(client: Client, scenario: (typeof SCENARIOS)[strin
       print(`Still ${booking.status} after ${elapsed}s, code ${booking.short_code}`);
       return 1;
     }
-    await new Promise((resolve) => setTimeout(resolve, opts.pollMs));
   }
 }
 
@@ -202,7 +201,6 @@ export async function run(argv: string[], options: CliOptions = {}): Promise<num
     }
     return await bookGoldenPath(client, scenario, {
       print,
-      pollMs: options.pollMs ?? POLL_MS,
       timeoutMs: options.timeoutMs ?? TIMEOUT_MS,
       now,
     });

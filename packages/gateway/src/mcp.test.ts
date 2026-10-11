@@ -59,7 +59,12 @@ describe("gateway MCP over streamable HTTP", () => {
     expect(tools.map((t) => t.name).sort()).toEqual([...GATEWAY_TOOL_NAMES].sort());
     for (const name of ["request_booking", "get_booking"]) {
       expect(tools.find((t) => t.name === name)?.description).toContain("Results are asynchronous");
+      expect(tools.find((t) => t.name === name)?.description).toContain("Call wait_for_booking");
     }
+    const wait = tools.find((t) => t.name === "wait_for_booking")!;
+    expect(wait.description).toContain("keep calling it until the status is final");
+    expect(wait.inputSchema.required).toEqual(["booking_id"]);
+    expect(wait.inputSchema.properties?.timeout_seconds).toMatchObject({ minimum: 5, maximum: 120 });
     expect(tools.find((t) => t.name === "get_booking")?.inputSchema.required).toEqual(["booking_id"]);
   });
 

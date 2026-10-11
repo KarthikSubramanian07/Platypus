@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Booking, BookingRoute, Cents, ChannelState, IdempotencyKey, Slot, TimeWindow, UntrustedText } from "./common";
+import { Booking, BookingRoute, BookingStatus, Cents, ChannelState, IdempotencyKey, Slot, TimeWindow, UntrustedText } from "./common";
 import { DarwinSummary } from "./darwin";
 import { Signals } from "./signals";
 import { defineTools, type ToolImplementation } from "./tool";
@@ -10,7 +10,12 @@ import { defineTools, type ToolImplementation } from "./tool";
  */
 export const OUTCOME_VOCABULARY = `Booking statuses: pending (asked, waiting on the owner), countered (owner proposed another time or price), confirmed (the owner said yes on the call or by text; only then is it booked), declined, expired, cancelled, rescheduled, completed, no_show, disputed.`;
 
-const ASYNC_NOTE = `Results are asynchronous: the owner answers on a phone call or by text, usually within minutes. Poll get_booking with the booking_id every few seconds until the status is no longer pending. Never tell the user a booking is confirmed until get_booking says confirmed.`;
+const ASYNC_NOTE = `Results are asynchronous: the owner answers on a phone call or by text, usually within minutes. Call wait_for_booking with the booking_id right away and keep calling it until the status is final; it returns the moment the owner answers, so there is no need to poll get_booking. Never tell the user a booking is confirmed until the status says confirmed.`;
+
+/** The statuses that end the wait, as wait_for_booking's description names them. */
+export const FINAL_STATUSES = ["confirmed", "declined", "expired", "cancelled", "countered"] as const;
+/** Under the ~60 s tool-call limit of Claude Desktop (behind mcp-remote) and the MCP SDK client's default request timeout. */
+export const WAIT_DEFAULT_SECONDS = 55;
 
 export const ProviderSummary = z.object({
   provider_id: z.string(),
@@ -75,6 +80,23 @@ export const GATEWAY_TOOLS = defineTools({
     description: `Current state of a booking. ${ASYNC_NOTE} ${OUTCOME_VOCABULARY}`,
     input: z.object({ booking_id: z.string() }),
     output: Booking,
+  },
+  wait_for_booking: {
+    description: `Wait for the owner's answer. Call it right after request_booking and keep calling it until the status is final (${FINAL_STATUSES.join(", ")}). It returns as soon as the status changes, or after timeout_seconds with changed false; then call it again. Report only the status it returns; never invent a result. ${OUTCOME_VOCABULARY}`,
+    input: z.object({
+      booking_id: z.string(),
+      timeout_seconds: z
+        .number()
+        .min(5)
+        .max(120)
+        .optional()
+        .describe(`Longest wait, 5 to 120 seconds. Default ${WAIT_DEFAULT_SECONDS}, under the 60-second limit many clients put on one tool call`),
+      since_status: BookingStatus.optional().describe("The status you last saw. Returns at once if the booking has moved on; defaults to its status when the call starts"),
+    }),
+    output: Booking.extend({
+      changed: z.boolean().describe("True when the status differs from since_status, or from the status when the call started"),
+      waited_seconds: z.number().nonnegative(),
+    }),
   },
   confirm_booking: {
     description: `Accept the time the owner proposed in a counter-offer. The booking becomes confirmed only because the owner already proposed that slot; Platypus never confirms on the agent's word alone. ${OUTCOME_VOCABULARY}`,
