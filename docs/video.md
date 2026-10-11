@@ -7,14 +7,14 @@ So this is a run sheet for one continuous take, not a shot list. It follows Hack
 ## Who does what
 
 - **Eddy** drives Claude Desktop as the customer. He presents the deck, types both requests, and does the problem, the tech stack, the time-saved numbers and the close.
-- **Karthik** plays the owner of "Sal's Auto". Sal's Auto's line is a second Dial number, so no personal phone rings. The owner's voice on the call is [confirm: who answers the shop line — Dial's inbound AI playing the owner, or Karthik through Dial]. Karthik also answers texts on the owner-phone panel and speaks in the "what is real, what is mocked" beat.
+- **Karthik** plays the owner of "Sal's Auto". Sal's Auto's line is a second Dial number, so no personal phone rings. The owner's voice on the call is [confirm: who answers the shop line: Dial's inbound AI playing the owner, or Karthik through Dial]. Karthik also answers texts on the owner-phone panel and speaks in the "what is real, what is mocked" beat.
 - The joke budget is one: "Our shop owner today is Karthik. Karthik is not a mechanic."
 
 The camera points at Karthik for the whole take. Nobody talks over the call.
 
 ## Run sheet
 
-Times are cumulative targets and assume a 60-second call. Slide titles are the deck's; the numbers are from deck v2 and shift if slides are removed, so go by title. Both ends of every call and text are Dial numbers (see "Dial-to-Dial" under "Variants" below). Wherever a row has Karthik speaking on the call, the speaker is [confirm: who answers the shop line — Dial's inbound AI playing the owner, or Karthik through Dial].
+Times are cumulative targets and assume a 60-second call. Slide titles are the deck's; the numbers are from deck v2 and shift if slides are removed, so go by title. Both ends of every call and text are Dial numbers (see "Dial-to-Dial" under "Variants" below). Wherever a row has Karthik speaking on the call, the speaker is [confirm: who answers the shop line: Dial's inbound AI playing the owner, or Karthik through Dial].
 
 | Time | Beat | On screen | Who speaks | The exact line |
 | --- | --- | --- | --- | --- |
@@ -23,7 +23,7 @@ Times are cumulative targets and assume a 60-second call. Slide titles are the d
 | 0:26 | Tech stack | Deck: How it works (9) | Eddy | "Platypus is an MCP server, written in TypeScript with Hono and SQLite. An agent sends it a request. Platypus asks Darwin whether an agent already covers the job. If none does, Dial places one AI voice call, and the voice agent books through our tools during the call. Every step is an event in an append-only log, and a booking is confirmed only when the owner says yes." |
 | 0:53 | The ask | Switch to the split screen: Claude Desktop on the left (fresh chat), the dashboard on the right. Sal's card reads PHONE-ONLY | Eddy | "This is Claude Desktop with Platypus connected. I'm the customer." He types, while talking: "Oil change tomorrow afternoon, under $120, near 1025 Sansome." |
 | 1:03 | Darwin | Dashboard: the Darwin panel with Darwin's result and the reason line | Eddy | "Platypus asks Darwin Search first. Darwin returned no ready agent, so we go to the phone." |
-| 1:12 | The owner picks up | Dashboard: booking pending, route call. The call panel shows the shop line ringing | Eddy, then Karthik | Eddy: "Our shop owner today is Karthik. Karthik is not a mechanic." The shop line answers on the second ring: "Sal's Auto, this is Karthik." [confirm: who answers the shop line — Dial's inbound AI playing the owner, or Karthik through Dial] |
+| 1:12 | The owner picks up | Dashboard: booking pending, route call. The call panel shows the shop line ringing | Eddy, then Karthik | Eddy: "Our shop owner today is Karthik. Karthik is not a mechanic." The shop line answers on the second ring: "Sal's Auto, this is Karthik." [confirm: who answers the shop line: Dial's inbound AI playing the owner, or Karthik through Dial] |
 | 1:20 | Disclosure | Dashboard: call panel, transcript turns appearing | AI voice, then Karthik | AI: "Hi, this is an AI assistant calling on behalf of a customer's agent through Platypus. Is this Sal's Auto?" Karthik: "It is." |
 | 1:28 | Price and slot | Call panel tool timeline: `check_slot`, then `hold_slot` | AI voice, then Karthik | AI: "A customer needs an oil change tomorrow afternoon. Do you have an opening, and what's the price?" Karthik: "Two o'clock works. Eighty-nine bucks." |
 | 1:42 | Booking through the tools | Timeline: `create_booking`. The booking shows as confirmed, with the owner's quoted words and a short code | AI voice, then Karthik | AI: "Tomorrow at 2pm for eighty-nine dollars. I'll book that. Can I confirm it's a 2019 Civic?" Karthik: "Yep, booked." |
@@ -61,7 +61,7 @@ Screen and sound
 
 The shop line
 
-- [ ] Sal's Auto's line is a second Dial number (`DIAL_OWNER_LINE`, also in `ALLOWED_NUMBERS`), so no personal phone rings. Settled before the take: [confirm: who answers the shop line — Dial's inbound AI playing the owner, or Karthik through Dial].
+- [ ] Sal's Auto's line is a second Dial number (`DIAL_OWNER_LINE`, also in `ALLOWED_NUMBERS`), so no personal phone rings. Settled before the take: [confirm: who answers the shop line: Dial's inbound AI playing the owner, or Karthik through Dial].
 - [ ] Both phones are on silent, with every other notification off.
 - [ ] If Karthik answers through Dial, he sits about 10 cm from the laptop microphone and keeps every answer under four words.
 
