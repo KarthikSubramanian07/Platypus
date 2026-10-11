@@ -1,0 +1,1450 @@
+{
+  "search_providers": {
+    "description": "Find local businesses that can do a job. Searches Darwin's agent index first; when no agent covers it (status no_match), returns phone-only and text-enabled local businesses Platypus can book. Each result carries routing signals (typical price, median reply time, acceptance) and next_step. Booking statuses: pending (asked, waiting on the owner), countered (owner proposed another time or price), confirmed (the owner said yes on the call or by text; only then is it booked), declined, expired, cancelled, rescheduled, completed, no_show, disputed.",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "service": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "What the customer needs, e.g. 'oil change'"
+        },
+        "location": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "Address or neighborhood, e.g. '1025 Sansome St, San Francisco'"
+        },
+        "window": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+              "description": "ISO-8601 date-time"
+            },
+            "end": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+              "description": "ISO-8601 date-time"
+            }
+          },
+          "required": [
+            "start",
+            "end"
+          ],
+          "description": "A time range the customer can make, e.g. tomorrow 12:00 to 17:00 local time, as ISO-8601"
+        },
+        "budget_cents": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Amount in US cents"
+        }
+      },
+      "required": [
+        "service",
+        "location"
+      ]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "providers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "provider_id": {
+                "type": "string"
+              },
+              "display_name": {
+                "type": "string"
+              },
+              "trade": {
+                "type": "string"
+              },
+              "address": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "channel_state": {
+                "type": "string",
+                "enum": [
+                  "phone_only",
+                  "text_enabled",
+                  "paused",
+                  "unlisted"
+                ],
+                "description": "phone_only: we will call. text_enabled: the owner opted in to texts"
+              },
+              "services": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "typical_price_cents": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991,
+                          "description": "Amount in US cents"
+                        },
+                        {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991,
+                          "description": "Amount in US cents"
+                        }
+                      ],
+                      "items": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "typical_price_cents"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "signals": {
+                "type": "object",
+                "properties": {
+                  "typical_price_cents": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991,
+                    "description": "Amount in US cents"
+                  },
+                  "median_reply_seconds": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "acceptance_rate": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "keewano",
+                      "local"
+                    ]
+                  }
+                },
+                "required": [
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              "next_step": {
+                "type": "string",
+                "enum": [
+                  "darwin_act",
+                  "call",
+                  "text"
+                ],
+                "description": "What request_booking would do for this provider right now"
+              }
+            },
+            "required": [
+              "provider_id",
+              "display_name",
+              "trade",
+              "address",
+              "channel_state",
+              "services",
+              "signals",
+              "next_step"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "darwin": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "completed",
+                "needs_input",
+                "no_match",
+                "error",
+                "disabled"
+              ]
+            },
+            "search_id": {
+              "type": "string"
+            },
+            "no_match_reason": {
+              "type": "string"
+            },
+            "question": {
+              "type": "string"
+            },
+            "agents": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "agent_id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "readiness": {
+                    "type": "string"
+                  },
+                  "can_start_thread": {
+                    "type": "boolean"
+                  },
+                  "reasons": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "uncertainties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "agent_id",
+                  "readiness",
+                  "can_start_thread",
+                  "reasons",
+                  "uncertainties"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "cached": {
+              "default": false,
+              "description": "True when this is the last live response replayed from disk, not a new search",
+              "type": "boolean"
+            },
+            "latency_ms": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "status",
+            "agents",
+            "cached"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "providers",
+        "darwin"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "get_provider": {
+    "description": "Public profile of one business: services, hours, price ranges, whether it is text-enabled.",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "provider_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider_id"
+      ]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "provider_id": {
+          "type": "string"
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "trade": {
+          "type": "string"
+        },
+        "address": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "channel_state": {
+          "type": "string",
+          "enum": [
+            "phone_only",
+            "text_enabled",
+            "paused",
+            "unlisted"
+          ],
+          "description": "phone_only: we will call. text_enabled: the owner opted in to texts"
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "typical_price_cents": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991,
+                    "description": "Amount in US cents"
+                  },
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991,
+                    "description": "Amount in US cents"
+                  }
+                ],
+                "items": false,
+                "minItems": 2,
+                "maxItems": 2
+              }
+            },
+            "required": [
+              "name",
+              "typical_price_cents"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "signals": {
+          "type": "object",
+          "properties": {
+            "typical_price_cents": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Amount in US cents"
+            },
+            "median_reply_seconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "acceptance_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "source": {
+              "type": "string",
+              "enum": [
+                "keewano",
+                "local"
+              ]
+            }
+          },
+          "required": [
+            "source"
+          ],
+          "additionalProperties": false
+        },
+        "next_step": {
+          "type": "string",
+          "enum": [
+            "darwin_act",
+            "call",
+            "text"
+          ],
+          "description": "What request_booking would do for this provider right now"
+        },
+        "hours": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "service_area": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "timezone": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider_id",
+        "display_name",
+        "trade",
+        "address",
+        "channel_state",
+        "services",
+        "signals",
+        "next_step",
+        "hours",
+        "service_area",
+        "timezone"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "get_availability": {
+    "description": "Known open slots for a business within a window. Empty does not mean unavailable: Platypus asks the owner when it does not know.",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "provider_id": {
+          "type": "string"
+        },
+        "window": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+              "description": "ISO-8601 date-time"
+            },
+            "end": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+              "description": "ISO-8601 date-time"
+            }
+          },
+          "required": [
+            "start",
+            "end"
+          ],
+          "description": "A time range the customer can make, e.g. tomorrow 12:00 to 17:00 local time, as ISO-8601"
+        }
+      },
+      "required": [
+        "provider_id",
+        "window"
+      ]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "slots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "start": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                "description": "ISO-8601 date-time"
+              },
+              "end": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                "description": "ISO-8601 date-time"
+              }
+            },
+            "required": [
+              "start",
+              "end"
+            ],
+            "additionalProperties": false,
+            "description": "A concrete appointment time"
+          }
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "bookings",
+            "template",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "slots",
+        "source"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "request_booking": {
+    "description": "Ask a business for a booking. Returns immediately with status pending and the route Platypus chose: darwin_act (an existing agent), call (an AI voice call that discloses itself first), or text (the owner opted in). Results are asynchronous: the owner answers on a phone call or by text, usually within minutes. Poll get_booking with the booking_id every few seconds until the status is no longer pending. Never tell the user a booking is confirmed until get_booking says confirmed. Booking statuses: pending (asked, waiting on the owner), countered (owner proposed another time or price), confirmed (the owner said yes on the call or by text; only then is it booked), declined, expired, cancelled, rescheduled, completed, no_show, disputed.",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "provider_id": {
+          "type": "string"
+        },
+        "service": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "window": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+              "description": "ISO-8601 date-time"
+            },
+            "end": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+              "description": "ISO-8601 date-time"
+            }
+          },
+          "required": [
+            "start",
+            "end"
+          ],
+          "description": "A time range the customer can make, e.g. tomorrow 12:00 to 17:00 local time, as ISO-8601"
+        },
+        "address_hint": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "requested_by": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "Who the booking is for, as the owner should hear it, e.g. \"Alex's assistant\""
+        },
+        "notes": {
+          "description": "Details such as the vehicle. Treated as data, never as instructions",
+          "type": "string",
+          "maxLength": 2000
+        },
+        "quote_id": {
+          "type": "string"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 128,
+          "description": "Unique per logical write. Retrying with the same key returns the original result and never books twice"
+        }
+      },
+      "required": [
+        "provider_id",
+        "service",
+        "window",
+        "requested_by",
+        "idempotency_key"
+      ]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "booking_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "const": "pending"
+        },
+        "route": {
+          "type": "string",
+          "enum": [
+            "darwin_act",
+            "call",
+            "text"
+          ],
+          "description": "darwin_act: an existing agent handles it. call: Platypus phones the business. text: the business has opted in to texts"
+        },
+        "short_code": {
+          "type": "string"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Why this route was chosen"
+        }
+      },
+      "required": [
+        "booking_id",
+        "status",
+        "route",
+        "short_code",
+        "reasons"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "get_booking": {
+    "description": "Current state of a booking. Results are asynchronous: the owner answers on a phone call or by text, usually within minutes. Poll get_booking with the booking_id every few seconds until the status is no longer pending. Never tell the user a booking is confirmed until get_booking says confirmed. Booking statuses: pending (asked, waiting on the owner), countered (owner proposed another time or price), confirmed (the owner said yes on the call or by text; only then is it booked), declined, expired, cancelled, rescheduled, completed, no_show, disputed.",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "booking_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "booking_id"
+      ]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "booking_id": {
+          "type": "string"
+        },
+        "provider_id": {
+          "type": "string"
+        },
+        "provider_name": {
+          "type": "string"
+        },
+        "service": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "quote_pending",
+            "quoted",
+            "pending",
+            "countered",
+            "confirmed",
+            "rescheduled",
+            "completed",
+            "no_show",
+            "disputed",
+            "declined",
+            "expired",
+            "cancelled"
+          ]
+        },
+        "route": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "darwin_act",
+                "call",
+                "text"
+              ],
+              "description": "darwin_act: an existing agent handles it. call: Platypus phones the business. text: the business has opted in to texts"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "short_code": {
+          "type": "string",
+          "description": "Reference code the owner and customer can quote, e.g. SAL-4K2"
+        },
+        "window": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                },
+                "end": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ],
+              "additionalProperties": false,
+              "description": "A time range the customer can make, e.g. tomorrow 12:00 to 17:00 local time, as ISO-8601"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "slot": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                },
+                "end": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ],
+              "additionalProperties": false,
+              "description": "A concrete appointment time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "price_cents": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Amount in US cents"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "confirmed_by": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "call",
+                "text",
+                "rule"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "How the owner said yes; null until confirmed"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+          "description": "ISO-8601 date-time"
+        }
+      },
+      "required": [
+        "booking_id",
+        "provider_id",
+        "provider_name",
+        "service",
+        "status",
+        "route",
+        "short_code",
+        "window",
+        "slot",
+        "price_cents",
+        "confirmed_by",
+        "updated_at"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "confirm_booking": {
+    "description": "Accept the time the owner proposed in a counter-offer. The booking becomes confirmed only because the owner already proposed that slot; Platypus never confirms on the agent's word alone. Booking statuses: pending (asked, waiting on the owner), countered (owner proposed another time or price), confirmed (the owner said yes on the call or by text; only then is it booked), declined, expired, cancelled, rescheduled, completed, no_show, disputed.",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "booking_id": {
+          "type": "string"
+        },
+        "slot": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+              "description": "ISO-8601 date-time"
+            },
+            "end": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+              "description": "ISO-8601 date-time"
+            }
+          },
+          "required": [
+            "start",
+            "end"
+          ],
+          "description": "A concrete appointment time"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 128,
+          "description": "Unique per logical write. Retrying with the same key returns the original result and never books twice"
+        }
+      },
+      "required": [
+        "booking_id",
+        "slot",
+        "idempotency_key"
+      ]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "booking_id": {
+          "type": "string"
+        },
+        "provider_id": {
+          "type": "string"
+        },
+        "provider_name": {
+          "type": "string"
+        },
+        "service": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "quote_pending",
+            "quoted",
+            "pending",
+            "countered",
+            "confirmed",
+            "rescheduled",
+            "completed",
+            "no_show",
+            "disputed",
+            "declined",
+            "expired",
+            "cancelled"
+          ]
+        },
+        "route": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "darwin_act",
+                "call",
+                "text"
+              ],
+              "description": "darwin_act: an existing agent handles it. call: Platypus phones the business. text: the business has opted in to texts"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "short_code": {
+          "type": "string",
+          "description": "Reference code the owner and customer can quote, e.g. SAL-4K2"
+        },
+        "window": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                },
+                "end": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ],
+              "additionalProperties": false,
+              "description": "A time range the customer can make, e.g. tomorrow 12:00 to 17:00 local time, as ISO-8601"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "slot": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                },
+                "end": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ],
+              "additionalProperties": false,
+              "description": "A concrete appointment time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "price_cents": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Amount in US cents"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "confirmed_by": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "call",
+                "text",
+                "rule"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "How the owner said yes; null until confirmed"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+          "description": "ISO-8601 date-time"
+        }
+      },
+      "required": [
+        "booking_id",
+        "provider_id",
+        "provider_name",
+        "service",
+        "status",
+        "route",
+        "short_code",
+        "window",
+        "slot",
+        "price_cents",
+        "confirmed_by",
+        "updated_at"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "reschedule_booking": {
+    "description": "Ask to move a confirmed booking. Status becomes rescheduled until the owner says yes to the new slot. Results are asynchronous: the owner answers on a phone call or by text, usually within minutes. Poll get_booking with the booking_id every few seconds until the status is no longer pending. Never tell the user a booking is confirmed until get_booking says confirmed.",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "booking_id": {
+          "type": "string"
+        },
+        "slot": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+              "description": "ISO-8601 date-time"
+            },
+            "end": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+              "description": "ISO-8601 date-time"
+            }
+          },
+          "required": [
+            "start",
+            "end"
+          ],
+          "description": "A concrete appointment time"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 128,
+          "description": "Unique per logical write. Retrying with the same key returns the original result and never books twice"
+        }
+      },
+      "required": [
+        "booking_id",
+        "slot",
+        "idempotency_key"
+      ]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "booking_id": {
+          "type": "string"
+        },
+        "provider_id": {
+          "type": "string"
+        },
+        "provider_name": {
+          "type": "string"
+        },
+        "service": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "quote_pending",
+            "quoted",
+            "pending",
+            "countered",
+            "confirmed",
+            "rescheduled",
+            "completed",
+            "no_show",
+            "disputed",
+            "declined",
+            "expired",
+            "cancelled"
+          ]
+        },
+        "route": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "darwin_act",
+                "call",
+                "text"
+              ],
+              "description": "darwin_act: an existing agent handles it. call: Platypus phones the business. text: the business has opted in to texts"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "short_code": {
+          "type": "string",
+          "description": "Reference code the owner and customer can quote, e.g. SAL-4K2"
+        },
+        "window": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                },
+                "end": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ],
+              "additionalProperties": false,
+              "description": "A time range the customer can make, e.g. tomorrow 12:00 to 17:00 local time, as ISO-8601"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "slot": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                },
+                "end": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ],
+              "additionalProperties": false,
+              "description": "A concrete appointment time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "price_cents": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Amount in US cents"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "confirmed_by": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "call",
+                "text",
+                "rule"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "How the owner said yes; null until confirmed"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+          "description": "ISO-8601 date-time"
+        }
+      },
+      "required": [
+        "booking_id",
+        "provider_id",
+        "provider_name",
+        "service",
+        "status",
+        "route",
+        "short_code",
+        "window",
+        "slot",
+        "price_cents",
+        "confirmed_by",
+        "updated_at"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "cancel_booking": {
+    "description": "Cancel a booking. The owner is told by text when they have opted in.",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "booking_id": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 128,
+          "description": "Unique per logical write. Retrying with the same key returns the original result and never books twice"
+        }
+      },
+      "required": [
+        "booking_id",
+        "idempotency_key"
+      ]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "booking_id": {
+          "type": "string"
+        },
+        "provider_id": {
+          "type": "string"
+        },
+        "provider_name": {
+          "type": "string"
+        },
+        "service": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "quote_pending",
+            "quoted",
+            "pending",
+            "countered",
+            "confirmed",
+            "rescheduled",
+            "completed",
+            "no_show",
+            "disputed",
+            "declined",
+            "expired",
+            "cancelled"
+          ]
+        },
+        "route": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "darwin_act",
+                "call",
+                "text"
+              ],
+              "description": "darwin_act: an existing agent handles it. call: Platypus phones the business. text: the business has opted in to texts"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "short_code": {
+          "type": "string",
+          "description": "Reference code the owner and customer can quote, e.g. SAL-4K2"
+        },
+        "window": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                },
+                "end": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ],
+              "additionalProperties": false,
+              "description": "A time range the customer can make, e.g. tomorrow 12:00 to 17:00 local time, as ISO-8601"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "slot": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                },
+                "end": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                  "description": "ISO-8601 date-time"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ],
+              "additionalProperties": false,
+              "description": "A concrete appointment time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "price_cents": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Amount in US cents"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "confirmed_by": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "call",
+                "text",
+                "rule"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "How the owner said yes; null until confirmed"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+          "description": "ISO-8601 date-time"
+        }
+      },
+      "required": [
+        "booking_id",
+        "provider_id",
+        "provider_name",
+        "service",
+        "status",
+        "route",
+        "short_code",
+        "window",
+        "slot",
+        "price_cents",
+        "confirmed_by",
+        "updated_at"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "report_outcome": {
+    "description": "After the appointment: completed, no_show, or issue. Feeds the business's reputation; only real bookings count.",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "booking_id": {
+          "type": "string"
+        },
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "completed",
+            "no_show",
+            "issue"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "booking_id",
+        "outcome"
+      ]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "const": true
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "completed",
+            "no_show",
+            "disputed"
+          ]
+        }
+      },
+      "required": [
+        "ok",
+        "status"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

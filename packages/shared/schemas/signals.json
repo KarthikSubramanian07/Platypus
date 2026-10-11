@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "typical_price_cents": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Amount in US cents"
+    },
+    "median_reply_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "acceptance_rate": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "keewano",
+        "local"
+      ]
+    }
+  },
+  "required": [
+    "source"
+  ],
+  "additionalProperties": false
+}
