@@ -53,6 +53,31 @@ describe("sanitizeUntrustedText", () => {
     expect(out.match(/\[link removed\]/g)).toHaveLength(8);
   });
 
+  it("strips links hidden behind invisible characters, fullwidth homoglyphs or non-Latin domains", () => {
+    for (const hidden of [
+      "pay at evil\u200B.com/x",
+      "pay at evil.\u2060com",
+      "pay at bit\u00AD.ly/3xYz",
+      "\uFF48\uFF54\uFF54\uFF50\uFF53\uFF1A\uFF0F\uFF0Fevil",
+      "\uFF57\uFF57\uFF57\uFF0Eevil",
+      "visit \u043F\u0440\u0438\u043C\u0435\u0440.\u0440\u0444/pay",
+      "visit \u0435vil.com now",
+    ]) {
+      const out = sanitizeUntrustedText(hidden);
+      expect(out, JSON.stringify(hidden)).toContain("[link removed]");
+      expect(out).not.toMatch(/evil\.|bit\.ly|\.\u0440\u0444/);
+    }
+  });
+
+  it("drops bidi overrides, zero-width characters and C1 controls", () => {
+    const out = sanitizeUntrustedText("Y\u202Eon\u202C \u200Bplease\u0085\u009B\uFEFF");
+    expect(out).toBe("Yon please");
+  });
+
+  it("keeps non-Latin words that are not links", () => {
+    expect(sanitizeUntrustedText("Sí, mañana a las 3. Спасибо!")).toBe("Sí, mañana a las 3. Спасибо!");
+  });
+
   it("keeps prices, times and ordinary words", () => {
     const text = "Brake inspection Tue 10am or 2:00pm, about $89. Notes: 2019 Civic, 2.5 hrs, e.g. pads.";
     expect(sanitizeUntrustedText(text)).toBe(text);

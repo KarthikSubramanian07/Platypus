@@ -11,7 +11,7 @@ fc.configureGlobal({ seed: Number(process.env.FC_SEED ?? 0x5afe), numRuns: Numbe
 
 /** Strings built from the pieces links are made of, plus the characters that try to hide them. */
 const linkish = fc.string({
-  unit: fc.constantFrom("http", "HTTP", "s", "://", ":", "//", "www", "WWW", ".", "com", "ly", "/", "x", "evil", " ", "\n", "\t", "\u0000", "\u0007", "\u001f", "\u007f", "a", "2:00pm", "…"),
+  unit: fc.constantFrom("http", "HTTP", "s", "://", ":", "//", "www", "WWW", ".", "com", "ly", "/", "x", "evil", " ", "\n", "\t", "\u0000", "\u0007", "\u001f", "\u007f", "a", "2:00pm", "…", "\u200B", "\u202E", "\u00AD", "\uFF48", "\uFF0E", "\u0435"),
   maxLength: 60,
 });
 const anyText = fc.oneof(linkish, fc.string({ unit: "binary", maxLength: 80 }), fc.string({ maxLength: 1200 }));
