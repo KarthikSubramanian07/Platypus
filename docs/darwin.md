@@ -24,7 +24,7 @@ customer agent ──request_booking──▶ gateway
 | - | - |
 | `packages/shared/src/darwin/schema.ts` | Zod schemas for Search v3 and Act v3, strict on the fields Platypus reads and loose on everything else. |
 | `packages/shared/src/darwin/client.ts` | `HttpDarwin`: bounded retries (network errors, 429 with `Retry-After`, 502/503/504), typed `DarwinError`, and the `x-request-id` on every failure. |
-| `packages/shared/src/darwin/lookup.ts` | The search ladder, the choice of startable result (first in Darwin's order, `canStartThread && readiness === "ready"`), a TTL cache, `toDarwinSummary` (the `DarwinSummary` that `search_providers` returns), and the `darwin.searched` event payload in the golden path's shape. |
+| `packages/shared/src/darwin/lookup.ts` | The search ladder, the choice of startable result (first in Darwin's order, `canStartThread && readiness === "ready"`), a cache keyed by trade and area, `toDarwinSummary` (the `DarwinSummary` that `search_providers` returns), and the `darwin.searched` event payload in the golden path's shape. |
 | `packages/shared/src/darwin/env.ts` | `createDarwin()`. In fakes mode it runs the real client over `createFakeDarwinFetch`, so fakes exercise the same parsing and ladder as live. |
 | `packages/shared/src/darwin/scripted.ts` | `ScriptedDarwin` and `DARWIN_FIXTURES`, exported from `@platypus/shared/testing`, for multi-step test sequences such as a 500 followed by a success. |
 | `packages/shared/src/testing/fixtures/darwin-*.recorded.json` | Real responses with provenance. The `listed`, `listed_context` and `needs_input` modes come from the ladder's own queries. |
@@ -44,6 +44,15 @@ Import it with `import { createDarwin, lookupDarwin, toDarwinSummary } from "@pl
 | `DARWIN_ENABLED` | No | Defaults to `true`. `false` skips Darwin entirely: `search_providers` reports `disabled`, and routing proceeds without it. |
 | `DARWIN_IMPL` | No | `fake` or `real`. Defaults to `fake` under `DEMO_MODE=fakes` and `real` under `live`. `fake` refuses to start under `DEMO_MODE=live`. |
 
+## Caching
+
+A live lookup takes 10 to 30 seconds when a rung returns 500, so the gateway keeps one `DarwinLookupCache` for all its tools.
+
+- **Keyed by trade and area.** Darwin's answer for the ladder is driven by the trade, and the last rung is always the bare trade. One answer therefore serves any service wording, budget and deadline for that trade in that area for ten minutes. Hits are reported with `cached: true`. An `unavailable` lookup (every rung failed) is never cached, so the next request tries again.
+- **Warmed on start.** With `DEMO_MODE=live` and Darwin enabled, `mount` fires one lookup per seeded trade and area in the background. Startup never waits for it, a failure is one log line, and no event is emitted because no agent asked.
+- **Warmed before the stage.** The cache lasts ten minutes, so run `pnpm --filter @platypus/gateway demo:cli warm` right before going on stage. It makes the stage search ("oil change" near the demo address) once and prints Darwin's answer and the round trip. It exits 1 when Darwin did not answer; run it again.
+- **Provenance.** The `darwin.searched` event says `provenance: "recorded"` when the recorded fake answered (`DEMO_MODE=fakes`), and `"live"` otherwise.
+
 ## Checking it
 
 - `pnpm run doctor` runs one live Search and the MCP handshake, and reports whether the key was accepted. Use `pnpm run doctor`, not `pnpm doctor`: pnpm 11 and later ship a built-in `doctor` command that shadows the script.
@@ -51,7 +60,7 @@ Import it with `import { createDarwin, lookupDarwin, toDarwinSummary } from "@pl
 
 ## Known Darwin behavior (2026-10-11)
 
-- **Many queries return HTTP 500.** Location-qualified phrasings fail consistently in about 2 to 17 seconds. Examples are "hair salon in San Francisco", "book an oil change" and "make a restaurant reservation". Bare trades such as "hair salon" and "auto repair shop" usually succeed but sometimes return 500 too: "auto repair shop" failed and then succeeded a minute later. The ladder therefore tries the specific phrasing once and the bare trade twice. In the 2026-10-11 live smoke runs, it answered all six seeded businesses, and Sal's Auto needed the third attempt. A lookup can take 30 seconds in the worst case, longer than the six-second target in `docs/workstreams.md`. The gateway should pass a `DarwinLookupCache` (ten-minute TTL; hits are reported with `cached: true`) and either warm it per trade or switch Darwin off with `DARWIN_ENABLED=false`. Example request ids for a Darwin bug report are `69e7c845-e9b1-428e-882b-236d69784a54`, `1a3bb8dc-2879-4dd8-81f5-02b572e91b64` and `700bc579-f989-4e08-b318-766f57828057`.
+- **Many queries return HTTP 500.** Location-qualified phrasings fail consistently in about 2 to 17 seconds. Examples are "hair salon in San Francisco", "book an oil change" and "make a restaurant reservation". Bare trades such as "hair salon" and "auto repair shop" usually succeed but sometimes return 500 too: "auto repair shop" failed and then succeeded a minute later. The ladder therefore tries the specific phrasing once and the bare trade twice. In the 2026-10-11 live smoke runs, it answered all six seeded businesses, and Sal's Auto needed the third attempt. A lookup can take 30 seconds in the worst case, longer than the six-second target in `docs/workstreams.md`. The gateway therefore caches answers per trade and area and warms the cache (see [Caching](#caching)); `DARWIN_ENABLED=false` remains the switch if Darwin is down. Example request ids for a Darwin bug report are `69e7c845-e9b1-428e-882b-236d69784a54`, `1a3bb8dc-2879-4dd8-81f5-02b572e91b64` and `700bc579-f989-4e08-b318-766f57828057`.
 - **The demo request, live.** "auto repair shop: oil change" with the area, budget and deadline as context returned 500. "auto repair shop" then returned `completed` with one agent, "Find shops", which is `unavailable`. The route was `call`, with the reasons "Darwin returned no ready agent" and "no text consent on record". Darwin has not returned `no_match` for any seeded trade.
 - **No local-service result is startable.** Every result for the seeded trades has `readiness: "unavailable"` and `canStartThread: false`, so today every booking routes to `call` or `text`. That is the gap Platypus fills.
 - **Act is a pilot.** Without an allowlisted credential, `POST /api/v3/act` returns 401 (no credential) or 403 `ACT_PREVIEW_ACCESS_REQUIRED`.
