@@ -41,7 +41,7 @@ import {
   type TranscriptTurn,
   type VoiceTool,
 } from "./state";
-import { askFacts, bookingForAsk, callElapsedMs, captionsAt, darwinSummary, FINAL_LINE, mergeTurns, phoneScreen } from "./story";
+import { askFacts, bookingForAsk, callElapsedMs, captionsAt, darwinSummary, FINAL_LINE, mergeTurns, phoneLabel, phoneScreen, railOf } from "./story";
 
 /**
  * /live: the demo as a judge follows it. The owner's phone on the left (the call,
@@ -67,6 +67,8 @@ const FINAL_DELAY_MS = 2_600;
 /** The recording knows each call's transcript in advance, so it can caption the call as it plays. */
 const RECORDED_TURNS = new Map<string, TranscriptTurn[]>();
 for (const e of GOLDEN_PATH) if (e.type === "call.transcribed" && e.refs.call_id) RECORDED_TURNS.set(e.refs.call_id, readTranscript(e.payload));
+/** The recording's rail is known before its consent plays, so the lock screen can say it from the start. */
+const RECORDED_RAIL = railOf(reduceAll(GOLDEN_PATH));
 
 const run = { active: false, finished: false, epoch: Date.now(), wallStart: 0, tag: 0, timer: undefined as ReturnType<typeof setTimeout> | undefined };
 
@@ -293,7 +295,7 @@ function renderTextCard(): void {
   else {
     const sent = state.messages.find((m) => m.bookingId === byText.id && m.direction === "out");
     const rail = formatRail(sent?.channel ?? business?.rail);
-    setText(lede, sent ? `No call. One ${rail ?? "text"} to ${business?.numberMasked ?? "the owner's cell"}, answered with one letter.` : "No call this time. Sending one text to the owner…");
+    setText(lede, sent ? `No call. One ${rail === "Dial" ? "Dial text" : (rail ?? "text")} to ${business?.numberMasked ?? "the owner's cell"}, answered with one letter.` : "No call this time. Sending one text to the owner…");
   }
   bookedCard($("#text-booking"), byText, byText ? evidenceLine(byText) : "");
   const seconds = byText ? confirmSeconds(state, byText) : undefined;
@@ -441,6 +443,7 @@ function renderPhone(): void {
   const typing = cues.find((c) => c.kind === "typing");
   const composing = cues.find((c) => c.kind === "composing");
   const screen = phoneScreen(state, { textComing: Boolean(typing) });
+  setText($("#lock-hint"), phoneLabel(RECORDING ? RECORDED_RAIL : railOf(state)));
   if (screen !== screenNow) {
     screenNow = screen;
     phone.dataset.screen = screen;
