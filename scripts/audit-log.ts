@@ -13,11 +13,13 @@ import { readFileSync } from "node:fs";
 import { auditEventLog, formatAuditReport } from "../packages/shared/src/audit/index";
 import { parseJsonl } from "../packages/shared/src/events/log";
 
-const DEFAULT_SOURCE = `http://localhost:${process.env.PORT ?? 8787}/events.jsonl`;
+const DEFAULT_SOURCE = `http://127.0.0.1:${process.env.PORT ?? 8787}/events.jsonl`;
 
 async function readLog(source: string): Promise<string> {
   if (/^https?:\/\//.test(source)) {
-    const res = await fetch(source, { signal: AbortSignal.timeout(10_000) });
+    // Through the tunnel the log needs DASHBOARD_TOKEN; on this machine it is open.
+    const token = process.env.DASHBOARD_TOKEN?.trim();
+    const res = await fetch(source, { signal: AbortSignal.timeout(10_000), ...(token ? { headers: { authorization: `Bearer ${token}` } } : {}) });
     if (!res.ok) throw new Error(`GET ${source} answered ${res.status}`);
     return res.text();
   }

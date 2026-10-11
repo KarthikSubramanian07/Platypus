@@ -23,7 +23,15 @@ const PLACEMENT_UNKNOWN = "PlacementUnknown";
 const LOCAL_LIVE = [PLACING, "Queued", "Ringing", "In-Progress"];
 const STATE_ORDER = [PLACING, PLACEMENT_UNKNOWN, "Queued", "Ringing", "In-Progress", "Terminated"];
 
-export type CallRefusal = "not_found" | "booking_mismatch" | "do_not_call" | "no_phone" | "live_call" | "cannot_verify";
+export type CallRefusal = "not_found" | "booking_mismatch" | "do_not_call" | "no_phone" | "live_call" | "cannot_verify" | "rate_limited";
+
+/**
+ * Calls one phone may receive from us in any hour, across every booking and agent. Agents
+ * can name themselves anything and cancel and re-request, so the gateway's per-agent limits
+ * cannot protect an owner on their own; this is counted from the calls table, so it holds
+ * across restarts too.
+ */
+export const MAX_CALLS_PER_NUMBER_PER_HOUR = 6;
 
 /** startOnboardingCall said no before dialing. Nothing was sent to Dial. */
 export class CallRefusedError extends Error {
@@ -56,6 +64,8 @@ export interface CallServiceOptions {
   anthropic?: AnthropicLike | null;
   /** Our Dial number, read out if the owner asks how to reach us. */
   callbackNumber?: string;
+  /** Overrides MAX_CALLS_PER_NUMBER_PER_HOUR. */
+  maxCallsPerNumberPerHour?: number;
 }
 
 export interface CallService {
@@ -110,6 +120,10 @@ export function createCallService(options: CallServiceOptions): CallService {
     if (business.do_not_call || dncEvent) return refuse("do_not_call", "The owner asked not to be called again", refs);
     const to = business.phone_e164;
     if (!to) return refuse("no_phone", "The business has no phone number", refs);
+    const hourAgo = new Date(clock.now().getTime() - 3_600_000).toISOString();
+    const { n: lastHour } = db.prepare("SELECT COUNT(*) AS n FROM calls WHERE to_e164 = ? AND direction = 'outbound' AND created_at > ?").get(to, hourAgo) as { n: number };
+    const callLimit = options.maxCallsPerNumberPerHour ?? MAX_CALLS_PER_NUMBER_PER_HOUR;
+    if (lastHour >= callLimit) return refuse("rate_limited", `This owner already got ${lastHour} calls from Platypus in the last hour; the most is ${callLimit}`, refs);
 
     // Non-negotiable 4: never two calls to one number. Local state first (synchronously, so two
     // concurrent requests cannot both pass), then Dial's own list.

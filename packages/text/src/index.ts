@@ -26,7 +26,7 @@ export * from "./money";
 export * from "./phone";
 export * from "./time";
 export { handleInbound, MAX_CLARIFICATIONS, type InboundInput, type InboundOutcome } from "./inbound";
-export { RoutingUnavailableError, dialChannelFor, type ResendResult, type SendBookingResult } from "./outbound";
+export { MAX_REQUESTS_PER_BUSINESS_PER_HOUR, OwnerRateLimitedError, RoutingUnavailableError, dialChannelFor, type ResendResult, type SendBookingResult } from "./outbound";
 export { DialEnvelope, signDialPayload, storedChannel, toInboundInput, verifyDialSignature } from "./webhook";
 export type { Clock, TextDeps } from "./deps";
 

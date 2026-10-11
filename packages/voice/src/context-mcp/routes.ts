@@ -1,8 +1,14 @@
 import { hostHeaderValidationResponse } from "@modelcontextprotocol/server";
 import type { VoiceTools } from "@platypus/shared/contracts";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { MIN_SECRET_BYTES, MIN_TOKEN_BYTES, safeEqual, secretProblem } from "./secret";
 import { createContextMcpHandler, type ToolCallLog } from "./server";
+
+/** A JSON-RPC tool call is well under a kilobyte; nothing Dial sends comes close to this. */
+export const MAX_CONTEXT_MCP_BODY_BYTES = 64 * 1024;
+/** One call makes a handful of tool calls; this is room for several calls at once, not for a loop. */
+export const CONTEXT_MCP_REQUESTS_PER_MINUTE = 120;
 
 export interface ContextMcpRoutesOptions {
   tools: VoiceTools;
@@ -15,6 +21,21 @@ export interface ContextMcpRoutesOptions {
   onToolCall?: (log: ToolCallLog) => void;
   /** Zone for times read aloud. Defaults to America/Los_Angeles. */
   timeZone?: string;
+  /** Authenticated requests per minute across the endpoint; the next one gets 429. */
+  requestsPerMinute?: number;
+  now?: () => number;
+}
+
+/** Sliding one-minute window: at most `limit` calls in any 60 seconds. */
+function minuteWindow(limit: number, now: () => number): () => boolean {
+  const times: number[] = [];
+  return () => {
+    const t = now();
+    while (times.length && t - times[0]! >= 60_000) times.shift();
+    if (times.length >= limit) return false;
+    times.push(t);
+    return true;
+  };
 }
 
 /** localhost plus the public tunnel's hostname. */
@@ -50,6 +71,8 @@ export function createContextMcpRoutes(opts: ContextMcpRoutesOptions): Hono {
     ...(opts.timeZone ? { timeZone: opts.timeZone } : {}),
   });
   const app = new Hono();
+  const take = minuteWindow(opts.requestsPerMinute ?? CONTEXT_MCP_REQUESTS_PER_MINUTE, opts.now ?? Date.now);
+  const limitBody = bodyLimit({ maxSize: MAX_CONTEXT_MCP_BODY_BYTES, onError: (c) => c.text("Payload Too Large", 413) });
   app.all("/mcp/:secret", async (c, next) => {
     if (!safeEqual(c.req.param("secret"), opts.secret)) {
       await next();
@@ -59,7 +82,13 @@ export function createContextMcpRoutes(opts: ContextMcpRoutesOptions): Hono {
     if (rejected) return rejected;
     const bearer = /^Bearer\s+(.+)$/i.exec(c.req.header("authorization") ?? "")?.[1]?.trim() ?? "";
     if (!safeEqual(bearer, opts.token)) return c.text("Forbidden", 403);
-    return handle(c.req.raw);
+    if (!take()) return c.text("Too Many Requests", 429, { "retry-after": "5" });
+    // bodyLimit answers 413 itself, or swaps in a size-capped body before the handler reads it.
+    let response: Response | undefined;
+    const refused = await limitBody(c, async () => {
+      response = await handle(c.req.raw);
+    });
+    return response ?? refused ?? c.res;
   });
   return app;
 }

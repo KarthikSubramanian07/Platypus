@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
 import type { TextChannel } from "@platypus/shared/config";
 import type { MessageChannel } from "@platypus/shared/db";
@@ -13,6 +14,8 @@ import type { InboundInput } from "./inbound";
  */
 
 export const SIGNATURE_TOLERANCE_SECONDS = 300;
+/** The largest webhook body read. A call.transcribed event for a two-minute call is a few kilobytes. */
+export const MAX_WEBHOOK_BYTES = 1024 * 1024;
 
 /**
  * X-Dial-Signature: t=<unix seconds>,v1=<hex>. v1 is HMAC-SHA256 keyed with the whole
@@ -102,7 +105,10 @@ export interface WebhookOptions {
 }
 
 export function mountDialWebhook(app: Hono, options: WebhookOptions): void {
-  app.post(options.path ?? "/webhooks/dial", async (c) => {
+  const path = options.path ?? "/webhooks/dial";
+  // Read before the signature can be checked, so the size is capped first: no unsigned body may fill memory.
+  app.use(path, bodyLimit({ maxSize: MAX_WEBHOOK_BYTES, onError: (c) => c.json({ error: "body too large" }, 413) }));
+  app.post(path, async (c) => {
     if (!options.secret) return c.json({ error: "webhook secret not configured" }, 503);
     const raw = await c.req.text();
     const nowSeconds = options.nowSeconds?.() ?? Math.floor(Date.now() / 1000);
@@ -116,8 +122,9 @@ export function mountDialWebhook(app: Hono, options: WebhookOptions): void {
     }
     const envelope = DialEnvelope.safeParse(json);
     if (!envelope.success) return c.json({ ok: true, ignored: "not an event envelope" });
-    const eventId = c.req.header("x-dial-event-id") ?? envelope.data.id;
-    options.ingest({ ...envelope.data, id: eventId }, "webhook");
+    // Dedupe on the id inside the signed body. The X-Dial-Event-Id header is not covered by the
+    // signature, so a replayed request with a fresh header must not count as a new event.
+    options.ingest(envelope.data, "webhook");
     return c.json({ ok: true });
   });
 }

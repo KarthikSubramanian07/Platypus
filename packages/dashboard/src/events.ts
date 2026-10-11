@@ -6,17 +6,30 @@ import type { StreamEvent } from "./format";
  * In dev the stream is same-origin (Vite proxies /events and /demo to the server).
  * A static deploy has no server, so it plays the bundled golden-path recording,
  * unless VITE_EVENTS_URL or ?events=<url> points it at a live one.
+ *
+ * Through a public tunnel the server's operator routes need DASHBOARD_TOKEN; the page
+ * passes ?token=<value> from its own URL to that server, and only to that server. It is
+ * never stored, so a link naming some other ?events= server cannot collect it later.
  */
 export interface StreamSource {
   mode: "live" | "recording";
   /** Origin of the event server, without a trailing slash; "" means same-origin. */
   base: string;
+  /** DASHBOARD_TOKEN for that server, from ?token= on this page's URL. */
+  token?: string;
+}
+
+/** Appends ?token= (EventSource and no-cors POSTs cannot send an Authorization header). */
+export function withToken(url: string, token: string | undefined): string {
+  if (!token) return url;
+  return `${url}${url.includes("?") ? "&" : "?"}token=${encodeURIComponent(token)}`;
 }
 
 export function resolveSource(search: string, env: { PROD: boolean; VITE_EVENTS_URL?: string | undefined }): StreamSource {
-  const fromQuery = new URLSearchParams(search).get("events");
-  const configured = fromQuery ?? env.VITE_EVENTS_URL;
-  return { mode: env.PROD && !configured ? "recording" : "live", base: (configured ?? "").replace(/\/$/, "") };
+  const query = new URLSearchParams(search);
+  const configured = query.get("events") ?? env.VITE_EVENTS_URL;
+  const token = query.get("token")?.trim();
+  return { mode: env.PROD && !configured ? "recording" : "live", base: (configured ?? "").replace(/\/$/, ""), ...(token ? { token } : {}) };
 }
 
 export type ConnectionState = "connecting" | "live" | "reconnecting" | "recording";
@@ -68,7 +81,7 @@ export interface LiveHandlers {
  *    the server died, so no heartbeat for `staleMs` counts as a dropped stream.
  * Duplicates are still possible across reconnects, so the consumer dedupes by id.
  */
-export function connectLive(base: string, handlers: LiveHandlers, { staleMs = 35_000 }: { staleMs?: number } = {}): () => void {
+export function connectLive(base: string, handlers: LiveHandlers, { staleMs = 35_000, token }: { staleMs?: number; token?: string | undefined } = {}): () => void {
   let source: EventSource | undefined;
   let lastId: string | undefined;
   let lastFrame = Date.now();
@@ -91,7 +104,7 @@ export function connectLive(base: string, handlers: LiveHandlers, { staleMs = 35
   }, Math.min(5_000, staleMs / 2));
 
   const open = () => {
-    const url = `${base}/events/stream${lastId ? `?after=${encodeURIComponent(lastId)}` : ""}`;
+    const url = withToken(`${base}/events/stream${lastId ? `?after=${encodeURIComponent(lastId)}` : ""}`, token);
     handlers.onState(lastId ? "reconnecting" : "connecting");
     lastFrame = Date.now();
     source = new EventSource(url);
@@ -130,9 +143,9 @@ export function connectLive(base: string, handlers: LiveHandlers, { staleMs = 35
 }
 
 /** Asks the dev server to replay the golden path. Resolves true when a replay started. */
-export async function requestReplay(base: string): Promise<boolean> {
+export async function requestReplay(base: string, token?: string): Promise<boolean> {
   try {
-    const response = await fetch(`${base}/demo/replay`, { method: "POST" });
+    const response = await fetch(withToken(`${base}/demo/replay`, token), { method: "POST" });
     return response.ok;
   } catch {
     return false;
@@ -165,10 +178,10 @@ export function isCrossOrigin(base: string, origin: string): boolean {
  * JSON body, in no-cors mode, so it reaches the server without a preflight the server
  * would not answer. Never retried automatically.
  */
-export async function postDemo(base: string, path: string, body?: unknown, origin = globalThis.location?.origin ?? ""): Promise<DemoResult> {
+export async function postDemo(base: string, path: string, body?: unknown, origin = globalThis.location?.origin ?? "", token?: string): Promise<DemoResult> {
   const cross = isCrossOrigin(base, origin);
   try {
-    const response = await fetch(`${base}${path}`, {
+    const response = await fetch(withToken(`${base}${path}`, token), {
       method: "POST",
       ...(body === undefined ? {} : { body: JSON.stringify(body), headers: { "content-type": cross ? "text/plain" : "application/json" } }),
       ...(cross ? { mode: "no-cors" as const } : {}),
@@ -181,11 +194,11 @@ export async function postDemo(base: string, path: string, body?: unknown, origi
 }
 
 /** The demo kill switch: ends the live call. */
-export function requestKillCall(base: string): Promise<DemoResult> {
-  return postDemo(base, "/demo/kill-call");
+export function requestKillCall(base: string, token?: string): Promise<DemoResult> {
+  return postDemo(base, "/demo/kill-call", undefined, undefined, token);
 }
 
 /** Replies as the shop owner, Y or N, through the server's owner line. */
-export function requestOwnerReply(base: string, body: "Y" | "N"): Promise<DemoResult> {
-  return postDemo(base, "/demo/owner-reply", { body });
+export function requestOwnerReply(base: string, body: "Y" | "N", token?: string): Promise<DemoResult> {
+  return postDemo(base, "/demo/owner-reply", { body }, undefined, token);
 }

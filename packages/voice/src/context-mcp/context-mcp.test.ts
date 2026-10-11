@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { callFixture, TOMORROW_AFTERNOON, AGENT_NUMBER, type CallFixture } from "../tools/call-fixture";
 import { VoiceToolInputError } from "../tools/errors";
 import { createVoiceTools } from "../tools/voice-tools";
-import { createContextMcpRoutes } from "./routes";
+import { createContextMcpRoutes, MAX_CONTEXT_MCP_BODY_BYTES } from "./routes";
 import { generateContextMcpSecret, generateContextMcpToken } from "./secret";
 import type { ToolCallLog } from "./server";
 import { spokenError } from "./spoken";
@@ -255,10 +255,38 @@ describe("HTTP guards", () => {
     expect(status).toBe(403);
   });
 
+  it("refuses an oversized body with 413 and never reaches the tools", async () => {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json, text/event-stream", ...auth },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: { pad: "x".repeat(MAX_CONTEXT_MCP_BODY_BYTES) } }),
+    });
+    expect(res.status).toBe(413);
+    expect(logs).toHaveLength(0);
+  });
+
+  it("rate limits authenticated requests, and only those", async () => {
+    const tools = createVoiceTools({ db: f.db, bus: f.bus, textChannel: "imessage" });
+    let t = 0;
+    const app = new Hono().route("/", createContextMcpRoutes({ tools, secret: SECRET, token: TOKEN, requestsPerMinute: 2, now: () => t }));
+    const post = (headers: Record<string, string>) =>
+      app.request(`/mcp/${SECRET}`, { method: "POST", headers: { "content-type": "application/json", accept: "application/json, text/event-stream", ...headers }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }) });
+    expect((await post({ Authorization: "Bearer nope" })).status).toBe(403); // does not use up the budget
+    expect((await post(auth)).status).toBe(200);
+    expect((await post(auth)).status).toBe(200);
+    const limited = await post(auth);
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get("retry-after")).toBe("5");
+    t = 60_000;
+    expect((await post(auth)).status).toBe(200);
+  });
+
   it("refuses to build routes with a weak secret or token", () => {
     const tools = createVoiceTools({ db: f.db, bus: f.bus, textChannel: "imessage" });
     expect(() => createContextMcpRoutes({ tools, secret: "short", token: TOKEN })).toThrow(/path secret/);
     const weakToken = Buffer.alloc(24, 7).toString("base64url"); // valid base64url, but only 24 bytes
     expect(() => createContextMcpRoutes({ tools, secret: SECRET, token: weakToken })).toThrow(/at least 32 random bytes/);
+    expect(() => createContextMcpRoutes({ tools, secret: SECRET, token: "a".repeat(64) })).toThrow(/not random/);
+    expect(() => createContextMcpRoutes({ tools, secret: "abcd".repeat(10), token: TOKEN })).toThrow(/not random/);
   });
 });

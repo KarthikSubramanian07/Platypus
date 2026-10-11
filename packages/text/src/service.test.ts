@@ -4,10 +4,10 @@ import { NumberNotAllowedError } from "@platypus/shared/safety";
 import { HELP_COPY, RESUME_COPY, STOP_COPY } from "./copy";
 import { createEventsConsumer } from "./events-consumer";
 import type { ReplyModel } from "./model";
-import { RoutingUnavailableError } from "./outbound";
+import { OwnerRateLimitedError, RoutingUnavailableError } from "./outbound";
 import { LookupUnavailableError, SendOutcomeUnknownError } from "./dial-messaging";
 import { harness, OUR_NUMBER } from "./test-helpers";
-import { verifyDialSignature } from "./webhook";
+import { MAX_WEBHOOK_BYTES, verifyDialSignature } from "./webhook";
 
 const GOLDEN_COPY = "New job via Platypus (AI-assisted): brake inspection, Tue 10am, 2019 Civic. From Alex's assistant. Reply Y, N, or a time.";
 
@@ -102,6 +102,23 @@ describe("the text golden path", () => {
 
     const open = harness({ overrides: { webhookSecret: undefined } });
     expect((await open.post(open.inbound("Y"))).status).toBe(503);
+  });
+
+  it("dedupes a replayed signed event even when the unsigned event-id header changes", async () => {
+    const seen: string[] = [];
+    const h = harness({ overrides: { onDialEvent: (e) => void seen.push(e.id) } });
+    const ended = { id: "evt_end_1", object: "event", type: "call.ended", version: 1, createdAt: h.clock.now().toISOString(), relatedObject: null, data: { callId: "call_1" } };
+    expect((await h.post(ended)).status).toBe(200);
+    expect((await h.post(ended, { eventId: "evt_forged_fresh_id" })).status).toBe(200);
+    await h.service.drain();
+    expect(seen).toEqual(["evt_end_1"]);
+  });
+
+  it("refuses an oversized body before reading it", async () => {
+    const h = harness();
+    const huge = "x".repeat(MAX_WEBHOOK_BYTES + 1);
+    const res = await h.app.request("/webhooks/dial", { method: "POST", body: huge, headers: { "content-type": "application/json", "content-length": String(huge.length) } });
+    expect(res.status).toBe(413);
   });
 
   it("matches Dial's published signature test vector (the whole whsec_ string is the key)", () => {
@@ -285,6 +302,21 @@ describe("outbound routing and safety", () => {
     const b = await h.service.sendBookingRequest({ booking_id: h.booking.id, business_id: h.sal.id });
     expect(b).toEqual(a);
     expect(h.outbox()).toHaveLength(1);
+  });
+
+  it("texts one owner about at most N new jobs an hour, and never escalates to a call over it", async () => {
+    const h = harness({ overrides: { maxRequestsPerHour: 2 } });
+    const slots = ["2026-10-14T17:00:00.000Z", "2026-10-15T17:00:00.000Z"];
+    await h.service.sendBookingRequest({ booking_id: h.booking.id, business_id: h.sal.id });
+    const second = h.newBooking("oil change", slots[0]);
+    await h.service.sendBookingRequest({ booking_id: second.id, business_id: h.sal.id });
+    const third = h.newBooking("tire rotation", slots[1]);
+    await expect(h.service.sendBookingRequest({ booking_id: third.id, business_id: h.sal.id })).rejects.toBeInstanceOf(OwnerRateLimitedError);
+    expect(h.outbox()).toHaveLength(2);
+    expect(h.events("message.rate_limited")).toHaveLength(1);
+    expect(h.events("routing.needs_call")).toHaveLength(0);
+    // A repeat for a booking already texted is still answered from the first message.
+    expect(await h.service.sendBookingRequest({ booking_id: second.id, business_id: h.sal.id })).toHaveProperty("message_id");
   });
 
   it("needs a call when there is no consent", async () => {

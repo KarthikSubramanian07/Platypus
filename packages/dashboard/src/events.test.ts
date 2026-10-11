@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { connectLive, isCrossOrigin, parseStreamEvent, postDemo, requestKillCall, requestOwnerReply, requestReplay, resolveSource, type ConnectionState } from "./events";
+import { connectLive, isCrossOrigin, parseStreamEvent, postDemo, requestKillCall, requestOwnerReply, requestReplay, resolveSource, withToken, type ConnectionState } from "./events";
 
 /** Just enough of EventSource to drive connectLive from a test. */
 class FakeSource {
@@ -53,6 +53,19 @@ describe("connectLive", () => {
     close();
   });
 
+  it("passes DASHBOARD_TOKEN to the stream as ?token=, on reconnects too", () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("EventSource", FakeSource);
+    const close = connectLive("https://tunnel.example", { onEvent: () => {}, onState: () => {} }, { staleMs: 10_000, token: "t&k=1" });
+    const first = FakeSource.all[0]!;
+    expect(first.url).toBe("https://tunnel.example/events/stream?token=t%26k%3D1");
+    first.emit("open");
+    first.emit("platypus", { data: JSON.stringify({ id: "evt_2", type: "x", created_at: "t" }), lastEventId: "evt_2" });
+    vi.advanceTimersByTime(30_000);
+    expect(FakeSource.all[1]!.url).toBe("https://tunnel.example/events/stream?after=evt_2&token=t%26k%3D1");
+    close();
+  });
+
   it("retries with backoff when the browser gives up on the source", () => {
     vi.useFakeTimers();
     vi.stubGlobal("EventSource", FakeSource);
@@ -78,6 +91,8 @@ describe("resolveSource", () => {
   it("lets ?events= override the build setting, without a trailing slash", () => {
     expect(resolveSource("?events=https://demo.example.com/", { PROD: true, VITE_EVENTS_URL: "https://other.example.com" })).toEqual({ mode: "live", base: "https://demo.example.com" });
     expect(resolveSource("", { PROD: true, VITE_EVENTS_URL: "https://other.example.com" })).toEqual({ mode: "live", base: "https://other.example.com" });
+    expect(resolveSource("?events=https://t.example&token=%20abc%20", { PROD: true })).toEqual({ mode: "live", base: "https://t.example", token: "abc" });
+    expect(resolveSource("?token=", { PROD: false })).toEqual({ mode: "live", base: "" });
   });
 });
 
@@ -112,6 +127,17 @@ describe("parseStreamEvent", () => {
 describe("demo controls", () => {
   afterEach(() => vi.unstubAllGlobals());
   const ORIGIN = "http://localhost:5173";
+
+  it("sends the token with every demo control, and nothing when there is none", async () => {
+    const fetch = vi.fn(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetch);
+    await requestKillCall("", "tok");
+    await requestOwnerReply("https://tunnel.example", "Y", "tok");
+    await requestReplay("", "tok");
+    const urls = fetch.mock.calls.map((call) => (call as unknown[])[0]);
+    expect(urls).toEqual(["/demo/kill-call?token=tok", "https://tunnel.example/demo/owner-reply?token=tok", "/demo/replay?token=tok"]);
+    expect(withToken("/x?a=1", undefined)).toBe("/x?a=1");
+  });
 
   it("tells same-origin from cross-origin bases", () => {
     expect(isCrossOrigin("", ORIGIN)).toBe(false);

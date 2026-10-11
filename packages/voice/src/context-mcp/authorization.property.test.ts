@@ -23,7 +23,7 @@ type Who = "sal" | "mira" | "random" | "junk";
 const caller = fc.oneof(
   fc.constantFrom<Who>("sal", "mira").map((who) => ({ who, raw: null as string | null })),
   fc.stringMatching(/^\+[1-9]\d{6,14}$/).map((raw) => ({ who: "random" as Who, raw })),
-  fc.oneof(fc.string({ maxLength: 16 }), fc.constantFrom("", "{{user_number}}", "+0123456789", "4155550101", "+1 415 555 0101", "+14155550101１")).map((raw) => ({ who: "junk" as Who, raw })),
+  fc.oneof(fc.string({ maxLength: 16 }), fc.constantFrom("", "{{user_number}}", "+0123456789", "4155550101", "+1 415 555 0101", "+14155550101\uFF11")).map((raw) => ({ who: "junk" as Who, raw })),
 );
 const direction = fc.constantFrom("outbound", "inbound", "Outbound", "", "sideways");
 const businessArg = fc.constantFrom("sal", "mira", "unknown", "omitted");

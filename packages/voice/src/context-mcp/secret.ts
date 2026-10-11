@@ -14,6 +14,8 @@ export const MIN_SECRET_BYTES = 24;
 export const MIN_TOKEN_BYTES = 32;
 
 const BASE64URL = /^[A-Za-z0-9_-]+$/;
+/** 32 random base64url characters use about 24 distinct symbols; fewer than 12 means it was not random. */
+const MIN_DISTINCT_CHARS = 12;
 
 /** A fresh path secret: 32 random bytes, base64url (43 characters). */
 export function generateContextMcpSecret(): string {
@@ -31,6 +33,8 @@ export function secretProblem(value: string | undefined, minBytes: number): stri
   if (!BASE64URL.test(value)) return "must be base64url (A-Z, a-z, 0-9, - and _)";
   const bytes = Buffer.from(value, "base64url").length;
   if (bytes < minBytes) return `must carry at least ${minBytes} random bytes (got ${bytes})`;
+  // Long enough but hand-typed ("aaaa…", "abcabc…"): random base64url of this length uses far more symbols.
+  if (new Set(value).size < MIN_DISTINCT_CHARS) return "looks hand-made, not random; generate it";
   return undefined;
 }
 
