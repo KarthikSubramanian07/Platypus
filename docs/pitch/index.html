@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platypus · Pitch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap">
+<style>
+  :root {
+    --paper: #F4F1EA;
+    --card: #FAF8F3;
+    --line: #DDD8CC;
+    --green: #1C5D55;
+    --wash: #E2EAE4;
+    --ink: #1F211D;
+    --ink-2: #44453E;
+    --muted: #77736A;
+    --on-dark: #F4F1EA;
+    --on-dark-2: #C9D9D4;
+    --on-dark-3: #93B8B0;
+    --dark-line: rgba(244, 241, 234, 0.2);
+    --dark-card: rgba(244, 241, 234, 0.06);
+    --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans: "DM Sans", -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    cursor: default;
+    user-select: none;
+  }
+  body.dark { background: var(--green); }
+  a { color: inherit; }
+  p, li { text-wrap: pretty; }
+  .nw { white-space: nowrap; }
+
+  /* The deck is designed at 1920x1080 and scaled to fit any window. */
+  .stage {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 1920px;
+    height: 1080px;
+    transform: translate(-50%, -50%) scale(var(--s, 1));
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 92px 120px 150px;
+    display: flex;
+    flex-direction: column;
+    background: var(--paper);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+  }
+  .slide.on { opacity: 1; visibility: visible; transition: opacity 0.3s ease; }
+  .slide.dark { background: var(--green); color: var(--on-dark); }
+
+  .eyebrow {
+    font: 500 24px/1 var(--mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 36px;
+  }
+  .dark .eyebrow { color: var(--on-dark-3); }
+
+  h2 {
+    font: 400 84px/1.06 var(--serif);
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+  .dark h2 { color: var(--on-dark); }
+  h3 { font: 500 44px/1.1 var(--serif); letter-spacing: -0.01em; color: var(--green); }
+
+  .chip {
+    display: inline-block;
+    font: 500 24px/1 var(--mono);
+    color: var(--green);
+    background: var(--wash);
+    border: 1px solid #C3D3CC;
+    border-radius: 10px;
+    padding: 12px 16px;
+    white-space: nowrap;
+  }
+  .code { font: 400 24px/1.4 var(--mono); color: var(--muted); }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+  }
+
+  /* Footer: brand and slide counter, always visible. */
+  .foot {
+    position: absolute;
+    left: 120px;
+    right: 120px;
+    bottom: 52px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+    font: 400 24px/1 var(--mono);
+    color: var(--muted);
+    z-index: 2;
+    pointer-events: none;
+  }
+  body.dark .foot { color: var(--on-dark-3); border-top-color: var(--dark-line); }
+  .brand { display: inline-flex; align-items: center; gap: 14px; }
+  .brand-word { font: 600 26px/1 var(--sans); letter-spacing: -0.02em; color: var(--ink); }
+  body.dark .brand-word { color: var(--on-dark); }
+  .brand-sep { opacity: 0.6; }
+  .mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--green);
+    display: grid;
+    place-items: center;
+  }
+  .mark::after { content: ""; width: 12px; height: 12px; border-radius: 3px; background: var(--paper); }
+  body.dark .mark { background: var(--paper); }
+  body.dark .mark::after { background: var(--green); }
+  .count { font: 500 28px/1 var(--mono); letter-spacing: 0.04em; color: var(--ink-2); }
+  body.dark .count { color: var(--on-dark); }
+
+  /* 1. Title */
+  .s-title { justify-content: space-between; }
+  .s-title h1 {
+    font: 400 240px/0.92 var(--serif);
+    letter-spacing: -0.035em;
+    color: var(--ink);
+    margin-left: -8px;
+  }
+  .title-claim { font: 400 80px/1.1 var(--serif); letter-spacing: -0.015em; color: var(--green); margin-top: 36px; }
+  .title-line { font: 500 46px/1.2 var(--sans); color: var(--ink-2); margin-top: 30px; }
+  .title-meta { display: flex; align-items: baseline; gap: 36px; }
+  .team { font: 600 42px/1 var(--sans); color: var(--ink); }
+  .built { font: 400 32px/1 var(--sans); color: var(--muted); }
+
+  /* 2. Problem */
+  .problem-grid {
+    margin-top: auto;
+    display: grid;
+    grid-template-columns: 0.82fr 1.18fr;
+    gap: 72px;
+    align-items: end;
+  }
+  .stat { font: 400 320px/0.82 var(--serif); letter-spacing: -0.045em; color: var(--green); margin-left: -10px; }
+  .stat-cap { font: 500 40px/1.25 var(--sans); color: var(--ink); margin-top: 28px; }
+  .stat-src { display: block; font: 400 26px/1.4 var(--mono); color: var(--muted); margin-top: 10px; }
+  .has { padding: 8px 0; }
+  .has-head {
+    display: flex;
+    justify-content: space-between;
+    padding: 22px 40px 14px;
+    font: 500 22px/1 var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .has li {
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 24px 40px;
+    border-top: 1px solid var(--line);
+    font: 400 40px/1.15 var(--sans);
+    color: var(--ink-2);
+  }
+  .has .no { font-size: 32px; color: var(--muted); }
+  .has .no::before { content: "\00D7"; margin-right: 14px; }
+  .has li.yes { background: var(--wash); color: var(--green); font-weight: 600; margin: 0 -1px -9px; border-radius: 0 0 24px 24px; }
+  .has li.yes .no::before { content: none; }
+  .has li.yes .no { color: var(--green); font-weight: 600; font-size: 36px; }
+
+  /* 3. Insight */
+  .sub { font: 400 48px/1.25 var(--serif); color: var(--on-dark-2); margin-top: 28px; }
+  .lane {
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1.75fr 1fr 1fr 1fr;
+    gap: 24px;
+    margin-top: 64px;
+  }
+  .lane li {
+    border: 1px solid var(--dark-line);
+    background: var(--dark-card);
+    border-radius: 24px;
+    padding: 34px 36px 38px;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .lane li.first { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+  .lane-k { font: 500 22px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--on-dark-3); }
+  .lane li.first .lane-k { color: var(--green); }
+  .lane-v { font: 400 56px/1.05 var(--serif); }
+  .lane-d { font: 400 31px/1.3 var(--sans); color: var(--ink-2); margin-top: auto; }
+  .reply {
+    align-self: flex-start;
+    font: 600 36px/1 var(--sans);
+    color: var(--green);
+    background: var(--paper);
+    border-radius: 20px 20px 6px 20px;
+    padding: 12px 24px;
+    margin-top: auto;
+  }
+  .kicker { margin-top: auto; font: 400 76px/1.05 var(--serif); letter-spacing: -0.02em; }
+
+  /* 4. How it works */
+  .flow {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 52px;
+    margin-top: 48px;
+  }
+  .flow li { position: relative; padding: 34px 32px 36px; display: flex; flex-direction: column; gap: 16px; }
+  .flow li:not(:last-child)::after {
+    content: "\2192";
+    position: absolute;
+    right: -42px;
+    top: 50%;
+    transform: translateY(-50%);
+    font: 400 36px/1 var(--sans);
+    color: var(--green);
+  }
+  .num { font: 500 24px/1 var(--mono); color: var(--green); letter-spacing: 0.08em; }
+  .flow p.body { font: 400 29px/1.32 var(--sans); color: var(--ink-2); }
+  .flow .tail { margin-top: auto; padding-top: 8px; }
+  .flow .chip { font-size: 21px; padding: 11px 14px; }
+  .quote { font: 400 36px/1.2 var(--serif); color: var(--green); }
+  .sms { display: flex; flex-direction: column; gap: 12px; }
+  .sms-in {
+    font: 400 25px/1.3 var(--sans);
+    color: var(--ink);
+    background: #ECE8DE;
+    border-radius: 20px 20px 20px 6px;
+    padding: 14px 18px;
+  }
+  .sms-out {
+    align-self: flex-end;
+    font: 600 30px/1 var(--sans);
+    color: var(--paper);
+    background: var(--green);
+    border-radius: 20px 20px 6px 20px;
+    padding: 12px 24px;
+  }
+  .rule { margin-top: auto; font: 400 50px/1.15 var(--serif); color: var(--green); letter-spacing: -0.01em; }
+
+  /* 5. Live demo */
+  .s-live .eyebrow { display: inline-flex; align-items: center; gap: 16px; }
+  .dot { width: 16px; height: 16px; border-radius: 50%; background: var(--paper); animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.25; } }
+  .live-h { font: 400 200px/0.95 var(--serif); letter-spacing: -0.035em; color: var(--on-dark); }
+  .ask {
+    margin-top: 56px;
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 28px;
+    padding: 40px 52px 48px;
+  }
+  .ask-label { font: 500 22px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .ask-text { font: 400 66px/1.15 var(--serif); letter-spacing: -0.015em; margin-top: 22px; text-wrap: balance; }
+  .watch { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; margin-top: auto; }
+  .watch li { font: 400 31px/1.3 var(--sans); color: var(--on-dark-2); border-top: 1px solid var(--dark-line); padding-top: 22px; }
+  .watch b { display: block; font: 500 22px/1 var(--mono); letter-spacing: 0.12em; color: var(--on-dark-3); margin-bottom: 14px; }
+
+  /* 6. Time saved */
+  .times { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 32px; margin-top: 56px; }
+  .times article { padding: 36px 40px 40px; display: flex; flex-direction: column; }
+  .who { font: 500 22px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .big { font: 400 148px/1 var(--serif); letter-spacing: -0.035em; color: var(--green); margin-top: 26px; }
+  .was { font: 400 32px/1.3 var(--sans); color: var(--ink); margin-top: 18px; }
+  .fine { font: 400 27px/1.35 var(--sans); color: var(--muted); margin-top: 12px; }
+  .tag {
+    align-self: flex-start;
+    margin-top: auto;
+    font: 500 20px/1 var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 9px 12px;
+  }
+  .times .fine { margin-bottom: 28px; }
+  .times .was { margin-bottom: 28px; }
+  .times .was + .fine { margin-top: -16px; }
+  .measure { margin-top: auto; font: 400 32px/1.4 var(--sans); color: var(--ink-2); max-width: 1600px; }
+  .measure b { font-weight: 600; color: var(--green); }
+
+  /* 7. Built on */
+  .built-grid { display: grid; grid-template-columns: 1.12fr 0.88fr; gap: 36px; margin-top: 48px; flex: 1; min-height: 0; }
+  .partners { display: flex; flex-direction: column; gap: 24px; }
+  .partner { padding: 30px 40px 32px; flex: 1; }
+  .partner-head { display: flex; align-items: baseline; gap: 22px; }
+  .role { font: 500 22px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .partner ul, .rm ul { list-style: none; }
+  .partner li { font: 400 28px/1.35 var(--sans); color: var(--ink-2); margin-top: 12px; padding-left: 28px; position: relative; }
+  .partner li::before { content: ""; position: absolute; left: 2px; top: 17px; width: 10px; height: 2px; background: var(--green); }
+  .partner .chip { font-size: 22px; padding: 7px 12px; }
+  .rm { padding: 30px 40px; display: flex; flex-direction: column; }
+  .rm-h { font: 500 22px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; }
+  .rm-h.real { color: var(--green); }
+  .rm-h.mock { color: var(--muted); margin-top: 34px; padding-top: 30px; border-top: 1px solid var(--line); }
+  .rm li { font: 400 30px/1.3 var(--sans); color: var(--ink); margin-top: 16px; }
+  .rm .mocked li { color: var(--ink-2); }
+  .alike { font: 400 26px/1.3 var(--sans); color: var(--muted); margin-top: 26px; }
+
+  /* 8. Close */
+  .close-h { font: 400 116px/1.06 var(--serif); letter-spacing: -0.025em; }
+  .close-claim { font: 400 52px/1.2 var(--serif); color: var(--on-dark-2); margin-top: 40px; }
+  .links { margin-top: auto; display: flex; flex-direction: column; gap: 18px; }
+  .links a { font: 400 36px/1.2 var(--mono); color: var(--on-dark); text-decoration: none; border-bottom: 1px solid var(--dark-line); align-self: flex-start; padding-bottom: 6px; cursor: pointer; font-variant-ligatures: none; }
+  .links span { display: inline-block; width: 150px; font: 500 22px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--on-dark-3); }
+  .team-close { font: 600 36px/1 var(--sans); color: var(--on-dark); margin-top: 40px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide, .slide.on { transition: none; }
+    .dot { animation: none; }
+  }
+</style>
+</head>
+<body>
+<main class="stage" aria-live="polite">
+
+  <!-- 1. Title -->
+  <section class="slide s-title" aria-label="Title">
+    <p class="eyebrow">SpeedHacks · San Francisco · October 11, 2026</p>
+    <div>
+      <h1>Platypus</h1>
+      <p class="title-claim">We make Main Street agent-native.</p>
+      <p class="title-line">One call. Agent-native forever.</p>
+    </div>
+    <div class="title-meta">
+      <p class="team">Eddy &amp; Karthik</p>
+      <p class="built">Built on Dial and Darwin</p>
+    </div>
+  </section>
+
+  <!-- 2. Problem -->
+  <section class="slide s-problem" aria-label="The problem">
+    <p class="eyebrow">The problem</p>
+    <h2>Your agent can book a flight.<br>It can’t book Main Street.</h2>
+    <div class="problem-grid">
+      <div>
+        <p class="stat">33M</p>
+        <p class="stat-cap">US small businesses<span class="stat-src">Source: SBA Office of Advocacy</span></p>
+      </div>
+      <div class="card has">
+        <p class="has-head"><span>What an agent needs</span><span>Main Street</span></p>
+        <ul>
+          <li><span>An API</span><span class="no">Most never will</span></li>
+          <li><span>A booking widget</span><span class="no">Most never will</span></li>
+          <li><span>An agent of their own</span><span class="no">Most never will</span></li>
+          <li class="yes"><span>A phone</span><span class="no">All of them</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Insight -->
+  <section class="slide dark s-insight" aria-label="The insight">
+    <p class="eyebrow">The insight</p>
+    <h2>The call is the onboarding, not the product.</h2>
+    <p class="sub">Everyone else calls a business every time. We call it once.</p>
+    <ol class="lane">
+      <li class="first">
+        <span class="lane-k">Request 1</span>
+        <span class="lane-v">One AI call</span>
+        <span class="lane-d">Books the job, then asks: “Can I text you next time?”</span>
+      </li>
+      <li>
+        <span class="lane-k">Request 2</span>
+        <span class="lane-v">A text</span>
+        <span class="reply">Y</span>
+      </li>
+      <li>
+        <span class="lane-k">Request 3</span>
+        <span class="lane-v">A text</span>
+        <span class="reply">Y</span>
+      </li>
+      <li>
+        <span class="lane-k">Every one after</span>
+        <span class="lane-v">A text</span>
+        <span class="reply">Y</span>
+      </li>
+    </ol>
+    <p class="kicker">One call. Agent-native forever.</p>
+  </section>
+
+  <!-- 4. How it works -->
+  <section class="slide s-how" aria-label="How it works">
+    <p class="eyebrow">How it works</p>
+    <h2>Any agent asks. Platypus finds a route, or makes one.</h2>
+    <ol class="flow">
+      <li class="card">
+        <p class="num">01</p>
+        <h3>Ask</h3>
+        <p class="body">Claude, or any agent that speaks MCP, sends the job to Platypus.</p>
+        <p class="tail code">request_booking</p>
+      </li>
+      <li class="card">
+        <p class="num">02</p>
+        <h3>Darwin first</h3>
+        <p class="body">Darwin Search v3 looks for an agent that already does this job.</p>
+        <p class="tail"><span class="chip">Darwin: no ready agent</span></p>
+      </li>
+      <li class="card">
+        <p class="num">03</p>
+        <h3>Call once</h3>
+        <p class="body">Dial calls the shop. The AI says it is an AI, books through our tools <span class="nw">mid-call</span>, then asks:</p>
+        <p class="tail quote">“Can I text you next time?”</p>
+      </li>
+      <li class="card">
+        <p class="num">04</p>
+        <h3>Text forever</h3>
+        <p class="body">Every later request is a text.</p>
+        <div class="tail sms">
+          <p class="sms-in">New job: brake inspection, Tue 10am. Reply Y, N, or a time.</p>
+          <p class="sms-out">Y</p>
+        </div>
+      </li>
+    </ol>
+    <p class="rule">Confirmed means the owner said yes, on the call or by text.</p>
+  </section>
+
+  <!-- 5. Live demo -->
+  <section class="slide dark s-live" aria-label="Live demo">
+    <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Live</p>
+    <h2 class="live-h">Live demo</h2>
+    <div class="ask">
+      <p class="ask-label">The customer types, in Claude</p>
+      <p class="ask-text">“Oil change tomorrow afternoon, under $120, near 1025 Sansome.”</p>
+    </div>
+    <ol class="watch">
+      <li><b>01</b>Darwin: no ready agent</li>
+      <li><b>02</b>The shop’s phone rings</li>
+      <li><b>03</b>The owner says yes to texts</li>
+      <li><b>04</b>Next job: one text, one Y</li>
+    </ol>
+  </section>
+
+  <!-- 6. Time saved -->
+  <section class="slide s-time" aria-label="Time saved">
+    <p class="eyebrow">Time saved · Estimates</p>
+    <h2>One booking, every minute counted.</h2>
+    <div class="times">
+      <article class="card">
+        <p class="who">Customer</p>
+        <p class="big">&lt;1 min</p>
+        <p class="was">instead of <span class="nw">15–25 min</span> calling around today</p>
+        <p class="fine">Setup, review and corrections included</p>
+        <p class="tag">Estimate</p>
+      </article>
+      <article class="card">
+        <p class="who">Owner · first job</p>
+        <p class="big">~75 s</p>
+        <p class="was">once, on the call, and it brings a paying job</p>
+        <p class="tag">Estimate</p>
+      </article>
+      <article class="card">
+        <p class="who">Owner · every job after</p>
+        <p class="big">5–10 s</p>
+        <p class="was">by text, instead of a <span class="nw">3–5 min</span> call</p>
+        <p class="tag">Estimate</p>
+      </article>
+    </div>
+    <p class="measure"><b>How we measure it:</b> opt-in rate (owners who say yes to texts) and reply seconds (from our text to the owner’s Y), both from the event log.</p>
+  </section>
+
+  <!-- 7. Built on -->
+  <section class="slide s-built" aria-label="Built on Dial and Darwin">
+    <p class="eyebrow">Partners · What is real</p>
+    <h2>Built on Dial and Darwin.</h2>
+    <div class="built-grid">
+      <div class="partners">
+        <article class="card partner">
+          <div class="partner-head"><h3>Dial</h3><p class="role">Reaches the shop</p></div>
+          <ul>
+            <li>The AI voice call to the business</li>
+            <li>Context MCP: the voice agent calls our booking tools <span class="nw">mid-call</span></li>
+            <li>Follow-up messages to the owner</li>
+          </ul>
+        </article>
+        <article class="card partner">
+          <div class="partner-head"><h3>Darwin</h3><p class="role">Checks the agent web first</p></div>
+          <ul>
+            <li>Search v3 before every call, so we never phone a shop an agent already covers</li>
+            <li>For these trades today: <span class="chip">Darwin: no ready agent</span></li>
+          </ul>
+        </article>
+      </div>
+      <div class="card rm">
+        <p class="rm-h real">Real</p>
+        <ul>
+          <li>Live Dial call</li>
+          <li>Live Darwin search</li>
+          <li>Consent stored with the owner’s own words</li>
+          <li>Typed bookings over MCP</li>
+        </ul>
+        <p class="rm-h mock">Mocked</p>
+        <ul class="mocked">
+          <li>The shop is a teammate’s phone</li>
+          <li>SMS to regular phones awaits 10DLC registration</li>
+        </ul>
+      </div>
+    </div>
+    <p class="alike">Alike kept our two parallel coding sessions in sync.</p>
+  </section>
+
+  <!-- 8. Close -->
+  <section class="slide dark s-close" aria-label="Close">
+    <p class="eyebrow">SpeedHacks · October 11, 2026</p>
+    <h2 class="close-h">Businesses live on the phone.<br>Agents live online.<br>Platypus lives in both.</h2>
+    <p class="close-claim">We make Main Street agent-native.</p>
+    <div class="links">
+      <a href="https://tryplatypus.pages.dev" target="_blank" rel="noopener"><span>Live</span>https://tryplatypus.pages.dev</a>
+      <a href="https://github.com/KarthikSubramanian07/Platypus" target="_blank" rel="noopener"><span>Code</span>https://github.com/KarthikSubramanian07/Platypus</a>
+    </div>
+    <p class="team-close">Eddy &amp; Karthik</p>
+  </section>
+
+  <footer class="foot">
+    <span class="brand"><span class="mark" aria-hidden="true"></span><span class="brand-word">platypus</span><span class="brand-sep">·</span><span>We make Main Street agent-native</span></span>
+    <span class="count" id="count">01 / 08</span>
+  </footer>
+</main>
+
+<script>
+  // Arrow keys, space, Page Up/Down (clickers) or a click to move; F for fullscreen; #N in the URL picks a slide.
+  const stage = document.querySelector(".stage");
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  const counter = document.getElementById("count");
+  const pad = (n) => String(n).padStart(2, "0");
+  const NEXT = ["ArrowRight", "ArrowDown", "PageDown", " ", "Enter"];
+  const PREV = ["ArrowLeft", "ArrowUp", "PageUp", "Backspace"];
+  let current = 0;
+
+  function fit() {
+    stage.style.setProperty("--s", Math.min(innerWidth / 1920, innerHeight / 1080));
+  }
+
+  function show(n) {
+    current = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((slide, k) => slide.classList.toggle("on", k === current));
+    document.body.classList.toggle("dark", slides[current].classList.contains("dark"));
+    counter.textContent = pad(current + 1) + " / " + pad(slides.length);
+    if (location.hash !== "#" + (current + 1)) history.replaceState(null, "", "#" + (current + 1));
+  }
+
+  function fromHash() {
+    return (parseInt(location.hash.slice(1), 10) || 1) - 1;
+  }
+
+  addEventListener("keydown", (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (NEXT.includes(e.key)) { e.preventDefault(); show(current + 1); }
+    else if (PREV.includes(e.key)) { e.preventDefault(); show(current - 1); }
+    else if (e.key === "Home") show(0);
+    else if (e.key === "End") show(slides.length - 1);
+    else if (e.key === "f" || e.key === "F") {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen();
+    }
+  });
+  addEventListener("click", (e) => { if (!e.target.closest("a")) show(current + 1); });
+  addEventListener("hashchange", () => show(fromHash()));
+  addEventListener("resize", fit);
+
+  fit();
+  show(fromHash());
+</script>
+</body>
+</html>
