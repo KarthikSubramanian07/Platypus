@@ -17,6 +17,8 @@ Platypus is a working prototype built at SpeedHacks (San Francisco, October 11, 
 
 - [Developer guide](https://tryplatypus.pages.dev/developers.md): quickstart, MCP endpoint and headers, the nine tools, booking outcomes, API keys.
 - [Home page](https://tryplatypus.pages.dev/index.md): the product, time saved, how it works, guarantees.
+- [Technical](https://tryplatypus.pages.dev/technical.md): the route decision, the architecture, and the rules the code enforces.
+- [Business](https://tryplatypus.pages.dev/business.md): why now, the landscape, the business model, roadmap and risks.
 - [Live dashboard](https://tryplatypus.pages.dev/live): the operator view of a booking, from the event stream (HTML only).
 - [Gateway tool JSON Schemas](https://github.com/KarthikSubramanian07/Platypus/blob/main/packages/shared/schemas/gateway-tools.json): input and output contracts for every tool.
 - [README](https://github.com/KarthikSubramanian07/Platypus/blob/main/README.md): architecture, golden path, what is real and what is mocked.

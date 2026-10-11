@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Technical · Platypus, AI booking for phone-only businesses</title>
+    <meta name="description" content="How Platypus routes a booking, the architecture behind it, and the rules the code enforces: evidence-only confirmation, consent with proof, an append-only log and a phone allowlist." />
+    <link rel="canonical" href="https://tryplatypus.pages.dev/technical" />
+    <link rel="alternate" type="text/markdown" href="https://tryplatypus.pages.dev/technical.md" title="This page as Markdown" />
+    <link rel="help" type="text/plain" href="https://tryplatypus.pages.dev/llms.txt" title="llms.txt" />
+    <meta property="og:site_name" content="Platypus" />
+    <meta property="og:title" content="Platypus · Technical" />
+    <meta property="og:description" content="How Platypus routes a booking, the architecture behind it, and the rules the code enforces: evidence-only confirmation, consent with proof, an append-only log and a phone allowlist." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://tryplatypus.pages.dev/technical" />
+    <meta property="og:image" content="https://tryplatypus.pages.dev/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#F4F1EA" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://tryplatypus.pages.dev/#org",
+            "name": "Platypus",
+            "url": "https://tryplatypus.pages.dev/",
+            "logo": "https://tryplatypus.pages.dev/favicon.svg",
+            "slogan": "We make Main Street agent-native.",
+            "description": "AI booking for phone-only businesses. One AI call makes a business bookable by every AI agent, by text.",
+            "foundingDate": "2026-10-11",
+            "sameAs": ["https://github.com/KarthikSubramanian07/Platypus"],
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "San Francisco",
+              "addressRegion": "CA",
+              "addressCountry": "US"
+            },
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "contactType": "customer support",
+              "url": "https://tryplatypus.pages.dev/contact",
+              "availableLanguage": "en"
+            }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "Platypus",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web",
+            "description": "AI booking for phone-only businesses: one call makes any phone-only business bookable by every AI agent.",
+            "url": "https://tryplatypus.pages.dev/",
+            "publisher": { "@id": "https://tryplatypus.pages.dev/#org" },
+            "codeRepository": "https://github.com/KarthikSubramanian07/Platypus",
+            "license": "https://opensource.org/licenses/MIT",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to the content</a>
+    <nav class="nav" aria-label="Primary">
+      <a class="brand" href="/" aria-label="Platypus home" title="Oh, there you are.">
+        <span class="brand-mark" aria-hidden="true"><i class="fedora"></i></span>
+        <span class="brand-word">platypus</span>
+      </a>
+      <div class="nav-links">
+        <a class="nav-live" href="/live" data-live-link>Live demo</a>
+        <a href="/technical" aria-current="page">Technical</a>
+        <a href="/business">Business</a>
+        <a href="/developers">Developers</a>
+      </div>
+      <a class="nav-source" href="https://github.com/KarthikSubramanian07/Platypus" rel="noopener">Source <span aria-hidden="true">↗</span></a>
+    </nav>
+
+    <header class="subhead">
+      <p class="badge"><span class="badge-dot" aria-hidden="true"></span>Platypus · Technical</p>
+      <h1>How it works, <em>and what it refuses to do.</em></h1>
+      <p class="lede">One gateway, two phone channels on Dial, and a shared core where a booking is confirmed only when the owner says yes. Every rule below is enforced in code and proven by a test.</p>
+    </header>
+
+    <main id="main" class="subpage">
+      <!-- ============================== HOW =============================== -->
+      <section id="how" class="section" aria-labelledby="how-title">
+        <div class="section-head">
+          <div>
+            <h2 id="how-title">Any agent asks Platypus. Platypus finds a route, or makes one.</h2>
+          </div>
+          <p class="section-lede">The customer never sees us. Their agent asks us. The business texts us.</p>
+        </div>
+
+        <ol class="flow">
+          <li>
+            <p class="num">01 · ask</p>
+            <h3>An agent asks</h3>
+            <p>Any MCP client calls <code>request_booking</code>.</p>
+          </li>
+          <li>
+            <p class="num">02 · route</p>
+            <h3>Route the cheapest way</h3>
+            <p>Darwin agent if one is ready, text if the owner said yes before, otherwise one call.</p>
+          </li>
+          <li>
+            <p class="num">03 · call once</p>
+            <h3>One honest call</h3>
+            <p>Dial rings the shop, says it's an AI first, and books mid-call through our tools.</p>
+          </li>
+          <li>
+            <p class="num">04 · consent</p>
+            <h3>"Yeah, text me."</h3>
+            <p>The owner's exact words and the call id are stored. The shop flips to text-enabled.</p>
+          </li>
+          <li>
+            <p class="num">05 · text forever</p>
+            <h3>Every agent, by text</h3>
+            <p>Next request: one text. The owner replies <b>Y</b>, <b>N</b> or a time. Confirmed in seconds.</p>
+          </li>
+        </ol>
+
+        <figure class="arch" aria-labelledby="arch-cap">
+          <div class="arch-row">
+            <div class="node node-ext"><b>Customer agents</b><span>Claude · Muse · Dots · any MCP client</span></div>
+            <div class="wire" aria-hidden="true"><span>MCP</span></div>
+            <div class="node node-core">
+              <b>gateway</b>
+              <span>9 typed MCP tools · Darwin routing · idempotency keys · per-agent rate limits</span>
+            </div>
+            <div class="wire" aria-hidden="true"><span>Search v3</span></div>
+            <div class="node node-ext node-darwin"><b>Darwin</b><span>is there already an agent for this?</span></div>
+          </div>
+          <div class="arch-split" aria-hidden="true"><i></i><i></i></div>
+          <div class="arch-row arch-row-2">
+            <div class="node node-dial">
+              <b>voice</b>
+              <span>Dial outbound call · AI disclosure is sentence one · Context MCP serves 5 mid-call tools, each authorized per request</span>
+            </div>
+            <div class="node node-dial">
+              <b>text</b>
+              <span>Dial webhooks, HMAC-verified and deduplicated · STOP, HELP and PAUSE before any model · Claude classifies replies</span>
+            </div>
+          </div>
+          <div class="arch-merge" aria-hidden="true"><i></i></div>
+          <div class="node node-shared">
+            <b>shared</b>
+            <span><code>confirm()</code> evidence gate · booking state machine with holds · consent CHECK constraints · append-only event log · replayable SSE · Zod contracts exported as JSON Schema · FakeDial, FakeDarwin, FakeGateway</span>
+          </div>
+          <figcaption id="arch-cap">Five TypeScript packages in one pnpm workspace. Each side builds against a fake of the other and switches to the real thing with one flag.</figcaption>
+        </figure>
+      </section>
+
+      <!-- =========================== GUARANTEES =========================== -->
+      <section id="guarantees" class="section" aria-labelledby="g-title">
+        <div class="section-head">
+          <div>
+            <h2 id="g-title">A booking is never confirmed because the AI said so.</h2>
+          </div>
+          <p class="section-lede">These are types, constraints and triggers, not prompt guidelines. A test proves each one; 800 run on every push.
+            <span class="aside">A model saying "booked" is not evidence. Curse you, Hallucinat-inator!</span>
+          </p>
+        </div>
+
+        <div class="rules">
+          <article class="rule">
+            <header><span>01</span><h3>Only <code>confirm()</code> can confirm, and only with evidence</h3></header>
+            <p>A quoted yes on the call, a Y by text, or a rule the owner approved. Nothing else can be expressed.</p>
+            <pre><code><span class="k">export function</span> <span class="f">confirm</span>(ctx, bookingId,
+  evidence: <span class="t">ConfirmationEvidence</span>) {
+  <span class="c">// "call" | "text" | "rule". A transcript
+  // alone cannot be expressed here.</span>
+  <span class="k">const</span> actor = <span class="f">verifyEvidence</span>(ctx, booking, evidence);</code></pre>
+            <a class="src" href="https://github.com/KarthikSubramanian07/Platypus/blob/main/packages/shared/src/booking/engine.ts" rel="noopener">booking/engine.ts ↗</a>
+          </article>
+          <article class="rule">
+            <header><span>02</span><h3>Consent cannot exist without its proof</h3></header>
+            <p>The database refuses a consent row without the owner's sentence and the call.</p>
+            <pre><code><span class="k">CHECK</span> (
+  (source = <span class="s">'call'</span> <span class="k">AND</span> call_id <span class="k">IS NOT NULL</span>
+    <span class="k">AND</span> <span class="f">LENGTH</span>(quoted_sentence) &gt; 0)
+  <span class="k">OR</span> (source = <span class="s">'join_text'</span>
+    <span class="k">AND</span> message_id <span class="k">IS NOT NULL</span>)
+)</code></pre>
+            <a class="src" href="https://github.com/KarthikSubramanian07/Platypus/blob/main/packages/shared/src/db/migrations/001_init.sql" rel="noopener">migrations/001_init.sql ↗</a>
+          </article>
+          <article class="rule">
+            <header><span>03</span><h3>Every change is an append-only event</h3></header>
+            <p>Actor, reason and confidence on every event. Nobody can edit history, including us.</p>
+            <pre><code><span class="k">CREATE TRIGGER</span> events_no_update
+  <span class="k">BEFORE UPDATE ON</span> events
+<span class="k">BEGIN</span>
+  <span class="k">SELECT</span> <span class="f">RAISE</span>(ABORT, <span class="s">'events are append-only'</span>);
+<span class="k">END</span>;</code></pre>
+            <a class="src" href="https://github.com/KarthikSubramanian07/Platypus/blob/main/packages/shared/src/db/migrations/002_events_append_only.sqlite.sql" rel="noopener">002_events_append_only.sql ↗</a>
+          </article>
+          <article class="rule">
+            <header><span>04</span><h3>Only allowed numbers can ever ring</h3></header>
+            <p>Checked right before anything that can reach a phone, in the real adapter and the fakes.</p>
+            <pre><code><span class="k">export function</span> <span class="f">assertAllowedNumber</span>(number,
+  allowed = <span class="f">parseAllowedNumbers</span>(env.ALLOWED_NUMBERS)) {
+  <span class="k">if</span> (!allowed.<span class="f">includes</span>(number))
+    <span class="k">throw new</span> <span class="t">NumberNotAllowedError</span>(number);
+}</code></pre>
+            <a class="src" href="https://github.com/KarthikSubramanian07/Platypus/blob/main/packages/shared/src/safety.ts" rel="noopener">shared/src/safety.ts ↗</a>
+          </article>
+        </div>
+        <details class="more" open>
+          <summary>Four more rules</summary>
+          <ul class="minor-rules">
+            <li>Agent and owner text is data, not instructions: links stripped, length capped, rendered as text.</li>
+            <li>Mid-call tools check that each request comes from the live call's number and names that call's business.</li>
+            <li>STOP, HELP and PAUSE are handled before any model sees the message.</li>
+            <li>Darwin is never simulated in live mode. If it is down, the step is skipped and the log says so.</li>
+          </ul>
+        </details>
+      </section>
+
+    </main>
+
+    <section class="close close-slim" aria-label="Next">
+      <div class="close-inner">
+        <h2>See it run.</h2>
+        <div class="actions actions-left">
+          <a class="btn btn-light btn-live" href="/live"><span class="live-dot" aria-hidden="true"></span>Open the live demo <span aria-hidden="true">→</span></a>
+          <a class="btn btn-outline-light" href="/">Back to the overview</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <p>A semi-aquatic, egg-laying agent of action. No platypuses were harmed; one was given a fedora.</p>
+      </div>
+      <nav class="footer-meta" aria-label="Footer">
+        <a href="/about">About</a>
+        <a href="/developers">Developers</a>
+        <a href="/contact">Contact</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/llms.txt">llms.txt</a>
+        <a href="https://github.com/KarthikSubramanian07/Platypus" rel="noopener">GitHub ↗</a>
+        <span>MIT · SpeedHacks SF, Oct 11, 2026</span>
+      </nav>
+    </footer>
+
+    <script type="module" src="/src/page.ts"></script>
+  </body>
+</html>

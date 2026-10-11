@@ -77,11 +77,10 @@ export function renderPage(page: SitePage, bodyHtml: string): string {
         <span class="brand-word">platypus</span>
       </a>
       <div class="nav-links">
-        <a href="/#demo">Demo</a>
-        <a href="/#time">Time saved</a>
-        <a href="/#moat">Moat</a>
+        <a class="nav-live" href="/live">Live demo</a>
+        <a href="/technical">Technical</a>
+        <a href="/business">Business</a>
         <a href="/developers"${page.slug === "developers" ? ' aria-current="page"' : ""}>Developers</a>
-        <a href="/about"${page.slug === "about" ? ' aria-current="page"' : ""}>About</a>
       </div>
       <a class="nav-source" href="https://github.com/KarthikSubramanian07/Platypus" rel="noopener">Source <span aria-hidden="true">↗</span></a>
     </nav>

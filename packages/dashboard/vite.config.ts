@@ -26,7 +26,7 @@ function contentPages(): Plugin {
       return { build: { rolldownOptions: { input } } };
     },
     generateBundle() {
-      this.emitFile({ type: "asset", fileName: "index.md", source: content("index") });
+      for (const slug of ["index", "technical", "business"]) this.emitFile({ type: "asset", fileName: `${slug}.md`, source: content(slug) });
       for (const site of SITE_PAGES) {
         if (!site.notFound) this.emitFile({ type: "asset", fileName: `${site.slug}.md`, source: content(site.slug) });
       }
@@ -41,7 +41,7 @@ export default defineConfig({
   plugins: [contentPages()],
   build: {
     rolldownOptions: {
-      input: { main: page("./index.html"), live: page("./live.html") },
+      input: { main: page("./index.html"), live: page("./live.html"), technical: page("./technical.html"), business: page("./business.html") },
     },
   },
   server: {
