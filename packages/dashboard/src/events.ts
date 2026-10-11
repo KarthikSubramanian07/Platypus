@@ -61,36 +61,57 @@ export interface LiveHandlers {
 
 /**
  * Opens /events/stream. EventSource reconnects by itself and sends Last-Event-ID,
- * so the server replays only what was missed. If the browser gives up (an HTTP
- * error from a proxy closes the source for good), this reopens it with ?after=
- * and a capped backoff. Duplicates are still possible across reconnects, so the
- * consumer dedupes by id.
+ * so the server replays only what was missed. Two cases it does not cover are
+ * handled here, both by reopening with ?after=<last id>:
+ *  - the browser gives up (an HTTP error from a proxy closes the source for good);
+ *  - the stream goes silent: a dev proxy can keep the browser's side open after
+ *    the server died, so no heartbeat for `staleMs` counts as a dropped stream.
+ * Duplicates are still possible across reconnects, so the consumer dedupes by id.
  */
-export function connectLive(base: string, handlers: LiveHandlers): () => void {
+export function connectLive(base: string, handlers: LiveHandlers, { staleMs = 35_000 }: { staleMs?: number } = {}): () => void {
   let source: EventSource | undefined;
   let lastId: string | undefined;
+  let lastFrame = Date.now();
   let retry = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let closed = false;
 
+  const reopen = (delay: number) => {
+    source?.close();
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(open, delay);
+  };
+
+  const watchdog = setInterval(() => {
+    if (closed || !source || source.readyState !== EventSource.OPEN) return;
+    if (Date.now() - lastFrame > staleMs) {
+      handlers.onState("reconnecting");
+      reopen(0);
+    }
+  }, Math.min(5_000, staleMs / 2));
+
   const open = () => {
     const url = `${base}/events/stream${lastId ? `?after=${encodeURIComponent(lastId)}` : ""}`;
     handlers.onState(lastId ? "reconnecting" : "connecting");
+    lastFrame = Date.now();
     source = new EventSource(url);
     source.addEventListener("open", () => {
       retry = 0;
+      lastFrame = Date.now();
       handlers.onState("live");
     });
+    source.addEventListener("heartbeat", () => (lastFrame = Date.now()));
     source.addEventListener("error", () => {
       if (closed) return;
       handlers.onState("reconnecting");
-      if (source?.readyState === EventSource.CLOSED) {
-        source.close();
-        timer = setTimeout(open, Math.min(10_000, 500 * 2 ** retry++));
-      }
+      if (source?.readyState === EventSource.CLOSED) reopen(Math.min(10_000, 500 * 2 ** retry++));
     });
-    source.addEventListener("ready", () => handlers.onReady?.());
+    source.addEventListener("ready", () => {
+      lastFrame = Date.now();
+      handlers.onReady?.();
+    });
     source.addEventListener("platypus", (message) => {
+      lastFrame = Date.now();
       const frame = message as MessageEvent<string>;
       const event = parseStreamEvent(frame.data);
       if (!event) return;
@@ -102,6 +123,7 @@ export function connectLive(base: string, handlers: LiveHandlers): () => void {
   open();
   return () => {
     closed = true;
+    clearInterval(watchdog);
     if (timer) clearTimeout(timer);
     source?.close();
   };
