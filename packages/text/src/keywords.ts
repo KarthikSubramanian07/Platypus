@@ -93,9 +93,35 @@ const RESUME_WORDS = new Set(["start", "unstop", "join", "resume", "subscribe", 
 const NUMBER_WORDS: Record<string, number> = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
 const PAUSE = /^pause(?: texts?| messages?)?(?: for)?(?: (\d{1,3}|a|an|one|two|three|four|five|six|seven|eight|nine|ten) ?(d|day|days|w|wk|wks|week|weeks|month|months))?$/;
 
+/** Cyrillic and Greek letters that render like Latin ones, so "ѕтор" reads as "stop". */
+const CONFUSABLES: Record<string, string> = {
+  а: "a", в: "b", е: "e", ё: "e", і: "i", ї: "i", ј: "j", к: "k", м: "m", н: "h", о: "o", р: "p", с: "c", т: "t", у: "y", х: "x", ѕ: "s", ԁ: "d", һ: "h", ӏ: "l", ԛ: "q", ԝ: "w",
+  α: "a", β: "b", ε: "e", η: "n", ι: "i", κ: "k", ν: "v", ο: "o", ρ: "p", τ: "t", υ: "u", χ: "x",
+};
+const CONFUSABLE = new RegExp(`[${Object.keys(CONFUSABLES).join("")}]`, "gu");
+
+/**
+ * A keyword written to dodge the exact rules: fullwidth letters ("ＳＴＯＰ"), invisible
+ * format characters inside a word ("S\u200BTOP"), look-alike letters ("ѕтор") or one
+ * letter at a time ("S T O P"). Folded for the keyword layer only, where reading too
+ * much as STOP is the safe error; the rest of the classifier sees the reply as sent.
+ */
+export function foldDisguises(text: string): string {
+  const folded = normalizeReply(text.normalize("NFKC").replace(/\p{Cf}/gu, "").toLowerCase().replace(CONFUSABLE, (c) => CONFUSABLES[c]!));
+  return /^(\p{L} )+\p{L}$/u.test(folded) ? folded.replace(/ /g, "") : folded;
+}
+
 /** Returns the keyword a message carries, or null. Pure and synchronous: no model, no I/O. */
 export function matchKeyword(text: string): KeywordMatch | null {
-  const words = normalizeReply(text);
+  const exact = matchNormalized(normalizeReply(text));
+  if (exact) return exact;
+  const folded = foldDisguises(text);
+  if (folded === normalizeReply(text)) return null;
+  const disguised = matchNormalized(folded);
+  return disguised ? { ...disguised, rule: `${disguised.rule} (disguised)` } : null;
+}
+
+function matchNormalized(words: string): KeywordMatch | null {
   const core = withoutFiller(words);
   if (!words) return null;
 
