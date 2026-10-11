@@ -6,7 +6,7 @@ import { defaultBus, type EventBus } from "./bus";
 import { ENTITY_REFS, EVENT_ACTORS, type EmitInput, type PlatypusEvent } from "./types";
 
 export interface EmitOptions {
-  bus?: EventBus;
+  bus?: Pick<EventBus, "publish">;
   clock?: Clock;
 }
 
