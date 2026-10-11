@@ -280,7 +280,10 @@ describe("DarwinLookupCache", () => {
     const cache = new DarwinLookupCache(60_000, clock);
     const darwin = new ScriptedDarwin();
     const first = await lookupDarwin(darwin, input, { cache });
-    expect(await lookupDarwin(darwin, input, { cache })).toBe(first);
+    const second = await lookupDarwin(darwin, input, { cache });
+    expect(second.search).toBe(first.search);
+    expect(toDarwinSummary(first).cached).toBe(false);
+    expect(toDarwinSummary(second).cached).toBe(true);
     expect(darwin.searches).toHaveLength(1);
     clock.advance(60_001);
     await lookupDarwin(darwin, input, { cache });
@@ -364,9 +367,11 @@ describe("createDarwin", () => {
     for (const off of ["false", "0", "OFF", " no "]) expect(isDarwinEnabled({ DARWIN_ENABLED: off })).toBe(false);
   });
 
-  it("enables Act only with a pilot token", () => {
+  it("enables Act only with DARWIN_ACT_ENABLED=true and a pilot token", () => {
     expect(createDarwin({ DARWIN_IMPL: "real" }).canAct).toBe(false);
-    expect(createDarwin({ DARWIN_IMPL: "real", DARWIN_ACT_TOKEN: "t" }).canAct).toBe(true);
+    expect(createDarwin({ DARWIN_IMPL: "real", DARWIN_ACT_TOKEN: "t" }).canAct).toBe(false);
+    expect(createDarwin({ DARWIN_IMPL: "real", DARWIN_ACT_ENABLED: "true" }).canAct).toBe(false);
+    expect(createDarwin({ DARWIN_IMPL: "real", DARWIN_ACT_ENABLED: "true", DARWIN_ACT_TOKEN: "t" }).canAct).toBe(true);
   });
 });
 

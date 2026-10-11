@@ -19,7 +19,7 @@ try {
 const darwin = new HttpDarwin({
   baseUrl: env.DARWIN_API_BASE_URL || undefined,
   apiKey: env.DARWIN_API_KEY || undefined,
-  actToken: env.DARWIN_ACT_TOKEN || undefined,
+  actToken: env.DARWIN_ACT_ENABLED === "true" ? env.DARWIN_ACT_TOKEN || undefined : undefined,
 });
 
 console.log(`\nDarwin smoke (${env.DARWIN_API_KEY ? "application key" : "anonymous"} Search, Act ${darwin.canAct ? "configured" : "not configured"})\n`);

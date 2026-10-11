@@ -35,7 +35,7 @@ function whyNotDarwin(darwin: DarwinLookup | null, canAct: boolean): string | nu
   if (!darwin) return "Darwin not consulted (DARWIN_ENABLED=false)";
   switch (darwin.outcome) {
     case "startable":
-      return canAct && darwin.candidate ? null : "Darwin has a ready agent but DARWIN_ACT_TOKEN is not set";
+      return canAct && darwin.candidate ? null : "Darwin has a ready agent but Darwin Act is not enabled";
     case "listed_only":
       return "Darwin returned no ready agent";
     case "needs_input":

@@ -4,4 +4,4 @@ The screen judges watch: the live event log, the Darwin panel, the call with its
 
 **Depends on:** `@platypus/shared` only, and the `/events/stream` SSE endpoint. It never needs Dial or Darwin running: the golden-path fixture replays the whole demo.
 
-Status: shell. Built in workstream C.
+Status: the shell (live event log with replay) is done. The full five-region dashboard and the Cloudflare Pages deployment are next; see [docs/workstreams.md](../../docs/workstreams.md).

@@ -70,8 +70,8 @@ try {
 const mcp = await probeDarwinMcp();
 if (mcp.ok) ok(`MCP server ${mcp.serverVersion} lists ${mcp.tools.length} tools, including search, act and get_thread`);
 else darwinProblem(`MCP check failed: ${mcp.error}`);
-if (process.env.DARWIN_ACT_TOKEN) ok("DARWIN_ACT_TOKEN set: darwin_act route enabled when Darwin reports a startable agent");
-else warn("DARWIN_ACT_TOKEN not set: bookings use call or text (Act is an allowlisted pilot)");
+if (process.env.DARWIN_ACT_ENABLED === "true" && process.env.DARWIN_ACT_TOKEN) ok("Darwin Act enabled: darwin_act is chosen when Darwin reports a startable agent");
+else warn("Darwin Act off (needs DARWIN_ACT_ENABLED=true and DARWIN_ACT_TOKEN): bookings use call or text");
 warn(`Darwin client in this mode: ${darwinImpl}`);
 
 console.log("\nDial CLI");

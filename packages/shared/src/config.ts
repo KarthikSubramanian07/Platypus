@@ -9,16 +9,17 @@ export const ENV_VARS = [
   { name: "DIAL_WEBHOOK_SECRET", required: "live", secret: true, purpose: "Verifies Dial webhook signatures" },
   { name: "TEXT_CHANNEL", required: "always", secret: false, purpose: "Owner text rail: imessage | whatsapp | dial" },
   { name: "DARWIN_API_KEY", required: "optional", secret: true, purpose: "Darwin application Search key (anonymous search works without it)" },
-  { name: "DARWIN_ACT_TOKEN", required: "optional", secret: true, purpose: "Darwin Act pilot OAuth token; without it the darwin_act route is never chosen" },
+  { name: "DARWIN_ACT_TOKEN", required: "optional", secret: true, purpose: "Darwin Act pilot OAuth token; used only with DARWIN_ACT_ENABLED=true" },
   { name: "DARWIN_API_BASE_URL", required: "optional", secret: false, purpose: "Darwin API origin (default https://api.darwin.so/api)" },
   { name: "DARWIN_IMPL", required: "optional", secret: false, purpose: "fake | real; overrides DEMO_MODE for Darwin only" },
-  { name: "DARWIN_ENABLED", required: "optional", secret: false, purpose: "false skips Darwin entirely (search_providers reports disabled)" },
-  { name: "KEEWANO_API_KEY", required: "optional", secret: true, purpose: "Keewano ingress key" },
-  { name: "KEEWANO_PAT", required: "optional", secret: true, purpose: "Keewano MCP personal access token" },
   { name: "ANTHROPIC_API_KEY", required: "live", secret: true, purpose: "Claude for reply understanding and transcript mining" },
   { name: "PUBLIC_BASE_URL", required: "live", secret: false, purpose: "Public HTTPS origin for webhooks and the Context MCP" },
   { name: "ALLOWED_NUMBERS", required: "always", secret: true, purpose: "Only numbers Platypus may call or message (E.164, comma-separated)" },
   { name: "DEMO_MODE", required: "always", secret: false, purpose: "fakes | live" },
+  { name: "GATEWAY_IMPL", required: "optional", secret: false, purpose: "fake | real: VoiceTools used by the phone side" },
+  { name: "DIAL_IMPL", required: "optional", secret: false, purpose: "fake | real: telephony used by the agent side" },
+  { name: "DARWIN_ENABLED", required: "optional", secret: false, purpose: "false skips Darwin; it is never simulated" },
+  { name: "DARWIN_ACT_ENABLED", required: "optional", secret: false, purpose: "Darwin Act beta handoff" },
 ] as const;
 
 export type EnvVarName = (typeof ENV_VARS)[number]["name"];

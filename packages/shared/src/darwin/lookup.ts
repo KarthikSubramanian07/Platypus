@@ -85,6 +85,8 @@ export interface DarwinLookup {
   attempts: DarwinAttempt[];
   /** Set when the last failure was a configuration problem (bad key), so doctor can flag it. */
   configError: DarwinErrorKind | null;
+  /** True when this answer came from DarwinLookupCache rather than a new search. */
+  cached?: boolean;
 }
 
 const CONFIG_ERRORS: ReadonlySet<DarwinErrorKind> = new Set(["unauthorized", "forbidden"]);
@@ -134,7 +136,7 @@ export async function lookupDarwin(
   const ladder = searchLadder(input);
   const key = JSON.stringify(ladder);
   const cached = options.cache?.get(key);
-  if (cached) return cached;
+  if (cached) return { ...cached, cached: true };
   const lookup = await runLadder(darwin, ladder);
   options.cache?.set(key, lookup);
   return lookup;
@@ -187,11 +189,11 @@ function classify(search: SearchResponse): Pick<DarwinLookup, "outcome" | "candi
  * "error" covers every rung failing; "disabled" (a null lookup) means DARWIN_ENABLED=false.
  * Reasons and uncertainties are Darwin's text about third parties, so they are sanitized.
  */
-export function toDarwinSummary(lookup: DarwinLookup | null, options: { cached?: boolean } = {}): DarwinSummary {
+export function toDarwinSummary(lookup: DarwinLookup | null): DarwinSummary {
   if (!lookup) return { status: "disabled", agents: [], cached: false };
   const latency_ms = lookup.attempts.reduce((sum, a) => sum + a.latencyMs, 0);
   const search = lookup.search;
-  if (!search) return { status: "error", agents: [], cached: options.cached ?? false, latency_ms };
+  if (!search) return { status: "error", agents: [], cached: lookup.cached ?? false, latency_ms };
   const clean = (items: string[]) => items.slice(0, 5).map((t) => sanitizeUntrustedText(t, 300));
   return {
     status: search.status,
@@ -206,7 +208,7 @@ export function toDarwinSummary(lookup: DarwinLookup | null, options: { cached?:
       reasons: clean(a.reasons),
       uncertainties: clean(a.uncertainties),
     })),
-    cached: options.cached ?? false,
+    cached: lookup.cached ?? false,
     latency_ms,
   };
 }

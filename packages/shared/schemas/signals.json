@@ -20,9 +20,9 @@
     "source": {
       "type": "string",
       "enum": [
-        "keewano",
         "local"
-      ]
+      ],
+      "description": "Where the numbers came from: computed from the local event log"
     }
   },
   "required": [

@@ -17,7 +17,7 @@ describe("decideBookingRoute", () => {
     const darwin = await lookup(new ScriptedDarwin({ script: [searchWith([startableAgent()])] }));
     expect(decideBookingRoute({ business: phoneOnly, darwin, canAct: false })).toEqual({
       route: "call",
-      reasons: ["Darwin has a ready agent but DARWIN_ACT_TOKEN is not set", "no text consent on record"],
+      reasons: ["Darwin has a ready agent but Darwin Act is not enabled", "no text consent on record"],
     });
   });
 

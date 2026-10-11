@@ -24,6 +24,7 @@ export function createDarwin(env: NodeJS.ProcessEnv = process.env, options: { fa
   return new HttpDarwin({
     baseUrl: env.DARWIN_API_BASE_URL || undefined,
     apiKey: env.DARWIN_API_KEY || undefined,
-    actToken: env.DARWIN_ACT_TOKEN || undefined,
+    // Act is a pilot: it needs both the switch and an allowlisted token.
+    actToken: env.DARWIN_ACT_ENABLED === "true" ? env.DARWIN_ACT_TOKEN || undefined : undefined,
   });
 }
