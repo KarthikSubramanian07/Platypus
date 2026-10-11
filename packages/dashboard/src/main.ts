@@ -107,7 +107,7 @@ function connect(): void {
       conn.dataset.state = state;
       conn.textContent = CONNECTION_LABELS[state];
     },
-  });
+  }, { token: source.token });
 }
 
 let playing: AbortController | undefined;
@@ -125,7 +125,7 @@ replay.addEventListener("click", async () => {
     if (RECORDING) void playLocal();
     else {
       resetView();
-      await requestReplay(BASE);
+      await requestReplay(BASE, source.token);
     }
   } finally {
     setTimeout(() => (replay.disabled = false), 1500);

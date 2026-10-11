@@ -11,6 +11,7 @@ import { Hono } from "hono";
 import { openDb } from "../packages/shared/src/db/index";
 import { createEventsApp, defaultBus, listEvents } from "../packages/shared/src/events/index";
 import { auditEventLog, formatAuditReport } from "../packages/shared/src/audit/index";
+import { guardOperatorRoutes, operatorAccessFromEnv } from "../packages/shared/src/http/operator-access";
 import { loadGoldenPath, replayEvents } from "../packages/shared/src/testing/replay";
 import type { AgentSide, PhoneSide } from "../packages/shared/src/contracts/seams";
 import * as gatewayPackage from "../packages/gateway/src/index";
@@ -19,6 +20,8 @@ import * as voicePackage from "../packages/voice/src/index";
 if (existsSync(".env")) process.loadEnvFile(".env");
 const mode = process.env.DEMO_MODE ?? "fakes";
 const port = Number(process.env.PORT ?? 8787);
+// Loopback only: cloudflared reaches us on 127.0.0.1, and nobody on the venue Wi-Fi can.
+const hostname = process.env.HOST ?? "127.0.0.1";
 const dbPath = process.env.PLATYPUS_DB ?? (mode === "fakes" ? "data/dev-fakes.db" : "data/platypus.db");
 
 // In fakes mode every run starts clean; the append-only log is never edited, the file is replaced.
@@ -26,6 +29,9 @@ if (mode === "fakes") for (const suffix of ["", "-wal", "-shm"]) rmSync(`${dbPat
 const db = openDb(dbPath);
 
 const app = new Hono();
+// The event log, /audit and /demo/* are for the team: this machine, or DASHBOARD_TOKEN through the tunnel.
+// Installed before any route so it runs first (see packages/shared/src/http/operator-access.ts).
+guardOperatorRoutes(app, operatorAccessFromEnv(process.env));
 app.get("/health", (c) => c.json({ ok: true, mode }));
 app.route("/", createEventsApp({ db, bus: defaultBus }));
 
@@ -59,16 +65,17 @@ async function playGoldenPath(speed: number) {
 }
 app.post("/demo/replay", async (c) => {
   if (mode !== "fakes") return c.json({ error: "Replay is only available with DEMO_MODE=fakes" }, 409);
-  const speed = Number(c.req.query("speed") ?? 2);
+  const asked = Number(c.req.query("speed") ?? 2);
+  const speed = Number.isFinite(asked) ? Math.min(50, Math.max(0.25, asked)) : 2;
   if (replaying) return c.json({ started: false, reason: "a replay is already running" }, 409);
   void playGoldenPath(speed);
   return c.json({ started: true, speed }, 202);
 });
 
-serve({ fetch: app.fetch, port }, () => console.log(`Platypus events on http://localhost:${port}/events/stream (DEMO_MODE=${mode})`));
+serve({ fetch: app.fetch, port, hostname }, () => console.log(`Platypus events on http://localhost:${port}/events/stream (DEMO_MODE=${mode})`));
 
 if (!process.argv.includes("--no-dashboard")) {
-  const vite = spawn("pnpm", ["--filter", "@platypus/dashboard", "dev"], { stdio: "inherit", env: { ...process.env, PLATYPUS_GATEWAY_URL: `http://localhost:${port}` } });
+  const vite = spawn("pnpm", ["--filter", "@platypus/dashboard", "dev"], { stdio: "inherit", env: { ...process.env, PLATYPUS_GATEWAY_URL: `http://127.0.0.1:${port}` } });
   const stop = () => {
     vite.kill("SIGTERM");
     process.exit(0);

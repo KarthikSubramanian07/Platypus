@@ -461,7 +461,7 @@ for (const button of replies.querySelectorAll<HTMLButtonElement>("button[data-re
     if (!waiting) return;
     const reply = button.dataset.reply === "N" ? "N" : "Y";
     for (const b of replies.querySelectorAll<HTMLButtonElement>("button")) b.disabled = true;
-    const result = await requestOwnerReply(source.base, reply);
+    const result = await requestOwnerReply(source.base, reply, source.token);
     for (const b of replies.querySelectorAll<HTMLButtonElement>("button")) b.disabled = false;
     if (result.ok) {
       repliedTo = waiting.id;
@@ -636,7 +636,7 @@ killButton.addEventListener("click", async () => {
   }
   disarmKill();
   killButton.disabled = true;
-  const result = await requestKillCall(source.base);
+  const result = await requestKillCall(source.base, source.token);
   killButton.disabled = false;
   say(result.ok ? (result.unconfirmed ? "Kill switch sent. Watch the phone for the call to end." : "Kill switch sent. The call ends in a moment.") : failure("Kill switch", result));
   renderKill();
@@ -701,7 +701,7 @@ async function onReplay(): Promise<void> {
       playRecording();
     } else {
       const cutoff = history.length;
-      if (await requestReplay(source.base)) resetTo(reduceAll(history.slice(cutoff)));
+      if (await requestReplay(source.base, source.token)) resetTo(reduceAll(history.slice(cutoff)));
       else say("Replay is only available on a fakes server (DEMO_MODE=fakes).");
     }
   } finally {
@@ -739,5 +739,5 @@ if (RECORDING) {
       clearTimeout(settle);
       requestAnimationFrame(() => requestAnimationFrame(() => (body.dataset.hydrating = "false")));
     },
-  });
+  }, { token: source.token });
 }
