@@ -25,7 +25,8 @@
     "demo:reset": "tsx scripts/demo-reset.ts",
     "tunnel": "tsx scripts/tunnel.ts",
     "dial:register-mcp": "tsx packages/voice/scripts/register-mcp.ts",
-    "dial:mcp-status": "tsx packages/voice/scripts/mcp-status.ts"
+    "dial:mcp-status": "tsx packages/voice/scripts/mcp-status.ts",
+    "live": "tsx scripts/live.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

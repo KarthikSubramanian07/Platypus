@@ -17,11 +17,11 @@ async function until<T>(read: () => T, ok: (v: T) => boolean, ms = 10_000): Prom
   }
 }
 
-describe("phone side, end to end against FakeDial", () => {
+describe.each(["imessage", "dial"] as const)("phone side on the %s rail, end to end against FakeDial", (rail) => {
   it("books on the call, records consent, then books the next job by text Y", async () => {
     const db = openDb(":memory:");
     const bus = new EventBus();
-    const side = createPhoneSide({ db, bus }, { env: ENV, fakeTimeScale: 0 });
+    const side = createPhoneSide({ db, bus }, { env: { ...ENV, TEXT_CHANNEL: rail }, fakeTimeScale: 0 });
     side.mount(new Hono());
     expect(side.mode).toBe("fake");
     const sal = getBusinessBySlug(db, "sals-auto")!;
@@ -37,7 +37,7 @@ describe("phone side, end to end against FakeDial", () => {
     const booked = await until(() => getBooking(ctx, first.id), (b) => b.status === "confirmed");
     expect(booked.confirmation_evidence).toMatchObject({ kind: "call", quotedSentence: "Yep, booked." });
     await until(() => getActiveConsent(db, sal.id), (c) => Boolean(c));
-    expect(getActiveConsent(db, sal.id)).toMatchObject({ source: "call", quoted_sentence: "Yeah, text me.", channel: "imessage" });
+    expect(getActiveConsent(db, sal.id)).toMatchObject({ source: "call", quoted_sentence: "Yeah, text me.", channel: rail });
     expect(getBusinessBySlug(db, "sals-auto")!.channel_state).toBe("text_enabled");
     await side.calls.idle();
     await until(() => listEvents(db, { type: "call.transcribed" }), (e) => e.length === 1);
@@ -52,9 +52,26 @@ describe("phone side, end to end against FakeDial", () => {
     const confirmed = await until(() => getBooking(ctx, second.id), (b) => b.status === "confirmed");
     expect(confirmed.confirmation_evidence?.kind).toBe("text");
     expect(side.fake!.listCalls().calls).toHaveLength(1);
+    // Dial-to-Dial sends "sms" (only to a Dial line); the other rails send on themselves.
+    expect(side.fake!.messages.filter((m) => m.direction === "outbound").map((m) => m.channel)).toContain(rail === "dial" ? "sms" : rail);
 
     const tools = listEvents(db, { type: "voice.tool_called" }).map((e) => e.payload.tool);
     expect(tools).toEqual(["check_slot", "hold_slot", "create_booking", "record_consent", "set_text_number"]);
+    side.calls.dispose();
+  });
+
+});
+
+describe("phone side controls", () => {
+  it("lets the dashboard's owner phone reply in fake mode", async () => {
+    const db = openDb(":memory:");
+    const side = createPhoneSide({ db, bus: new EventBus() }, { env: ENV, fakeTimeScale: 0 });
+    const app = new Hono();
+    side.mount(app);
+    const res = await app.request("/demo/owner-reply", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ body: "HELP" }) });
+    expect(await res.json()).toMatchObject({ ok: true });
+    await side.text.drain();
+    expect(listEvents(db, { type: "message.received" })).toHaveLength(1);
     side.calls.dispose();
   });
 

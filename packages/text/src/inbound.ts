@@ -3,6 +3,8 @@ import type { TextInbound } from "@platypus/shared/contracts";
 import {
   getActiveConsent,
   getBusinessByNumber,
+  getBusinessBySlug,
+  DEMO_SHOP_SLUG,
   getMessageByProviderId,
   getRow,
   insertRow,
@@ -135,7 +137,10 @@ async function reply(deps: TextDeps, business: Business, input: InboundInput, to
 export async function handleInbound(deps: TextDeps, input: InboundInput): Promise<InboundOutcome> {
   if (getMessageByProviderId(deps.db, input.provider_message_id)) return { status: "duplicate" };
   const from = toE164(input.from) ?? input.from;
-  const business = getBusinessByNumber(deps.db, from) ?? null;
+  const business =
+    getBusinessByNumber(deps.db, from) ??
+    (deps.ownerLine && from === deps.ownerLine && deps.textChannel === "dial" ? getBusinessBySlug(deps.db, DEMO_SHOP_SLUG) : undefined) ??
+    null;
   const booking = business ? resolveBooking(deps, business, input) : null;
   const at = now(deps);
 

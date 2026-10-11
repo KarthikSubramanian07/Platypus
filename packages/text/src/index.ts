@@ -147,7 +147,8 @@ export function createTextService(deps: TextServiceDeps): TextService {
  */
 export function createTextServiceFromEnv(side: SideDeps, env: NodeJS.ProcessEnv = process.env, overrides: Partial<TextServiceDeps> = {}): TextService {
   const config = loadConfig(env);
-  const dialNumbers = parseAllowedNumbers(env.DIAL_OWNER_NUMBERS);
+  // The owner line is itself a Dial number, so it may receive "sms" on the Dial-to-Dial rail.
+  const dialNumbers = [...new Set([...parseAllowedNumbers(env.DIAL_OWNER_NUMBERS), ...parseAllowedNumbers(env.DIAL_OWNER_LINE)])];
   let messaging: DialMessaging | undefined = overrides.messaging;
   if (!messaging) {
     if (!env.DIAL_API_KEY || !env.DIAL_FROM_NUMBER_ID) throw new Error("DIAL_API_KEY and DIAL_FROM_NUMBER_ID are required to text owners");
@@ -162,6 +163,7 @@ export function createTextServiceFromEnv(side: SideDeps, env: NodeJS.ProcessEnv 
     dialNumbers,
     model: replyModelFromEnv(env),
     ...(env.DIAL_NUMBER ? { ourNumber: env.DIAL_NUMBER } : {}),
+    ...(env.DIAL_OWNER_LINE ? { ownerLine: env.DIAL_OWNER_LINE.trim() } : {}),
     ...(env.DIAL_WEBHOOK_SECRET ? { webhookSecret: env.DIAL_WEBHOOK_SECRET } : {}),
     ...(env.DIAL_API_KEY ? { dialApiKey: env.DIAL_API_KEY } : {}),
     ...overrides,

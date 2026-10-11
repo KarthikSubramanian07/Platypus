@@ -393,7 +393,8 @@ function applyEvent(state: DashboardState, event: StreamEvent): DashboardState {
         budgetCents: num(p.budget_cents),
         windowStart: str(window?.start ?? p.window_start, 40),
         windowEnd: str(window?.end ?? p.window_end, 40),
-        utterance: str(event.reason, 300),
+        // Only the customer's own words: the gateway's bookkeeping reason ("agent called ...") is not a quote.
+        utterance: /^agent called\b/i.test(event.reason ?? "") ? undefined : str(event.reason, 300),
         at: event.created_at,
       });
       // A request_booking after a search keeps the richer search ask on screen.

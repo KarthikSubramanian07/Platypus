@@ -27,6 +27,12 @@ export interface TextDeps {
   allowedNumbers: readonly string[];
   /** DIAL_OWNER_NUMBERS: owner numbers that are themselves Dial numbers, the only ones that may get "sms". */
   dialNumbers?: readonly string[];
+  /**
+   * DIAL_OWNER_LINE: on the Dial-to-Dial rail, a second Dial number that stands in for the demo
+   * shop's texting line (spec A.4: "today Sal's line is a Dial number"). Used only for the demo
+   * shop and only when TEXT_CHANNEL=dial; replies from it are read as the demo shop's.
+   */
+  ownerLine?: string;
   /** Our Dial number in E.164 (DIAL_NUMBER), recorded as the sender on outbound rows. */
   ourNumber?: string;
   /** Claude, or null when ANTHROPIC_API_KEY is unset. */
