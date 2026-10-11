@@ -1,4 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { manualClock } from "../clock";
 import { DarwinSummary } from "../contracts/darwin";
 import { DARWIN_FIXTURES, darwinFailures, ScriptedDarwin, searchWith, startableAgent } from "../testing";
@@ -10,6 +13,8 @@ import {
   HttpDarwin,
   isDarwinEnabled,
   lookupDarwin,
+  warmDarwinLookups,
+  type SearchResponse,
   parseRetryAfter,
   probeDarwinMcp,
   searchLadder,
@@ -169,11 +174,12 @@ describe("parseRetryAfter", () => {
 });
 
 describe("searchLadder", () => {
-  it("tries trade, service and area first, then the bare trade", () => {
-    expect(searchLadder({ trade: "salon", service: "Haircut", area: "San Francisco" })).toEqual([
-      { query: "hair salon: Haircut", maxResults: 5, context: [{ type: "text", text: "San Francisco" }] },
+  it("tries trade and service first, then the bare trade, and never sends a location", () => {
+    expect(searchLadder({ trade: "salon", service: "Haircut" })).toEqual([
+      { query: "hair salon: Haircut", maxResults: 5 },
       { query: "hair salon", maxResults: 5 },
     ]);
+    expect(JSON.stringify(searchLadder({ trade: "salon", service: "Haircut", ...({ area: "San Francisco" } as object) }))).not.toContain("San Francisco");
   });
 
   it("sends budget and a UTC deadline as context, never an offset", () => {
@@ -200,7 +206,7 @@ describe("searchLadder", () => {
 });
 
 describe("lookupDarwin", () => {
-  const input = { trade: "salon", service: "Haircut", area: "San Francisco" };
+  const input = { trade: "salon", service: "Haircut" };
 
   it("falls back to the bare trade when the specific query returns 500", async () => {
     const darwin = new ScriptedDarwin({ script: [darwinFailures.server500("r-1")] });
@@ -273,11 +279,11 @@ describe("lookupDarwin", () => {
 });
 
 describe("DarwinLookupCache", () => {
-  const input = { trade: "salon", service: "Haircut", area: "San Francisco" };
+  const input = { trade: "salon", service: "Haircut" };
 
   it("answers a repeated lookup without calling Darwin, until the TTL passes", async () => {
     const clock = manualClock();
-    const cache = new DarwinLookupCache(60_000, clock);
+    const cache = new DarwinLookupCache({ ttlMs: 60_000, clock, maxStaleMs: 0 });
     const darwin = new ScriptedDarwin();
     const first = await lookupDarwin(darwin, input, { cache });
     const second = await lookupDarwin(darwin, input, { cache });
@@ -290,11 +296,122 @@ describe("DarwinLookupCache", () => {
     expect(darwin.searches).toHaveLength(2);
   });
 
+  it("shares the bare-trade answer across services, so warm-up covers every request", async () => {
+    const cache = new DarwinLookupCache();
+    const darwin = new ScriptedDarwin();
+    expect(await warmDarwinLookups(darwin, cache, ["salon", "salon", "dog_groomer"])).toEqual([
+      { trade: "salon", outcome: "listed_only", rounds: 1 },
+      { trade: "dog_groomer", outcome: "listed_only", rounds: 1 },
+    ]);
+    const lookup = await lookupDarwin(darwin, { trade: "salon", service: "Color", budgetCents: 9000 }, { cache });
+    expect(lookup).toMatchObject({ outcome: "listed_only", cached: true, attempts: [] });
+    expect(darwin.searches.map((r) => r.query)).toEqual(["hair salon", "dog groomer"]);
+  });
+
+  it("skips a phrasing that just failed", async () => {
+    const clock = manualClock();
+    const cache = new DarwinLookupCache({ ttlMs: 0, clock, failureTtlMs: 60_000, maxStaleMs: 0 });
+    const darwin = new ScriptedDarwin({ script: [darwinFailures.server500()] });
+    await lookupDarwin(darwin, input, { cache });
+    clock.advance(1);
+    await lookupDarwin(darwin, input, { cache });
+    expect(darwin.searches.map((r) => r.query)).toEqual(["hair salon: Haircut", "hair salon", "hair salon"]);
+    clock.advance(60_001);
+    await lookupDarwin(darwin, input, { cache });
+    expect(darwin.searches.at(-1)?.query).toBe("hair salon: Haircut");
+  });
+
+  it("runs one ladder for concurrent identical lookups", async () => {
+    const cache = new DarwinLookupCache();
+    const darwin = new ScriptedDarwin();
+    const [a, b] = await Promise.all([lookupDarwin(darwin, input, { cache }), lookupDarwin(darwin, input, { cache })]);
+    expect(a).toBe(b);
+    expect(darwin.searches).toHaveLength(1);
+  });
+
+  it("keeps warming a trade until Darwin answers", async () => {
+    const darwin = new ScriptedDarwin({ script: [darwinFailures.server500(), darwinFailures.server500(), darwinFailures.server500()] });
+    expect(await warmDarwinLookups(darwin, new DarwinLookupCache(), ["auto_repair"])).toEqual([
+      { trade: "auto_repair", outcome: "listed_only", rounds: 2 },
+    ]);
+  });
+
+  it("stands in the last good answer, labeled cached, when Darwin fails", async () => {
+    const clock = manualClock();
+    const cache = new DarwinLookupCache({ ttlMs: 1000, clock });
+    const fails = [darwinFailures.server500(), darwinFailures.server500(), darwinFailures.server500()];
+    const darwin = new ScriptedDarwin({ script: [DARWIN_FIXTURES.hairSalon, ...fails] });
+    await lookupDarwin(darwin, { trade: "salon" }, { cache });
+    clock.advance(5000);
+    const lookup = await lookupDarwin(darwin, input, { cache });
+    expect(lookup).toMatchObject({ outcome: "listed_only", cached: true });
+    expect(lookup.attempts.map((a) => a.status)).toEqual([500, 500, 500]);
+    expect(toDarwinSummary(lookup)).toMatchObject({ status: "completed", cached: true });
+  });
+
+  it("persists answers without the search token and reloads them", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "darwin-cache-"));
+    const file = join(dir, "nested", "lookups.json");
+    const search = { ...DARWIN_FIXTURES.hairSalon, searchToken: "secret-token" };
+    await lookupDarwin(new ScriptedDarwin({ script: [search] }), { trade: "salon" }, { cache: new DarwinLookupCache({ file }) });
+    expect(readFileSync(file, "utf8")).not.toContain("secret-token");
+    const reloaded = new DarwinLookupCache({ file });
+    const darwin = new ScriptedDarwin();
+    expect(await lookupDarwin(darwin, { trade: "salon", service: "cut" }, { cache: reloaded })).toMatchObject({ outcome: "listed_only", cached: true });
+    expect(darwin.searches).toHaveLength(0);
+    writeFileSync(file, "{not json");
+    expect(() => new DarwinLookupCache({ file })).not.toThrow();
+  });
+
   it("never caches an outage", async () => {
     const cache = new DarwinLookupCache();
     const darwin = new ScriptedDarwin({ script: [darwinFailures.server500(), darwinFailures.server500(), darwinFailures.server500()] });
     expect((await lookupDarwin(darwin, input, { cache })).outcome).toBe("unavailable");
     expect((await lookupDarwin(darwin, input, { cache })).outcome).toBe("listed_only");
+  });
+});
+
+describe("lookup budget", () => {
+  const slow = (ms: number) => () => new Promise<SearchResponse>((resolve) => setTimeout(() => resolve(DARWIN_FIXTURES.hairSalon), ms));
+
+  it("answers a slow lookup from the last good answer when there is one", async () => {
+    const clock = manualClock();
+    const cache = new DarwinLookupCache({ ttlMs: 1000, clock });
+    await lookupDarwin(new ScriptedDarwin(), { trade: "salon" }, { cache });
+    clock.advance(5000);
+    const lookup = await lookupDarwin(new ScriptedDarwin({ script: [slow(80)] }), { trade: "salon" }, { cache, budgetMs: 20 });
+    expect(lookup).toMatchObject({ outcome: "listed_only", cached: true, timedOut: true });
+  });
+
+  it("answers within the budget and finishes in the background to fill the cache", async () => {
+    const cache = new DarwinLookupCache();
+    const darwin = new ScriptedDarwin({ script: [slow(80)] });
+    const started = Date.now();
+    const first = await lookupDarwin(darwin, { trade: "salon" }, { cache, budgetMs: 20 });
+    expect(Date.now() - started).toBeLessThan(70);
+    expect(first).toMatchObject({ outcome: "unavailable", timedOut: true });
+    expect(toDarwinSummary(first).status).toBe("error");
+    expect(darwinEventPayload(first)).toMatchObject({ timed_out: true });
+    await new Promise((r) => setTimeout(r, 120));
+    const second = await lookupDarwin(darwin, { trade: "salon" }, { cache, budgetMs: 20 });
+    expect(second).toMatchObject({ outcome: "listed_only", cached: true });
+    expect(darwin.searches).toHaveLength(1);
+  });
+
+  it("returns Darwin's answer when it beats the budget", async () => {
+    const lookup = await lookupDarwin(new ScriptedDarwin({ script: [slow(5)] }), { trade: "salon" }, { budgetMs: 500 });
+    expect(lookup.outcome).toBe("listed_only");
+    expect(lookup.timedOut).toBeUndefined();
+  });
+
+  it("reports a bug thrown after the budget instead of crashing the process", async () => {
+    const onBackgroundError = vi.fn();
+    const darwin = new ScriptedDarwin({
+      script: [() => new Promise<SearchResponse>((_, reject) => setTimeout(() => reject(new RangeError("bug")), 30))],
+    });
+    await lookupDarwin(darwin, { trade: "salon" }, { budgetMs: 5, onBackgroundError });
+    await new Promise((r) => setTimeout(r, 60));
+    expect(onBackgroundError).toHaveBeenCalledWith(expect.any(RangeError));
   });
 });
 
@@ -348,10 +465,10 @@ describe("toDarwinSummary", () => {
 describe("createDarwin", () => {
   it("runs the real client over the recorded api.darwin.so in fakes mode", async () => {
     const darwin = createDarwin({ DEMO_MODE: "fakes" });
-    const lookup = await lookupDarwin(darwin, { trade: "salon", service: "haircut", area: "San Francisco" });
+    const lookup = await lookupDarwin(darwin, { trade: "salon", service: "haircut" });
     expect(lookup.outcome).toBe("listed_only");
     expect(lookup.search?.searchId).toBe(DARWIN_FIXTURES.hairSalon.searchId);
-    const failing = await lookupDarwin(createDarwin({ DEMO_MODE: "fakes" }, { fakeMode: "error_500" }), { trade: "auto_repair", area: "SF" });
+    const failing = await lookupDarwin(createDarwin({ DEMO_MODE: "fakes" }, { fakeMode: "error_500" }), { trade: "auto_repair", service: "oil change" });
     expect(failing.outcome).toBe("unavailable");
     expect(failing.attempts.map((a) => a.status)).toEqual([500, 500, 500]);
   });

@@ -5,7 +5,7 @@ import { decideBookingRoute } from "./route";
 
 const phoneOnly = { channel_state: "phone_only", do_not_call: false } as const;
 const texting = { channel_state: "text_enabled", do_not_call: false } as const;
-const lookup = (darwin: ScriptedDarwin) => lookupDarwin(darwin, { trade: "salon", service: "Haircut", area: "San Francisco" });
+const lookup = (darwin: ScriptedDarwin) => lookupDarwin(darwin, { trade: "salon", service: "Haircut" });
 
 describe("decideBookingRoute", () => {
   it("uses Darwin Act when Darwin says a result can start and Platypus holds a pilot token", async () => {
@@ -43,6 +43,16 @@ describe("decideBookingRoute", () => {
       route: "call",
       reasons: ["Darwin unavailable", "no text consent on record"],
     });
+  });
+
+  it("says when the answer is Darwin's last one rather than a new search", async () => {
+    const darwin = await lookup(new ScriptedDarwin());
+    expect(decideBookingRoute({ business: phoneOnly, darwin: { ...darwin, cached: true }, canAct: false }).reasons[0]).toBe(
+      "Darwin returned no ready agent (Darwin's last answer, cached)",
+    );
+    expect(decideBookingRoute({ business: phoneOnly, darwin: { ...darwin, outcome: "unavailable", timedOut: true }, canAct: false }).reasons[0]).toBe(
+      "Darwin did not answer in time",
+    );
   });
 
   it("works without consulting Darwin at all", () => {

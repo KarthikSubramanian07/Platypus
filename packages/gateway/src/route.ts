@@ -33,6 +33,11 @@ export function decideBookingRoute(input: {
 /** null when Darwin Act should take the booking. */
 function whyNotDarwin(darwin: DarwinLookup | null, canAct: boolean): string | null {
   if (!darwin) return "Darwin not consulted (DARWIN_ENABLED=false)";
+  const reason = whyNotDarwinLive(darwin, canAct);
+  return reason && darwin.cached ? `${reason} (Darwin's last answer, cached)` : reason;
+}
+
+function whyNotDarwinLive(darwin: DarwinLookup, canAct: boolean): string | null {
   switch (darwin.outcome) {
     case "startable":
       return canAct && darwin.candidate ? null : "Darwin has a ready agent but Darwin Act is not enabled";
@@ -43,6 +48,6 @@ function whyNotDarwin(darwin: DarwinLookup | null, canAct: boolean): string | nu
     case "no_match":
       return "Darwin has no match";
     case "unavailable":
-      return "Darwin unavailable";
+      return darwin.timedOut ? "Darwin did not answer in time" : "Darwin unavailable";
   }
 }

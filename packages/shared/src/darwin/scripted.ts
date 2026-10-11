@@ -26,7 +26,10 @@ export function searchWith(agents: SearchAgent[], base: SearchResponse = DARWIN_
   return copy;
 }
 
-export type FakeSearchStep = SearchResponse | DarwinError | ((request: SearchRequest) => SearchResponse | DarwinError);
+export type FakeSearchStep =
+  | SearchResponse
+  | DarwinError
+  | ((request: SearchRequest) => SearchResponse | DarwinError | Promise<SearchResponse | DarwinError>);
 
 export interface ScriptedDarwinOptions {
   /** Consumed one per search() call. When empty, every search returns `fallback`. */
@@ -57,7 +60,7 @@ export class ScriptedDarwin implements Darwin {
   async search(request: SearchRequest): Promise<DarwinSearchResult> {
     this.searches.push(structuredClone(request));
     let step = this.script.shift() ?? this.fallback;
-    if (typeof step === "function") step = step(request);
+    if (typeof step === "function") step = await step(request);
     if (step instanceof DarwinError) throw step;
     return { search: structuredClone(step), requestId: `fake-${this.searches.length}`, latencyMs: 0 };
   }

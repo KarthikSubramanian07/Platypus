@@ -7,7 +7,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { decideBookingRoute } from "../packages/gateway/src/route";
 import { SEED_BUSINESSES } from "../packages/shared/src/db/seed";
-import { HttpDarwin, lookupDarwin, probeDarwinMcp, type DarwinLookup } from "../packages/shared/src/darwin";
+import { DarwinLookupCache, HttpDarwin, lookupDarwin, probeDarwinMcp, warmDarwinLookups, type DarwinLookup } from "../packages/shared/src/darwin";
 
 const env = process.env;
 try {
@@ -29,7 +29,6 @@ for (const business of SEED_BUSINESSES) {
   const lookup = await lookupDarwin(darwin, {
     trade: business.trade,
     service: business.services[0]?.name,
-    area: business.service_area,
   });
   const decision = decideBookingRoute({ business: { channel_state: "phone_only", do_not_call: false }, darwin: lookup, canAct: darwin.canAct });
   rows.push({ slug: business.slug, lookup, route: decision.route ?? "none" });
@@ -45,6 +44,19 @@ for (const business of SEED_BUSINESSES) {
   }
 }
 
+// The demo path as the gateway runs it: warm the bare trades at startup, then the
+// agent's request is answered inside the six-second budget from docs/workstreams.md.
+console.log("\nDemo path (warm cache, then a 6 s budget)");
+const cache = new DarwinLookupCache();
+const warmStarted = Date.now();
+const warmed = await warmDarwinLookups(darwin, cache, SEED_BUSINESSES.map((b) => b.trade), { rounds: 4 });
+console.log(`  • warm-up took ${((Date.now() - warmStarted) / 1000).toFixed(1)}s: ${warmed.map((w) => `${w.trade}=${w.outcome}`).join(", ")}`);
+const demoStarted = Date.now();
+const demo = await lookupDarwin(darwin, { trade: "auto_repair", service: "oil change", budgetCents: 12000, deadline: new Date(Date.now() + 86_400_000) }, { cache, budgetMs: 6000 });
+const demoMs = Date.now() - demoStarted;
+const demoOk = demoMs < 6000 && !demo.timedOut;
+console.log(`  ${demoOk ? "✓" : "✗"} demo lookup answered in ${demoMs}ms: ${demo.outcome}${demo.cached ? " (cached)" : ""}${demo.timedOut ? " (timed out)" : ""}`);
+
 console.log("\nDarwin MCP (https://mcp.darwin.so/mcp)");
 const mcp = await probeDarwinMcp();
 if (mcp.ok) console.log(`  ✓ server ${mcp.serverVersion}, protocol ${mcp.protocolVersion}, ${mcp.tools.length} tools: ${mcp.tools.join(", ")}`);
@@ -58,6 +70,7 @@ writeFileSync(
     {
       at: new Date().toISOString(),
       mcp,
+      demo: { ms: demoMs, outcome: demo.outcome, cached: demo.cached ?? false, timedOut: demo.timedOut ?? false, warmed },
       lookups: rows.map((r) => ({
         slug: r.slug,
         outcome: r.lookup.outcome,
