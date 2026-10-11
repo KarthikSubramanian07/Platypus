@@ -1,8 +1,7 @@
 import { systemClock, type Clock } from "../clock";
 import { maskNumber } from "../config";
 import { newId } from "../ids";
-import type { Db } from "./index";
-import { getBusinessBySlug, insertRow, updateRow } from "./repo";
+import { getBusinessBySlug, insertRow, updateRow, type Db } from "./repo";
 import type { Business } from "./types";
 
 /**

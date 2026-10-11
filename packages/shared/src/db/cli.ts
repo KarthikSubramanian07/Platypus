@@ -4,6 +4,7 @@
  */
 import { existsSync } from "node:fs";
 import { parseAllowedNumbers } from "../config";
+import { emitSeedEvents } from "../events/seed-events";
 import { describeSeed, migrate, openDb, seed } from "./index";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
@@ -19,7 +20,7 @@ if (command === "migrate") {
   if (allowedNumbers.length === 0) {
     console.warn("ALLOWED_NUMBERS is empty: Sal's Auto gets a fictional 555 number and cannot be called.");
   }
-  const businesses = seed(db, { allowedNumbers });
+  const businesses = seed(db, { allowedNumbers, onSeeded: emitSeedEvents(db) });
   console.log(describeSeed(businesses));
 } else {
   console.error("Usage: tsx packages/shared/src/db/cli.ts <migrate|seed>");
