@@ -98,7 +98,20 @@ function words(s: string): string[] {
 /** The agent's opening: its first turn, joined with any agent turns before the other party speaks. */
 export function openingStartsWithDisclosure(turns: unknown, disclosure: string = DISCLOSURE): { ok: boolean; opening: string | null } {
   if (!Array.isArray(turns)) return { ok: false, opening: null };
-  const first = turns.findIndex((t) => isObj(t) && t.speaker === "agent");
+  const expected = words(disclosure);
+  const isAgent = (t: unknown): t is Obj => isObj(t) && t.speaker === "agent";
+  // A first attempt cut off by crosstalk ("Hi, this", then the full line) still opens with the
+  // disclosure, as in the call service's own check: skip agent turns that are only a prefix of it.
+  const clipped = (t: Obj) => {
+    const w = words(typeof t.text === "string" ? t.text : "");
+    return w.length > 0 && w.length < expected.length && w.every((x, i) => expected[i] === x);
+  };
+  let first = turns.findIndex(isAgent);
+  while (first >= 0 && clipped(turns[first] as Obj)) {
+    const next = turns.findIndex((t, i) => i > first && isAgent(t));
+    if (next < 0) break;
+    first = next;
+  }
   if (first < 0) return { ok: false, opening: null };
   const parts: string[] = [];
   for (let i = first; i < turns.length; i++) {
@@ -108,7 +121,6 @@ export function openingStartsWithDisclosure(turns: unknown, disclosure: string =
   }
   const opening = parts.join(" ");
   const said = words(opening);
-  const expected = words(disclosure);
   return { ok: expected.every((w, i) => said[i] === w), opening: opening.slice(0, 120) };
 }
 
@@ -190,8 +202,10 @@ export function auditEventLog(events: readonly PlatypusEvent[], opts: AuditOptio
   const doNotCall = new Map<string, string>();
   const consents = new Map<string, { business_id: string | undefined; active: boolean }>();
   const revokedBusinesses = new Set<string>();
-  const received = new Map<string, { business_id: string | undefined; event_id: string }>();
+  const received = new Map<string, { business_id: string | undefined; booking_id: string | undefined; event_id: string }>();
   const replyClass = new Map<string, string>();
+  /** message id -> the booking its yes confirmed: one yes confirms one booking. */
+  const usedYes = new Map<string, string>();
 
   const stats: AuditStats = {
     events: events.length,
@@ -324,6 +338,7 @@ export function auditEventLog(events: readonly PlatypusEvent[], opts: AuditOptio
       } else if (sub === "slot_agreed" && bookingId) {
         const b = bookings.get(bookingId) ?? newBooking(bookingId, businessId, "pending", null);
         bookings.set(bookingId, b);
+        checkSlotChange(b, id, type);
         b.slotAgreed = true;
         b.slotAgreedHold = str(refs.hold_id);
         b.slot = slotOf(p) ?? b.slot;
@@ -362,6 +377,7 @@ export function auditEventLog(events: readonly PlatypusEvent[], opts: AuditOptio
       if (bookingId) {
         const b = bookings.get(bookingId);
         if (b) {
+          checkSlotChange(b, id, type);
           b.holds.add(holdId);
           if (slot) b.slot = slot;
         }
@@ -454,7 +470,7 @@ export function auditEventLog(events: readonly PlatypusEvent[], opts: AuditOptio
     } else if (type === "message.received") {
       stats.messages.received++;
       const mid = str(refs.message_id);
-      if (mid) received.set(mid, { business_id: businessId, event_id: id ?? "" });
+      if (mid) received.set(mid, { business_id: businessId, booking_id: bookingId, event_id: id ?? "" });
       if (businessId && at !== undefined && e.actor === "owner") {
         const sentAt = lastSentAt.get(businessId);
         if (sentAt !== undefined && at >= sentAt) {
@@ -532,6 +548,13 @@ export function auditEventLog(events: readonly PlatypusEvent[], opts: AuditOptio
   }));
   return { ok: !violations.some((v) => v.severity === "error"), violations, rules, stats };
 
+  /** A hold or an agreed slot for a confirmed or closed booking changes its terms without a transition. */
+  function checkSlotChange(b: BookingState, id: string | null, type: string): void {
+    if (SETTLED.includes(b.status)) {
+      fail("R5", id, `${type} changes the slot of booking ${short(b.id)}, which is ${b.status}; its time and price may only change through a transition (rescheduled).`);
+    }
+  }
+
   // ---- R1 and R8: the confirmation checks ------------------------------------------------------
 
   /** Returns true when it reported the confirmation as illegal, so R5 does not report it twice. */
@@ -586,6 +609,12 @@ export function auditEventLog(events: readonly PlatypusEvent[], opts: AuditOptio
         if (msg.business_id && businessId && msg.business_id !== businessId) fail("R1", id, `Booking ${bk} was confirmed by a text from a different business.`);
         const cls = replyClass.get(mid!);
         if (cls !== "accept") fail("R1", id, `Booking ${bk} was confirmed by a text classified ${cls ? `"${cls}"` : "nothing yet"}, not accept.`);
+        const about = msg.booking_id;
+        const target = str(e.refs?.booking_id);
+        if (about && target && about !== target) fail("R1", id, `Booking ${bk} was confirmed by the owner's reply about booking ${short(about)}.`);
+        const earlier = usedYes.get(mid!);
+        if (earlier && target && earlier !== target) fail("R1", id, `Booking ${bk} was confirmed by the same yes that already confirmed booking ${short(earlier)}; one yes confirms one booking.`);
+        if (target) usedYes.set(mid!, target);
       }
     } else if (kind === "rule") {
       if (e.actor !== "autopilot") fail("R1", id, `Booking ${bk} has rule evidence but was confirmed by actor "${e.actor}", not autopilot.`);
@@ -596,6 +625,9 @@ export function auditEventLog(events: readonly PlatypusEvent[], opts: AuditOptio
     return illegal;
   }
 }
+
+/** Statuses whose slot is settled or final: only a transition (reschedule) may change their time or price. */
+const SETTLED: readonly BookingStatus[] = ["confirmed", "completed", "no_show", "disputed", "declined", "expired", "cancelled"];
 
 function newBooking(id: string, business_id: string | undefined, status: BookingStatus, route: string | null): BookingState {
   return {

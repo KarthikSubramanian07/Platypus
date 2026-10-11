@@ -176,6 +176,16 @@ describe("R1: confirmed only by the owner's yes", () => {
     expect(errors(auditEventLog(N.events), "R1")[0]!.message).toMatch(/no message\.received/);
   });
 
+  it("flags a yes about another booking, and one yes confirming two bookings", () => {
+    const L = logBuilder();
+    L.add("consent.recorded", "voice", { business_id: BIZ, consent_id: "cns" });
+    textBooking(L, { booking: "b1", msg: "m1" });
+    L.add("booking.pending", "agent", { booking_id: "b2", business_id: BIZ });
+    L.add("booking.confirmed", "owner", { booking_id: "b2", business_id: BIZ }, { from: "pending", to: "confirmed", evidence: { kind: "text", messageId: "m1" } });
+    const msgs = errors(auditEventLog(L.events), "R1").map((v) => v.message);
+    expect(msgs).toEqual([expect.stringMatching(/reply about booking/), expect.stringMatching(/one yes confirms one booking/)]);
+  });
+
   it("flags a classification that arrives only after the confirmation", () => {
     const L = logBuilder();
     L.add("consent.recorded", "voice", { business_id: BIZ, consent_id: "cns" });
@@ -251,6 +261,16 @@ describe("R2: the disclosure comes first", () => {
 
   it("is an error when the call was marked disclosure_verified anyway", () => {
     expect(errors(withTurns(skipped, ["call.disclosure_verified"]), "R2")[0]!.message).toMatch(/marked disclosure_verified/);
+  });
+
+  it("passes a first attempt clipped by crosstalk, then the full disclosure", () => {
+    const clipped = [
+      { speaker: "agent", text: "Hi, this", startMs: 0, endMs: 300 },
+      { speaker: "user", text: "Sal's Auto, hello?", startMs: 100, endMs: 900 },
+      { speaker: "agent", text: DISCLOSURE, startMs: 1000, endMs: 5000 },
+    ];
+    expect(withTurns(clipped).ok).toBe(true);
+    expect(withTurns([{ speaker: "agent", text: "Hi, this", startMs: 0, endMs: 1 }, { speaker: "agent", text: "is Bob", startMs: 2, endMs: 3 }]).ok).toBe(false);
   });
 
   it("treats a transcript with no agent turn as missing", () => {
@@ -389,6 +409,29 @@ describe("R5: well-formed events and legal transitions", () => {
     L.add("booking.pending", "agent", { booking_id: "b", business_id: BIZ });
     L.add("booking.expired", "system", { booking_id: "x", business_id: BIZ });
     expect(errors(auditEventLog(L.events), "R5")).toHaveLength(2);
+  });
+
+  it("flags a hold or an agreed slot that changes a confirmed booking without a reschedule", () => {
+    const L = logBuilder();
+    callBooking(L);
+    L.add("hold.placed", "voice", { booking_id: "bkg_1", business_id: BIZ, hold_id: "h9" }, LATER);
+    L.add("booking.slot_agreed", "voice", { booking_id: "bkg_1", business_id: BIZ, hold_id: "h9" }, { ...LATER, price_cents: 1 });
+    const r = auditEventLog(L.events);
+    expect(errors(r, "R5").map((v) => v.message)).toEqual([expect.stringMatching(/hold\.placed changes the slot/), expect.stringMatching(/slot_agreed changes the slot/)]);
+
+    const M = logBuilder();
+    callBooking(M);
+    M.add("booking.rescheduled", "owner", { booking_id: "bkg_1", business_id: BIZ }, { from: "confirmed", to: "rescheduled" });
+    M.add("hold.placed", "voice", { booking_id: "bkg_1", business_id: BIZ, hold_id: "h9" }, LATER);
+    expect(auditEventLog(M.events).ok).toBe(true);
+  });
+
+  it("ignores event types it has no rule for, such as the call service's checks", () => {
+    const L = logBuilder();
+    for (const t of ["call.placing", "call.stop_requested", "call.friction_scored", "evidence.quote_verified", "routing.lookup", "booking.dispatch_failed", "booking.price_mismatch"]) {
+      L.add(t, "system", { business_id: BIZ, booking_id: "b", call_id: "c" }, {}, { reason: null, confidence: 0.4 });
+    }
+    expect(auditEventLog(L.events).violations).toEqual([]);
   });
 
   it("trusts a mid-log booking's own from when the log starts after its creation", () => {
