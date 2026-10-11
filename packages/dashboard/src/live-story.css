@@ -19,7 +19,8 @@
   --cap: clamp(40px, 4.4vw, 84px);
 }
 
-html { scroll-snap-type: y proximity; scrollbar-color: var(--line-warm) transparent; }
+/* No scroll snapping: the scroll is the story's timeline, so every position in between is a frame. */
+html { scrollbar-color: var(--line-warm) transparent; }
 body.story-page { min-height: 100dvh; }
 body[data-hydrating="true"] * { transition: none !important; animation: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -58,7 +59,7 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 .story { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 40vw); max-width: 1680px; margin: 0 auto; }
 .scenes { padding: 0 clamp(24px, 4vw, 72px) 0 clamp(28px, 7vw, 132px); }
 .scene {
-  min-height: calc(100dvh - var(--head)); scroll-margin-top: var(--head); scroll-snap-align: start;
+  min-height: calc(100dvh - var(--head)); scroll-margin-top: var(--head);
   display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: clamp(28px, 4.5vh, 48px);
   padding: 48px 0;
 }
@@ -101,17 +102,37 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 .route { display: inline-flex; margin: 18px 0 0; padding: 9px 15px; border-radius: 999px; background: var(--ink-2); color: #fbfaf6; font: 500 15px/1 var(--sans); }
 .route[hidden] { display: none; }
 
-/* Scene 4: the shop's card goes from phone-only to text-enabled, one crossfade. */
-.shop { width: min(480px, 100%); aspect-ratio: 1.85; }
-.shop-card { position: relative; height: 100%; }
+/* Scene 3: what Platypus does while the shop talks. Platypus's side, so it sits beside the phone, not on it. */
+.work { width: min(560px, 100%); padding: 22px 26px 24px; border-radius: 22px; background: var(--panel-2); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.work-head { margin: 0 0 16px; font: 500 13px var(--mono); color: var(--muted); }
+.tools { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.tool { display: flex; align-items: center; gap: 14px; font: 500 clamp(18px, 1.5vw, 22px)/1.2 var(--sans); color: var(--muted); transition: color var(--dur) var(--ease-out); }
+.tool::before {
+  content: ""; flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; box-sizing: border-box; border: 2px solid var(--line-warm);
+  transition: background-color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
+}
+.tool[data-state="ok"] { color: var(--ink); }
+.tool[data-state="ok"]::before { border-color: var(--green); background: var(--green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 12.5 4 4 8-9' fill='none' stroke='%23fbfaf6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 18px no-repeat; }
+.tool[data-state="failed"] { color: #a33a2f; }
+.tool[data-state="failed"]::before { border-color: #c4473a; background: #c4473a; }
+/* The booking as proof: its code, price and slot, then the words that confirmed it. */
+.proof { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.proof[hidden] { display: none; }
+.proof b { font: 600 clamp(16px, 1.3vw, 19px) var(--mono); color: var(--green); }
+.proof span { font: italic 400 clamp(18px, 1.5vw, 22px)/1.35 var(--serif); color: var(--ink-3); }
+.work .proof { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.proof-lead b { font-size: clamp(20px, 1.8vw, 26px); }
+
+/* Scene 4: the shop's card turns over, phone-only to text-enabled, its angle scrubbed by the scroll. */
+.shop { width: min(480px, 100%); aspect-ratio: 1.85; perspective: 1600px; }
+.shop-card { position: relative; height: 100%; transform-style: preserve-3d; }
+.shop[data-flipped="true"] .shop-card { transform: rotateY(calc(var(--k-yes, 1) * 180deg)); }
 .shop-face {
   position: absolute; inset: 0; display: flex; flex-direction: column; padding: 26px 30px 26px;
-  border-radius: 24px; transition: opacity var(--dur) var(--ease-out);
+  border-radius: 24px; -webkit-backface-visibility: hidden; backface-visibility: hidden;
 }
 .shop-front { background: var(--panel-2); border: 1px solid var(--line); box-shadow: var(--shadow); }
-.shop-back { opacity: 0; background: var(--green); color: #f4f1ea; box-shadow: 0 30px 60px -30px rgba(21, 63, 55, 0.6); }
-.shop[data-flipped="true"] .shop-front { opacity: 0; }
-.shop[data-flipped="true"] .shop-back { opacity: 1; }
+.shop-back { transform: rotateY(180deg); background: var(--green); color: #f4f1ea; box-shadow: 0 30px 60px -30px rgba(21, 63, 55, 0.6); }
 .shop p { margin: 0; }
 .shop-trade { font: 500 13px var(--mono); letter-spacing: 0.04em; color: var(--muted); }
 .shop-back .shop-trade { color: var(--mint); }
@@ -134,6 +155,8 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 .led-y { position: relative; flex-shrink: 0; display: grid; place-items: center; width: 76px; height: 76px; border-radius: 24px; border: 1.5px dashed var(--line-warm); color: var(--green); }
 .led-y b { font: 400 38px/1 var(--serif); }
 .led-real { background: var(--green); border: 1.5px solid var(--green); color: #f4f1ea; }
+/* Each Y lands in turn as the scroll arrives at the payoff. */
+.led-y { --r: clamp(0, calc(var(--k-payoff, 1) * 7 - var(--j, 1)), 1); opacity: var(--r); transform: translateY(calc((1 - var(--r)) * 14px)); }
 .led-real span { position: absolute; top: calc(100% + 8px); font: 500 13px var(--mono); color: var(--muted); white-space: nowrap; }
 .payoff-note { margin-top: 18px; font: 500 15px var(--mono); color: var(--ink-3); }
 
@@ -142,7 +165,7 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
   position: sticky; top: var(--head); height: calc(100dvh - var(--head)); align-self: start;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 14px 24px;
 }
-.stage-note { margin: 0; font: 13px var(--mono); color: var(--muted); text-align: center; }
+.stage-note { margin: 0; font: 16px/1.4 var(--sans); color: var(--ink-3); text-align: center; }
 
 /* ---- The iPhone --------------------------------------------------------------------------- */
 /*
@@ -197,14 +220,9 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 .iphone[data-screen="messages"] .statusbar { color: #000; }
 .iphone[data-screen="messages"] .home-bar { background: #000; }
 
-/* Screens crossfade: no zoom, no blur. */
-.scr { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity var(--dur) var(--ease-out), visibility 0s var(--dur); }
+/* The script sets each screen's opacity from the scroll; the short transition only smooths a change mid-scene. */
+.scr { position: absolute; inset: 0; opacity: 0; transition: opacity 160ms linear; }
 .scr p { margin: 0; }
-.iphone[data-screen="lock"] .scr-lock,
-.iphone[data-screen="incoming"] .scr-incoming,
-.iphone[data-screen="call"] .scr-call,
-.iphone[data-screen="ended"] .scr-call,
-.iphone[data-screen="messages"] .scr-messages { opacity: 1; visibility: visible; transition: opacity var(--dur) var(--ease-out), visibility 0s; }
 
 .round { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; }
 .round svg { width: 34px; height: 34px; fill: #fff; }
@@ -240,18 +258,6 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 .call-said[hidden] { display: none; }
 .call-said span { display: block; font: 600 15px var(--ios-font); color: rgba(255, 255, 255, 0.55); }
 .call-said b { display: block; margin-top: 3px; font: 600 28px/1.25 var(--ios-font); color: #fff; }
-.tools-label { margin-top: 40px !important; font: 600 16px var(--ios-font); letter-spacing: 0.02em; color: rgba(255, 255, 255, 0.5); }
-.call-said:not([hidden]) + .tools-label { margin-top: 22px !important; }
-.tools { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 20px; }
-.tool { display: flex; align-items: center; gap: 14px; font: 500 24px/1.2 var(--ios-font); color: rgba(255, 255, 255, 0.3); transition: color var(--dur) var(--ease-out); }
-.tool::before {
-  content: ""; flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; box-sizing: border-box; border: 2px solid rgba(255, 255, 255, 0.22);
-  transition: background-color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
-}
-.tool[data-state="ok"] { color: #fff; }
-.tool[data-state="ok"]::before { border-color: var(--mint); background: var(--mint) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 12.5 4 4 8-9' fill='none' stroke='%230f2e28' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 21px no-repeat; }
-.tool[data-state="failed"] { color: #ff9f97; }
-.tool[data-state="failed"]::before { border-color: #ff453a; background: #ff453a; }
 .call-end { position: absolute; left: 0; right: 0; bottom: 56px; display: flex; justify-content: center; transition: opacity var(--dur) var(--ease-out); }
 .iphone[data-screen="ended"] .call-end { opacity: 0.28; }
 
@@ -268,10 +274,11 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 .im-stamp { margin: 4px 0 14px !important; text-align: center; font: 500 13px/1.35 var(--ios-font); color: var(--ios-grey); }
 .im-stamp b { display: block; font-weight: 600; }
 .bubbles { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.bubble { position: relative; max-width: 80%; padding: 10px 15px 11px; border-radius: 21px; font: 400 22px/1.3 var(--ios-font); letter-spacing: -0.2px; overflow-wrap: anywhere; animation: arrive var(--dur) var(--ease-out) both; }
+.bubble { position: relative; max-width: 80%; padding: 10px 15px 11px; border-radius: 21px; font: 400 22px/1.3 var(--ios-font); letter-spacing: -0.2px; overflow-wrap: anywhere; opacity: var(--f, 1); transform: translateY(calc((1 - var(--f, 1)) * 22px)); transform-origin: 0 100%; }
 .bubble.tail { margin-bottom: 8px; }
 .b-them { align-self: flex-start; background: var(--im-grey); color: #000; }
-.b-me { align-self: flex-end; background: var(--im-blue); color: #fff; font-size: 30px; padding: 6px 20px 8px; }
+/* The owner's Y grows into place with the scroll. */
+.b-me { align-self: flex-end; background: var(--im-blue); color: #fff; font-size: 30px; transform-origin: 100% 100%; transform: translateY(calc((1 - var(--f, 1)) * 22px)) scale(calc(0.55 + 0.45 * var(--f, 1))); padding: 6px 20px 8px; }
 .iphone[data-rail="sms"] .b-me { background: var(--sms-green); }
 .bubble.tail::before, .bubble.tail::after { content: ""; position: absolute; bottom: 0; height: 20px; }
 .b-them.tail::before { left: -7px; width: 20px; background: var(--im-grey); border-bottom-right-radius: 16px 14px; }
@@ -279,8 +286,7 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 .b-me.tail::before { right: -7px; width: 20px; background: var(--im-blue); border-bottom-left-radius: 16px 14px; }
 .iphone[data-rail="sms"] .b-me.tail::before { background: var(--sms-green); }
 .b-me.tail::after { right: -10px; width: 10px; background: #fff; border-bottom-left-radius: 10px; }
-/* A new text rises into the thread the way it does on a phone: a short lift, no bounce. */
-@keyframes arrive { from { opacity: 0; transform: translateY(6px); } }
+
 .receipt { align-self: flex-end; margin: -4px 4px 8px 0; font: 500 13px var(--ios-font); color: var(--ios-grey); list-style: none; }
 .im-compose { position: absolute; left: 0; right: 0; bottom: 0; height: 92px; display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px 0; background: #fff; }
 .im-plus { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: #ededf0; }

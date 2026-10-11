@@ -6,8 +6,8 @@ import "./live-story.css";
 import { $, el, setText } from "./dom";
 import { connectLive, CONNECTION_LABELS, requestReplay, resolveSource, type ConnectionState } from "./events";
 import { GOLDEN_PATH, planRecording, recordedAt } from "./fixture";
-import { formatClock, formatLatency, formatRail, formatTrade, SHOP_TIME_ZONE, type StreamEvent } from "./format";
-import { liveScene, pace, PAYOFF, quoteCaption, SCENES, screenAt, threadAt } from "./scenes";
+import { formatClock, formatLatency, formatMoney, formatRail, formatSlot, formatTrade, SHOP_TIME_ZONE, type StreamEvent } from "./format";
+import { darwinCaption, liveScene, pace, PAYOFF, quoteCaption, SCENES, screenAt, threadAt } from "./scenes";
 import { confirmSeconds, currentCall, evidenceMessage, initialState, reduce, reduceAll, storyBookings, VOICE_TOOLS, type AskView, type BusinessView, type DarwinView, type DashboardState, type VoiceTool } from "./state";
 import { askFacts, callElapsedMs, darwinSummary } from "./story";
 
@@ -26,7 +26,9 @@ const source = resolveSource(location.search, { PROD: import.meta.env.PROD, VITE
 const RECORDING = source.mode === "recording";
 const stillMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const body = document.body;
+// Every load opens at the top, on scene 1: never where a reload or the last visit left off.
 history.scrollRestoration = "manual";
+scrollTo(0, 0);
 
 let state: DashboardState = initialState();
 /** Every event received in live mode, so a replay can start from the ones after it. */
@@ -149,7 +151,7 @@ function readyAgent(d: DarwinView | undefined) {
 
 /** The scene's caption: fixed words, except where the events carry the exact ones. */
 function caption(scene: number): string {
-  if (scene === 1 && readyAgent(firstDarwin)) return "Darwin first. An agent is ready.";
+  if (scene === 1) return darwinCaption(firstDarwin);
   const quote = quoteCaption(shop()?.consentQuote);
   if (scene === 3 && quote) return quote;
   const { byText } = storyBookings(state);
@@ -164,13 +166,20 @@ function caption(scene: number): string {
   return SCENES[scene]!.caption;
 }
 
+/** Darwin's answer in the search card, as strong as the status and no stronger. */
+const DARWIN_RESULTS: Record<string, string> = {
+  error: "No answer from Darwin.",
+  disabled: "Darwin not consulted.",
+  no_match: "No agent can book it.",
+  needs_input: "Darwin needs more detail.",
+};
 const ROUTES: Record<string, string> = { call: "Routed to a phone call", text: "Routed to a text", darwin_act: "Routed to a Darwin agent" };
 const TOOL_LABELS: Record<VoiceTool, string> = {
   check_slot: "Checked the calendar",
   hold_slot: "Held the slot",
   create_booking: "Booked the job",
   record_consent: "Saved the yes to texts",
-  set_text_number: "Saved the best cell",
+  set_text_number: "Saved the text line",
 };
 
 // ---- Rendering the scenes ------------------------------------------------------------------------
@@ -209,7 +218,7 @@ function renderDarwin(): void {
   setText($("#darwin-latency"), d?.latencyMs ? (formatLatency(d.latencyMs) ?? "") : "");
   setText($("#darwin-query"), d?.query ?? "");
   const ready = readyAgent(d);
-  setText($("#darwin-result"), !d ? "Not searched yet." : ready ? `${ready.name ?? ready.id} can take it.` : "No agent ready to book.");
+  setText($("#darwin-result"), !d ? "Not searched yet." : ready ? `${ready.name ?? ready.id} can take it.` : (DARWIN_RESULTS[d.status] ?? "No agent ready to book."));
   setText($("#darwin-line"), d ? (darwinSummary(d) ?? "") : "");
   const first = state.bookingOrder[0] ? state.bookings[state.bookingOrder[0]] : undefined;
   const route = $("#route");
@@ -243,6 +252,21 @@ function renderPayoff(): void {
   setText($("#pay-note"), booked ? `${booked} job${booked === 1 ? "" : "s"} booked, ${calls} call${calls === 1 ? "" : "s"}` : "");
 }
 
+/** The booking itself, as proof: code, price and slot, and the words that confirmed it. */
+function renderProof(): void {
+  const { byCall, byText } = storyBookings(state);
+  const call = currentCall(state);
+  for (const [i, tool] of VOICE_TOOLS.entries()) toolNodes[i]!.dataset.state = call?.tools[tool].state ?? "pending";
+  for (const node of document.querySelectorAll<HTMLElement>("[data-proof]")) {
+    const booking = node.dataset.proof === "text" ? byText : byCall;
+    node.hidden = booking?.status !== "confirmed";
+    if (!booking || node.hidden) continue;
+    setText(node.firstElementChild!, [booking.shortCode, formatMoney(booking.priceCents), formatSlot(booking.slotStart)].filter(Boolean).join(" · "));
+    const how = `Confirmed by ${booking.route === "text" ? "text" : "call"}`;
+    setText(node.lastElementChild!, booking.evidence?.quote ? `${how}: “${booking.evidence.quote}”` : how);
+  }
+}
+
 function renderScenes(): void {
   for (const [i, node] of sceneNodes.entries()) {
     node.dataset.state = sceneState(i);
@@ -254,6 +278,7 @@ function renderScenes(): void {
   renderAsk();
   renderDarwin();
   renderShop();
+  renderProof();
   renderPayoff();
 }
 
@@ -284,7 +309,6 @@ function renderCall(scene: number, screen: string): void {
   if (!call) return;
   const elapsed = formatClock((call.durationSeconds ?? callElapsedMs(call, clockNow()) / 1000) || 0);
   setText($("#call-time"), screen === "ended" ? (call.canceled ? "Call ended early" : `Call ended · ${elapsed}`) : elapsed);
-  for (const [i, tool] of VOICE_TOOLS.entries()) toolNodes[i]!.dataset.state = call.tools[tool].state;
   const b = shop();
   const said = $("#call-said");
   said.hidden = !(scene >= 3 && b?.consentQuote);
@@ -294,8 +318,11 @@ function renderCall(scene: number, screen: string): void {
 
 const bubbleNodes = new Map<string, HTMLLIElement>();
 const receipt = el("li", "receipt");
-function renderThread(scene: number): void {
+/** The thread as of `scene`; texts that arrive with it rise in by `f`, the arrival's scroll progress. */
+function renderThread(scene: number, f: number): void {
   const messages = threadAt(state, scene);
+  // Before the text scene the thread is not on screen, so its first text rises in with the scene.
+  const before = new Set(scene > 4 ? threadAt(state, scene - 1).map((m) => m.id) : []);
   const channel = (messages[0]?.channel ?? shop()?.rail ?? "sms").toLowerCase();
   phone.dataset.rail = channel === "imessage" ? "imessage" : "sms";
   setText($("#im-service"), channel === "imessage" ? "iMessage" : channel === "whatsapp" ? "WhatsApp" : `Text Message${channel === "dial" ? " · Dial" : ""}`);
@@ -317,6 +344,7 @@ function renderThread(scene: number): void {
       list.append(node);
     }
     node.classList.toggle("tail", messages[i + 1]?.direction !== m.direction);
+    node.style.setProperty("--f", before.has(m.id) ? "1" : f.toFixed(3));
   }
   const lastReply = messages.findLast((m) => m.direction === "in");
   if (lastReply) {
@@ -336,21 +364,63 @@ function fitPhone(): void {
 }
 addEventListener("resize", fitPhone);
 
+// ---- Scroll as the story's timeline --------------------------------------------------------------------
+// The visuals are scrubbed by the scroll, frame by frame: hand scrolling and the page's own smooth
+// scroll to the next scene both play them, so nothing runs on a timer of its own.
+
+const storyEl = $(".story");
+const SCREEN_NODES: Record<string, HTMLElement> = { lock: $(".scr-lock"), incoming: $(".scr-incoming"), call: $(".scr-call"), ended: $(".scr-call"), messages: $(".scr-messages") };
+
+/** Where the scroll is in the story: 2 is scene 3 at rest, 2.5 is halfway on to scene 4. */
+function scrollStory(): number {
+  const margin = parseFloat(getComputedStyle(sceneNodes[0]!).scrollMarginTop) || 0;
+  const tops = sceneNodes.map((node) => node.getBoundingClientRect().top - margin);
+  let i = 0;
+  while (i < tops.length - 1 && tops[i + 1]! <= 0.5) i++;
+  const span = (tops[i + 1] ?? 0) - tops[i]!;
+  const at = span > 0 ? i + Math.min(1, Math.max(0, -tops[i]! / span)) : i;
+  // Reduced motion: no in-between frames, each scene's state as it lands.
+  return stillMotion.matches ? Math.round(at) : at;
+}
+
+addEventListener("scroll", schedule, { passive: true });
+
+const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
+
 function renderPhone(): void {
   // The phone never runs ahead of the story: scrolled past the live scene, it holds there.
-  const scene = Math.min(story.view, story.shown);
-  const screen = screenAt(state, scene);
+  const at = Math.min(scrollStory(), story.shown);
+  const from = Math.floor(at);
+  const f = at - from;
+  const scene = f > 0 ? from + 1 : from;
+  const leaving = screenAt(state, from);
+  const arriving = screenAt(state, scene);
+  const screen = f < 0.5 ? leaving : arriving;
   if (phone.dataset.screen !== screen) {
     phone.dataset.screen = screen;
     phone.setAttribute("aria-label", SCREEN_LABELS[screen]!);
   }
+  // The next screen comes in as the scroll moves on: a crossfade that settles from a slight zoom.
+  for (const node of new Set(Object.values(SCREEN_NODES))) {
+    const isOut = SCREEN_NODES[leaving] === node;
+    const isIn = SCREEN_NODES[arriving] === node;
+    const opacity = isOut && isIn ? 1 : isIn ? f : isOut ? 1 - f : 0;
+    node.style.opacity = opacity.toFixed(3);
+    node.style.transform = isIn && !isOut ? `scale(${(1.05 - 0.05 * f).toFixed(4)})` : "";
+  }
+  // Scrubbed by the same progress: the shop's card turns over into the yes, the Ys line up in the
+  // payoff, and the phone turns from a three-quarter stance to face the reader as the texts begin.
+  storyEl.style.setProperty("--k-yes", clamp01(at - 2).toFixed(3));
+  storyEl.style.setProperty("--k-payoff", clamp01(at - (PAYOFF - 1)).toFixed(3));
+  fit.style.setProperty("--ry", `${(-13 + 11 * clamp01(at - 3)).toFixed(2)}deg`);
+  fit.style.setProperty("--rx", `${(3 - 2 * clamp01(at - 3)).toFixed(2)}deg`);
   const now = Date.now();
   const clock = shopTime(now, { hour: "numeric", minute: "2-digit" }).replace(/ [AP]M$/, "");
   setText($("#sb-time"), clock);
   setText($("#lock-time"), clock);
   setText($("#lock-date"), shopTime(now, { weekday: "long", month: "long", day: "numeric" }));
-  if (screen === "call" || screen === "ended") renderCall(scene, screen);
-  renderThread(scene);
+  if ([leaving, arriving].some((s) => s === "call" || s === "ended")) renderCall(scene, arriving === "ended" ? arriving : leaving);
+  renderThread(scene, f > 0 ? f : 1);
 }
 
 // ---- Header, render loop ------------------------------------------------------------------------------
