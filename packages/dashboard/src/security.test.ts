@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
  */
 describe("dashboard sources", () => {
   const dir = import.meta.dirname;
-  const sources = readdirSync(dir).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"));
+  const sources = readdirSync(dir, { recursive: true, encoding: "utf8" }).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"));
 
   it("never parse event text as HTML", () => {
     expect(sources.length).toBeGreaterThan(3);
