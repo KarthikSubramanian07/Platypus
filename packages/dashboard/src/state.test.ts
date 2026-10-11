@@ -45,8 +45,8 @@ describe("reduce over the golden path", () => {
     expect(others.every((b) => b.channel === "phone_only" && b.rail === undefined && b.consentQuote === undefined)).toBe(true);
   });
 
-  it("shows Darwin exactly as recorded: an HTTP 500 error, no agents, no invented reason", () => {
-    expect(state.darwin).toMatchObject({ status: "error", httpStatus: 500, provenance: "recorded", recordedAt: "2026-10-11T18:11:07Z", latencyMs: 1050, cached: false, agents: [] });
+  it("shows Darwin exactly as recorded: a no_match, no agents, no invented reason", () => {
+    expect(state.darwin).toMatchObject({ status: "no_match", httpStatus: 200, provenance: "recorded", recordedAt: "2026-10-11T21:33:00Z", latencyMs: 1235, cached: false, agents: [] });
     expect(state.darwin?.noMatchReason).toBeUndefined();
     expect(state.darwin?.question).toBeUndefined();
   });

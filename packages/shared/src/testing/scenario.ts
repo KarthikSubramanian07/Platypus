@@ -59,12 +59,12 @@ export async function runGoldenPath(options: GoldenPathOptions): Promise<GoldenP
     reason: "Get me an oil change tomorrow afternoon, under $120, near 1025 Sansome.",
   }, emitOpts);
 
-  // 2. Darwin. The fixture carries the real recorded outcome of this query (HTTP 500 on 2026-10-11), never a simulated no_match.
-  const darwin = loadDarwinRecording("error_500");
+  // 2. Darwin. The fixture carries the real recorded answer to this query (no_match on 2026-10-11), never a simulated one.
+  const darwin = loadDarwinRecording("no_match");
   emit(db, {
     type: "darwin.searched",
     actor: "system",
-    payload: { status: "error", http_status: darwin.status, provenance: "recorded", recorded_at: darwin._provenance.recorded_at, latency_ms: darwin._provenance.latency_ms, query: (darwin as unknown as { request: { query: string } }).request.query, agents: [] },
+    payload: { status: "no_match", http_status: darwin.status, provenance: "recorded", recorded_at: darwin._provenance.recorded_at, latency_ms: darwin._provenance.latency_ms, query: (darwin as unknown as { request: { query: string } }).request.query, agents: [] },
     reason: "Darwin Search v3 consulted before any call",
   }, emitOpts);
 
