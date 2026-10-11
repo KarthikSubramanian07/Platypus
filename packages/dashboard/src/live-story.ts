@@ -6,25 +6,29 @@ import "./live-story.css";
 import { $, el, setText } from "./dom";
 import { connectLive, CONNECTION_LABELS, requestReplay, resolveSource, type ConnectionState } from "./events";
 import { GOLDEN_PATH, planRecording, recordedAt } from "./fixture";
-import { formatClock, formatLatency, formatRail, formatTrade, SHOP_TIME_ZONE, type StreamEvent } from "./format";
-import { liveScene, pace, PAYOFF, SCENES, screenAt, threadAt } from "./scenes";
+import { formatClock, formatLatency, formatMoney, formatRail, formatSlot, formatTrade, SHOP_TIME_ZONE, type StreamEvent } from "./format";
+import { darwinCaption, liveScene, pace, PAYOFF, quoteCaption, SCENES, screenAt, threadAt } from "./scenes";
 import { confirmSeconds, currentCall, evidenceMessage, initialState, reduce, reduceAll, storyBookings, VOICE_TOOLS, type AskView, type BusinessView, type DarwinView, type DashboardState, type VoiceTool } from "./state";
 import { askFacts, callElapsedMs, darwinSummary } from "./story";
 
 /**
- * /live-story: the golden path as seven scenes, moved along by the event stream. When an
- * event moves the story forward the page scrolls to that scene by itself; the shop's line is
- * pinned beside the scenes and shows whichever one is in view. Scrolling by hand (wheel,
- * touch, keys, the scene list) pauses that until the next event moves the story, or until
- * "Follow live". Facts come from DashboardState, the same reducer /live uses, and event
- * text reaches the DOM through textContent only.
+ * /live-story: the golden path as seven scenes, moved along by the event stream. Every page
+ * load starts at scene 1 and plays forward: the static build plays the recorded run, a live
+ * page plays the backlog it connected to the same way, then carries on with live events.
+ * When the story moves on the page scrolls to that scene by itself; the shop's line is pinned
+ * beside the scenes (above them on narrow screens) and shows whichever one is in view.
+ * Scrolling by hand (wheel, touch, keys, the scene list) pauses that until the next event
+ * moves the story, or until "Follow live". Facts come from DashboardState, the same reducer
+ * /live uses, and event text reaches the DOM through textContent only.
  */
 
 const source = resolveSource(location.search, { PROD: import.meta.env.PROD, VITE_EVENTS_URL: import.meta.env.VITE_EVENTS_URL as string | undefined });
 const RECORDING = source.mode === "recording";
 const stillMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const body = document.body;
+// Every load opens at the top, on scene 1: never where a reload or the last visit left off.
 history.scrollRestoration = "manual";
+scrollTo(0, 0);
 
 let state: DashboardState = initialState();
 /** Every event received in live mode, so a replay can start from the ones after it. */
@@ -32,8 +36,11 @@ const received: StreamEvent[] = [];
 /** The first ask and Darwin's answer to it: the second request must not rewrite scenes 1 and 2. */
 let firstAsk: AskView | undefined;
 let firstDarwin: DarwinView | undefined;
-/** True while a live page loads the history it missed: the story jumps to where it is, no pacing. */
-let catchingUp = !RECORDING;
+/**
+ * Live events waiting their turn. A live page holds the backlog until the server says it is
+ * all sent, plays it from scene 1, and holds anything newer until that playback ends.
+ */
+let held: StreamEvent[] | undefined = RECORDING ? undefined : [];
 
 /** shown: the scene the story is on. view: the scene across the middle of the viewport. */
 const story = { shown: 0, shownAt: performance.now(), view: 0, following: true, timer: undefined as ReturnType<typeof setTimeout> | undefined };
@@ -64,13 +71,13 @@ function advance(): void {
   if (story.timer) clearTimeout(story.timer);
   story.timer = undefined;
   const target = liveScene(state);
-  let next = catchingUp ? { scene: target } : pace(story.shown, target, performance.now() - story.shownAt);
+  let next = pace(story.shown, target, performance.now() - story.shownAt);
   if (next.scene !== story.shown) {
     story.shown = next.scene;
     story.shownAt = performance.now();
     setText($("#announce"), caption(story.shown));
-    if (story.following && !catchingUp) goTo(story.shown);
-    if (!catchingUp) next = pace(story.shown, target, 0);
+    if (story.following) goTo(story.shown);
+    next = pace(story.shown, target, 0);
   }
   if (next.waitMs !== undefined) story.timer = setTimeout(advance, next.waitMs);
   schedule();
@@ -90,13 +97,15 @@ const stepNodes = SCENES.map((scene, i) => {
   return li;
 });
 
-// The scene across the middle of the viewport drives the phone and the scene list.
+// The scene under a line 70% down the viewport drives the phone and the scene list. On narrow
+// screens the pinned phone covers the top half, so a mid-viewport line would read the scene
+// before the one under the caption and the phone would lag a scene behind.
 const watcher = new IntersectionObserver(
   (entries) => {
     for (const entry of entries) if (entry.isIntersecting) story.view = Number((entry.target as HTMLElement).dataset.scene);
     schedule();
   },
-  { rootMargin: "-50% 0px -50% 0px" },
+  { rootMargin: "-70% 0px -30% 0px" },
 );
 for (const node of sceneNodes) watcher.observe(node);
 
@@ -142,9 +151,9 @@ function readyAgent(d: DarwinView | undefined) {
 
 /** The scene's caption: fixed words, except where the events carry the exact ones. */
 function caption(scene: number): string {
-  if (scene === 1 && readyAgent(firstDarwin)) return "Darwin first. An agent is ready.";
-  const quote = shop()?.consentQuote;
-  if (scene === 3 && quote) return `“${quote}”`;
+  if (scene === 1) return darwinCaption(firstDarwin);
+  const quote = quoteCaption(shop()?.consentQuote);
+  if (scene === 3 && quote) return quote;
   const { byText } = storyBookings(state);
   const reply = byText ? evidenceMessage(state, byText)?.body : undefined;
   if (scene === 5 && reply && reply.length <= 12) {
@@ -157,13 +166,20 @@ function caption(scene: number): string {
   return SCENES[scene]!.caption;
 }
 
+/** Darwin's answer in the search card, as strong as the status and no stronger. */
+const DARWIN_RESULTS: Record<string, string> = {
+  error: "No answer from Darwin.",
+  disabled: "Darwin not consulted.",
+  no_match: "No agent can book it.",
+  needs_input: "Darwin needs more detail.",
+};
 const ROUTES: Record<string, string> = { call: "Routed to a phone call", text: "Routed to a text", darwin_act: "Routed to a Darwin agent" };
 const TOOL_LABELS: Record<VoiceTool, string> = {
   check_slot: "Checked the calendar",
   hold_slot: "Held the slot",
   create_booking: "Booked the job",
   record_consent: "Saved the yes to texts",
-  set_text_number: "Saved the best cell",
+  set_text_number: "Saved the text line",
 };
 
 // ---- Rendering the scenes ------------------------------------------------------------------------
@@ -202,7 +218,7 @@ function renderDarwin(): void {
   setText($("#darwin-latency"), d?.latencyMs ? (formatLatency(d.latencyMs) ?? "") : "");
   setText($("#darwin-query"), d?.query ?? "");
   const ready = readyAgent(d);
-  setText($("#darwin-result"), !d ? "Not searched yet." : ready ? `${ready.name ?? ready.id} can take it.` : "No agent ready to book.");
+  setText($("#darwin-result"), !d ? "Not searched yet." : ready ? `${ready.name ?? ready.id} can take it.` : (DARWIN_RESULTS[d.status] ?? "No agent ready to book."));
   setText($("#darwin-line"), d ? (darwinSummary(d) ?? "") : "");
   const first = state.bookingOrder[0] ? state.bookings[state.bookingOrder[0]] : undefined;
   const route = $("#route");
@@ -236,6 +252,21 @@ function renderPayoff(): void {
   setText($("#pay-note"), booked ? `${booked} job${booked === 1 ? "" : "s"} booked, ${calls} call${calls === 1 ? "" : "s"}` : "");
 }
 
+/** The booking itself, as proof: code, price and slot, and the words that confirmed it. */
+function renderProof(): void {
+  const { byCall, byText } = storyBookings(state);
+  const call = currentCall(state);
+  for (const [i, tool] of VOICE_TOOLS.entries()) toolNodes[i]!.dataset.state = call?.tools[tool].state ?? "pending";
+  for (const node of document.querySelectorAll<HTMLElement>("[data-proof]")) {
+    const booking = node.dataset.proof === "text" ? byText : byCall;
+    node.hidden = booking?.status !== "confirmed";
+    if (!booking || node.hidden) continue;
+    setText(node.firstElementChild!, [booking.shortCode, formatMoney(booking.priceCents), formatSlot(booking.slotStart)].filter(Boolean).join(" · "));
+    const how = `Confirmed by ${booking.route === "text" ? "text" : "call"}`;
+    setText(node.lastElementChild!, booking.evidence?.quote ? `${how}: “${booking.evidence.quote}”` : how);
+  }
+}
+
 function renderScenes(): void {
   for (const [i, node] of sceneNodes.entries()) {
     node.dataset.state = sceneState(i);
@@ -247,6 +278,7 @@ function renderScenes(): void {
   renderAsk();
   renderDarwin();
   renderShop();
+  renderProof();
   renderPayoff();
 }
 
@@ -261,8 +293,6 @@ const SCREEN_LABELS: Record<string, string> = {
   ended: "The shop's line after the call",
   messages: "The shop's line: the text thread with Platypus",
 };
-/** Scenes whose own visual leads; the phone steps back for them. */
-const ASIDE = new Set([0, 1, 3, PAYOFF]);
 
 const toolNodes = VOICE_TOOLS.map((tool) => {
   const li = el("li", "tool", TOOL_LABELS[tool]);
@@ -279,7 +309,6 @@ function renderCall(scene: number, screen: string): void {
   if (!call) return;
   const elapsed = formatClock((call.durationSeconds ?? callElapsedMs(call, clockNow()) / 1000) || 0);
   setText($("#call-time"), screen === "ended" ? (call.canceled ? "Call ended early" : `Call ended · ${elapsed}`) : elapsed);
-  for (const [i, tool] of VOICE_TOOLS.entries()) toolNodes[i]!.dataset.state = call.tools[tool].state;
   const b = shop();
   const said = $("#call-said");
   said.hidden = !(scene >= 3 && b?.consentQuote);
@@ -289,8 +318,11 @@ function renderCall(scene: number, screen: string): void {
 
 const bubbleNodes = new Map<string, HTMLLIElement>();
 const receipt = el("li", "receipt");
-function renderThread(scene: number): void {
+/** The thread as of `scene`; texts that arrive with it rise in by `f`, the arrival's scroll progress. */
+function renderThread(scene: number, f: number): void {
   const messages = threadAt(state, scene);
+  // Before the text scene the thread is not on screen, so its first text rises in with the scene.
+  const before = new Set(scene > 4 ? threadAt(state, scene - 1).map((m) => m.id) : []);
   const channel = (messages[0]?.channel ?? shop()?.rail ?? "sms").toLowerCase();
   phone.dataset.rail = channel === "imessage" ? "imessage" : "sms";
   setText($("#im-service"), channel === "imessage" ? "iMessage" : channel === "whatsapp" ? "WhatsApp" : `Text Message${channel === "dial" ? " · Dial" : ""}`);
@@ -312,6 +344,7 @@ function renderThread(scene: number): void {
       list.append(node);
     }
     node.classList.toggle("tail", messages[i + 1]?.direction !== m.direction);
+    node.style.setProperty("--f", before.has(m.id) ? "1" : f.toFixed(3));
   }
   const lastReply = messages.findLast((m) => m.direction === "in");
   if (lastReply) {
@@ -331,22 +364,63 @@ function fitPhone(): void {
 }
 addEventListener("resize", fitPhone);
 
+// ---- Scroll as the story's timeline --------------------------------------------------------------------
+// The visuals are scrubbed by the scroll, frame by frame: hand scrolling and the page's own smooth
+// scroll to the next scene both play them, so nothing runs on a timer of its own.
+
+const storyEl = $(".story");
+const SCREEN_NODES: Record<string, HTMLElement> = { lock: $(".scr-lock"), incoming: $(".scr-incoming"), call: $(".scr-call"), ended: $(".scr-call"), messages: $(".scr-messages") };
+
+/** Where the scroll is in the story: 2 is scene 3 at rest, 2.5 is halfway on to scene 4. */
+function scrollStory(): number {
+  const margin = parseFloat(getComputedStyle(sceneNodes[0]!).scrollMarginTop) || 0;
+  const tops = sceneNodes.map((node) => node.getBoundingClientRect().top - margin);
+  let i = 0;
+  while (i < tops.length - 1 && tops[i + 1]! <= 0.5) i++;
+  const span = (tops[i + 1] ?? 0) - tops[i]!;
+  const at = span > 0 ? i + Math.min(1, Math.max(0, -tops[i]! / span)) : i;
+  // Reduced motion: no in-between frames, each scene's state as it lands.
+  return stillMotion.matches ? Math.round(at) : at;
+}
+
+addEventListener("scroll", schedule, { passive: true });
+
+const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
+
 function renderPhone(): void {
   // The phone never runs ahead of the story: scrolled past the live scene, it holds there.
-  const scene = Math.min(story.view, story.shown);
-  const screen = screenAt(state, scene);
+  const at = Math.min(scrollStory(), story.shown);
+  const from = Math.floor(at);
+  const f = at - from;
+  const scene = f > 0 ? from + 1 : from;
+  const leaving = screenAt(state, from);
+  const arriving = screenAt(state, scene);
+  const screen = f < 0.5 ? leaving : arriving;
   if (phone.dataset.screen !== screen) {
     phone.dataset.screen = screen;
     phone.setAttribute("aria-label", SCREEN_LABELS[screen]!);
   }
-  stage.dataset.focus = ASIDE.has(story.view) ? "aside" : "phone";
+  // The next screen comes in as the scroll moves on: a crossfade that settles from a slight zoom.
+  for (const node of new Set(Object.values(SCREEN_NODES))) {
+    const isOut = SCREEN_NODES[leaving] === node;
+    const isIn = SCREEN_NODES[arriving] === node;
+    const opacity = isOut && isIn ? 1 : isIn ? f : isOut ? 1 - f : 0;
+    node.style.opacity = opacity.toFixed(3);
+    node.style.transform = isIn && !isOut ? `scale(${(1.05 - 0.05 * f).toFixed(4)})` : "";
+  }
+  // Scrubbed by the same progress: the shop's card turns over into the yes, the Ys line up in the
+  // payoff, and the phone turns from a three-quarter stance to face the reader as the texts begin.
+  storyEl.style.setProperty("--k-yes", clamp01(at - 2).toFixed(3));
+  storyEl.style.setProperty("--k-payoff", clamp01(at - (PAYOFF - 1)).toFixed(3));
+  fit.style.setProperty("--ry", `${(-13 + 11 * clamp01(at - 3)).toFixed(2)}deg`);
+  fit.style.setProperty("--rx", `${(3 - 2 * clamp01(at - 3)).toFixed(2)}deg`);
   const now = Date.now();
   const clock = shopTime(now, { hour: "numeric", minute: "2-digit" }).replace(/ [AP]M$/, "");
   setText($("#sb-time"), clock);
   setText($("#lock-time"), clock);
   setText($("#lock-date"), shopTime(now, { weekday: "long", month: "long", day: "numeric" }));
-  if (screen === "call" || screen === "ended") renderCall(scene, screen);
-  renderThread(scene);
+  if ([leaving, arriving].some((s) => s === "call" || s === "ended")) renderCall(scene, arriving === "ended" ? arriving : leaving);
+  renderThread(scene, f > 0 ? f : 1);
 }
 
 // ---- Header, render loop ------------------------------------------------------------------------------
@@ -384,6 +458,12 @@ function schedule(): void {
 // The phone's clock and the call timer move between events.
 setInterval(schedule, 500);
 
+/** A live event: held while the backlog plays, dispatched once the story has caught up. */
+function arrive(event: StreamEvent): void {
+  if (held) held.push(event);
+  else dispatch(event);
+}
+
 function dispatch(event: StreamEvent): void {
   if (!RECORDING) received.push(event);
   const next = reduce(state, event);
@@ -400,7 +480,7 @@ function dispatch(event: StreamEvent): void {
   const moved = liveScene(state) > before || (waiting && state.reached.length > 0);
   if (moved && !story.following) {
     story.following = true;
-    if (!catchingUp) goTo(story.shown);
+    goTo(story.shown);
   }
   advance();
 }
@@ -429,32 +509,42 @@ function resetTo(next: DashboardState): void {
 // ---- The recorded run (static deploys) --------------------------------------------------------------------
 
 /** About 1.6x real time; the call plays at exactly this speed so its timer reads true. */
-const PLAN = planRecording(GOLDEN_PATH, { speed: 1.6, maxGapMs: 2_400 });
-const run = { tag: 0, epoch: 0, start: 0, autoplay: undefined as ReturnType<typeof setTimeout> | undefined };
+const plan = (events: readonly StreamEvent[]) => planRecording(events, { speed: 1.6, maxGapMs: 2_400 });
+const run = { tag: 0, plan: plan([]), epoch: 0, start: 0, playing: false, autoplay: undefined as ReturnType<typeof setTimeout> | undefined };
 
-/** The call timer's clock: the recording's own in recorded mode, the wall's when live. */
+/** The call timer's clock: the playback's own while a run plays (and after a recording), the wall's when live. */
 function clockNow(): number {
-  return RECORDING && run.start ? run.epoch + recordedAt(PLAN, performance.now() - run.start) : Date.now();
+  return (RECORDING || run.playing) && run.start ? run.epoch + recordedAt(run.plan, performance.now() - run.start) : Date.now();
 }
 
-function playRecording(): void {
+/**
+ * Plays `events` from scene 1 at the recording's pace. The recording is re-stamped to now so
+ * it reads as today's run; a live backlog keeps its own times. `done` runs after the last one.
+ */
+function play(events: readonly StreamEvent[], restamp: boolean, done?: () => void): void {
   clearTimeout(run.autoplay);
   const tag = ++run.tag;
   resetTo(initialState());
-  run.epoch = Date.now();
+  run.plan = plan(events);
+  run.epoch = restamp ? Date.now() : Date.parse(events[0]?.created_at ?? "") || Date.now();
   run.start = performance.now();
+  run.playing = true;
   let i = 0;
   const step = () => {
     if (tag !== run.tag) return;
     const t = performance.now() - run.start;
-    for (; i < PLAN.events.length && PLAN.events[i]!.wallMs <= t; i++) {
-      const { event, recordedMs } = PLAN.events[i]!;
-      dispatch({ ...event, id: `${event.id}-r${tag}`, created_at: new Date(run.epoch + recordedMs).toISOString(), payload: { ...event.payload, replayed: true } });
+    for (; i < run.plan.events.length && run.plan.events[i]!.wallMs <= t; i++) {
+      const { event, recordedMs } = run.plan.events[i]!;
+      dispatch(restamp ? { ...event, id: `${event.id}-r${tag}`, created_at: new Date(run.epoch + recordedMs).toISOString(), payload: { ...event.payload, replayed: true } } : event);
     }
-    if (i < PLAN.events.length) setTimeout(step, PLAN.events[i]!.wallMs - t);
+    if (i < run.plan.events.length) return void setTimeout(step, run.plan.events[i]!.wallMs - t);
+    run.playing = false;
+    done?.();
   };
   step();
 }
+
+const playRecording = () => play(GOLDEN_PATH, true);
 
 // ---- Replay and the data source ------------------------------------------------------------------------------
 
@@ -463,6 +553,7 @@ replayButton.addEventListener("click", async () => {
   replayButton.disabled = true;
   try {
     if (RECORDING) playRecording();
+    else if (held) say("Still playing the run so far.");
     else {
       // The server re-emits the golden-path fixture; the story restarts from the first of those events.
       const cutoff = received.length;
@@ -494,19 +585,27 @@ if (RECORDING) {
     document.addEventListener("visibilitychange", onVisible);
   }
 } else {
-  // Until the server says the history is replayed, the story jumps straight to where the events are.
+  // Once the server says the backlog is sent, the story plays it from scene 1, then goes live.
+  let settled = false;
+  const goLive = () => {
+    const rest = held ?? [];
+    held = undefined;
+    for (const event of rest) dispatch(event);
+  };
   const settle = () => {
-    if (!catchingUp) return;
-    catchingUp = false;
-    if (story.following) goTo(story.shown, true);
-    requestAnimationFrame(() => requestAnimationFrame(() => (body.dataset.hydrating = "false")));
-    advance();
+    if (settled) return;
+    settled = true;
+    const backlog = held ?? [];
+    held = [];
+    body.dataset.hydrating = "false";
+    if (backlog.length) play(backlog, false, goLive);
+    else goLive();
   };
   const fallback = setTimeout(settle, 2_500);
   connectLive(
     source.base,
     {
-      onEvent: dispatch,
+      onEvent: arrive,
       onState: setConnection,
       onReady: () => {
         clearTimeout(fallback);

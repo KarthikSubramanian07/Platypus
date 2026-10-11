@@ -1,5 +1,5 @@
 import type { StepKey } from "./format";
-import { currentCall, storyBookings, type DashboardState, type MessageView } from "./state";
+import { currentCall, storyBookings, type DarwinView, type DashboardState, type MessageView } from "./state";
 import type { PhoneScreen } from "./story";
 
 /**
@@ -8,7 +8,7 @@ import type { PhoneScreen } from "./story";
  */
 export const SCENES = [
   { key: "ask", label: "Ask", caption: "A customer's agent asks." },
-  { key: "darwin", label: "Darwin", caption: "Darwin first. No agent ready." },
+  { key: "darwin", label: "Darwin", caption: "Darwin first." },
   { key: "call", label: "Call", caption: "So Platypus calls the shop." },
   { key: "yes", label: "Yes", caption: "“Yeah, text me.”" },
   { key: "text", label: "Text", caption: "The next job? Just a text." },
@@ -17,6 +17,34 @@ export const SCENES = [
 ] as const;
 
 export const PAYOFF = SCENES.length - 1;
+
+/** Scene 2's caption, never stronger than Darwin's actual answer. */
+export function darwinCaption(d: DarwinView | undefined): string {
+  if (!d) return SCENES[1].caption;
+  switch (d.status) {
+    case "error":
+      return "Darwin didn't answer. We call.";
+    case "disabled":
+      return "Darwin not asked. We call.";
+    case "no_match":
+      return "Darwin: no agent can book it.";
+    case "needs_input":
+      return "Darwin asked for more detail.";
+    default:
+      return d.agents.some((a) => a.canStartThread || a.id === d.candidateAgentId) ? "Darwin first. An agent is ready." : "Darwin: no agent ready.";
+  }
+}
+
+/** A caption is read from across a room, on a projector: six words at most. */
+export const MAX_CAPTION_WORDS = 6;
+
+export const wordCount = (text: string) => text.split(/\s+/).filter(Boolean).length;
+
+/** The shop's own yes as the "Yes" caption when it fits; a longer one stays in the call screen. */
+export function quoteCaption(quote: string | undefined): string | undefined {
+  const said = quote?.trim();
+  return said && wordCount(said) <= MAX_CAPTION_WORDS ? `“${said}”` : undefined;
+}
 
 const SCENE_OF: Record<StepKey, number> = { ask: 0, darwin: 1, call: 2, tools: 2, consent: 3, text: 4, confirmed: 5 };
 
