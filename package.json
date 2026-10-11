@@ -22,6 +22,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "vitest run --project voice src/phone-side.test.ts && vitest run --passWithNoTests .e2e.test.ts",
+    "test:eval": "vitest run --project text src/evals.test.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "demo:reset": "tsx scripts/demo-reset.ts",
     "tunnel": "tsx scripts/tunnel.ts",
@@ -29,7 +31,9 @@
     "dial:mcp-status": "tsx packages/voice/scripts/mcp-status.ts",
     "live": "tsx scripts/live.ts",
     "ci:hygiene": "tsx scripts/ci/repo-hygiene.ts",
-    "ci:coverage-summary": "tsx scripts/ci/coverage-summary.ts"
+    "ci:coverage-summary": "tsx scripts/ci/coverage-summary.ts",
+    "ci:golden-path": "tsx scripts/ci/validate-golden-path.ts",
+    "ci:eval-summary": "tsx scripts/ci/eval-summary.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
