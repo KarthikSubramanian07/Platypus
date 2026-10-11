@@ -20,7 +20,8 @@ export type SearchContextItem = z.infer<typeof SearchContextItem>;
 
 export const SearchRequest = z.object({
   query: z.string().min(1).max(20000),
-  previousResponseId: z.string().regex(/^sresp_[a-f0-9-]{36}$/).optional(),
+  /** Refines an earlier search: the latest responseId of that search (see DarwinLookup refinement). */
+  previousResponseId: z.string().regex(/^sresp_\S+$/).optional(),
   maxResults: z.number().int().min(1).max(20).optional(),
   context: z.array(SearchContextItem).max(10).optional(),
 });
@@ -46,7 +47,8 @@ export const SearchAgent = z.looseObject({
   providerCheck: z.enum(PROVIDER_CHECKS),
   reasons: z.array(z.string()),
   uncertainties: z.array(z.string()),
-  requiredSetup: z.record(z.string(), z.unknown()).nullable(),
+  /** Null or absent means no requirement was declared, which is unknown, not "none needed". */
+  requiredSetup: z.record(z.string(), z.unknown()).nullable().optional(),
   connectionMethods: z.array(ConnectionMethod),
   connectionPrompt: z.string(),
 });

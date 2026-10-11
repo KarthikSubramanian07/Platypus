@@ -4,7 +4,7 @@ import type { OwnerChannels } from "@platypus/shared/contracts";
 import { createDarwin, type Darwin } from "@platypus/shared/darwin";
 import { getBusinessBySlug, getRow, openDb, seed, selectRows, updateRow, type Business, type Db } from "@platypus/shared/db";
 import { EventBus, listEvents } from "@platypus/shared/events";
-import { ScriptedDarwin, searchWith, startableAgent } from "@platypus/shared/testing";
+import { DARWIN_FIXTURES, ScriptedDarwin, searchWith, startableAgent } from "@platypus/shared/testing";
 import { createGatewayTools, DISPATCH_FAILED_REASON, GatewayError, MAX_OPEN_PER_BUSINESS, RATE_LIMIT, STATE_TTL_MS, type GatewayDeps } from "./tools";
 
 // Sunday 7pm in San Francisco; the window is Monday noon to 5pm Pacific.
@@ -69,11 +69,36 @@ describe("search_providers", () => {
     expect(out.providers.map((p) => p.display_name)).toEqual(["Sal's Auto"]);
     expect(out.providers[0]).toMatchObject({ next_step: "call", channel_state: "phone_only", signals: { source: "local" } });
     expect(out.darwin.status).toBe("completed");
+    expect(out.darwin.agents.length).toBeGreaterThan(0);
+    expect(out.darwin.agents.every((a) => a.label === "listed, not ready" && a.setup === "unknown" && a.reasons.length > 0)).toBe(true);
     expect(types()).toEqual(["agent.tool_called", "darwin.searched", "signals.computed"]);
     const [called, searched, signals] = listEvents(db).filter((e) => e.type !== "business.listed");
     expect(called!.payload).toMatchObject({ tool: "search_providers", agent_id: "claude-desktop", service: "oil change", budget_cents: 12000 });
-    expect(searched!.payload).toMatchObject({ status: "completed", outcome: "listed_only", provenance: "recorded" });
+    expect(searched!.payload).toMatchObject({ status: "completed", outcome: "listed_only", provenance: "recorded", search_id: expect.stringMatching(/^srch_/), response_id: expect.stringMatching(/^sresp_/) });
     expect(signals!.payload).toEqual({ source: "local", signals: {}, note: "no history yet" });
+  });
+
+  it("answers Darwin's question by refining the same search when the agent adds detail", async () => {
+    const asking = { ...DARWIN_FIXTURES.needsInput, searchToken: "tok-anon" };
+    const answered = { ...DARWIN_FIXTURES.hairSalon, searchId: asking.searchId, responseId: "sresp_00000000-0000-4000-8000-000000000002", previousResponseId: asking.responseId };
+    const darwin = new ScriptedDarwin({ script: [asking, answered] });
+    const { tools, calls } = gateway({ darwin });
+
+    const first = await tools.search_providers({ service: "oil change", location: "San Francisco" }, agent);
+    expect(first.darwin).toMatchObject({ status: "needs_input", question: asking.response.question });
+    expect(first.darwin.note).toMatch(/search_providers again/);
+
+    const second = await tools.search_providers({ service: "oil change for a 2019 Honda Civic", location: "San Francisco" }, agent);
+    expect(darwin.searches[1]).toMatchObject({ query: "auto repair shop: oil change for a 2019 Honda Civic", previousResponseId: asking.responseId });
+    expect(darwin.searchOptions[1]).toEqual({ searchToken: "tok-anon" });
+    expect(second.darwin.status).toBe("completed");
+    expect(listEvents(db, { type: "darwin.searched" }).at(-1)!.payload).toMatchObject({ response_id: answered.responseId, previous_response_id: asking.responseId });
+    expect(JSON.stringify(listEvents(db))).not.toContain("tok-anon");
+
+    // request_booking reuses the refined answer: no extra Darwin round trip before the phone rings.
+    expect(await tools.request_booking(request(), agent)).toMatchObject({ route: "call", reasons: ["Darwin returned no ready agent", "no text consent on record"] });
+    expect(darwin.searches).toHaveLength(2);
+    expect(calls).toHaveLength(1);
   });
 
   it("reports Darwin as disabled, never simulated, when it is switched off", async () => {

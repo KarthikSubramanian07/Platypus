@@ -21,6 +21,17 @@ describe("decideBookingRoute", () => {
     });
   });
 
+  it("never uses Darwin Act when the ready agent's setup is unknown, and says why", async () => {
+    const darwin = await lookup(new ScriptedDarwin({ script: [searchWith([{ ...startableAgent(), requiredSetup: null }])] }));
+    expect(decideBookingRoute({ business: phoneOnly, darwin, canAct: true })).toEqual({
+      route: "call",
+      reasons: ["Darwin has a ready agent, but its setup requirements are unknown", "no text consent on record"],
+    });
+    // Even a lookup that claims "startable" is re-checked against Darwin's own fields.
+    const claimed = { ...darwin, outcome: "startable" as const, candidate: { ...startableAgent(), requiredSetup: null } };
+    expect(decideBookingRoute({ business: phoneOnly, darwin: claimed, canAct: true })).toEqual(decideBookingRoute({ business: phoneOnly, darwin, canAct: true }));
+  });
+
   it("calls a phone-only business when Darwin only lists agents (today's live behavior)", async () => {
     const darwin = await lookup(new ScriptedDarwin());
     expect(decideBookingRoute({ business: phoneOnly, darwin, canAct: true })).toEqual({
