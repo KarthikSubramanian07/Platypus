@@ -102,7 +102,7 @@ describe("startOnboardingCall on the golden call", () => {
     expect(input.outboundInstruction).toContain(`"${DISCLOSURE} Is this Sal's Auto?"`);
     expect(input.outboundInstruction).toContain(`business_id "${s.businessId}"`);
     expect(opts.idempotencyKey).toBe(`onboard-${s.bookingId}`);
-    expect(getRow(s.db, "calls", callId)?.script_version).toMatch(/^onboard-v2@[0-9a-f]{16}$/);
+    expect(getRow(s.db, "calls", callId)?.script_version).toMatch(/^onboard-v3@[0-9a-f]{16}$/);
   });
 
   it("persists the transcript and emits the call events in order", async () => {
