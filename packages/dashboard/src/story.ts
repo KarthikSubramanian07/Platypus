@@ -50,6 +50,17 @@ export function mergeTurns(turns: readonly TranscriptTurn[], max = MAX_CAPTIONS)
   return merged.slice(-max);
 }
 
+/** The owner text rail the events show: the first text's channel, else the rail consent switched a shop to. */
+export function railOf(state: DashboardState): string | undefined {
+  const rail = state.messages[0]?.channel ?? state.businessOrder.map((id) => state.businesses[id]?.rail).find(Boolean);
+  return rail?.toLowerCase();
+}
+
+/** The phone's caption. On the dial rail a Dial number plays the shop's line; otherwise it is the owner's own phone. */
+export function phoneLabel(rail: string | undefined): string {
+  return rail === "dial" ? "Sal's Auto line · Dial-to-Dial" : "Sal's Auto · the owner's phone";
+}
+
 /** One line on what Darwin said, for the first story card. */
 export function darwinSummary(d: DarwinView | undefined, reasons: readonly string[] = []): string | undefined {
   if (!d) return reasons.some((r) => /darwin not consulted/i.test(r)) ? "Darwin not consulted" : undefined;

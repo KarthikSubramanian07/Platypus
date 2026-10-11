@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { cuesAt, GOLDEN_PATH, planRecording, recordedAt } from "./fixture";
 import type { StreamEvent } from "./format";
 import { initialState, readDarwin, reduceAll, type DarwinView, type TranscriptTurn } from "./state";
-import { askFacts, bookingForAsk, callElapsedMs, captionsAt, darwinSummary, formatWindow, MAX_CAPTIONS, mergeTurns, phoneScreen } from "./story";
+import { askFacts, bookingForAsk, callElapsedMs, captionsAt, darwinSummary, formatWindow, MAX_CAPTIONS, mergeTurns, phoneLabel, phoneScreen, railOf } from "./story";
 
 let n = 0;
 function ev(type: string, payload: Record<string, unknown> = {}, refs: Record<string, string> = {}): StreamEvent {
@@ -27,6 +27,21 @@ describe("phoneScreen", () => {
     expect(phoneScreen(upTo((e) => e.type === "call.ended"), { textComing: true })).toBe("messages");
     const again = reduceAll([...GOLDEN_PATH, ev("call.placed", {}, { call_id: "c2" })]);
     expect(phoneScreen(again)).toBe("incoming");
+  });
+});
+
+describe("the phone's rail", () => {
+  it("reads the rail from the events: the text's channel, else the rail consent switched the shop to", () => {
+    expect(railOf(initialState())).toBeUndefined();
+    expect(railOf(upTo((e) => e.type === "call.placed"))).toBeUndefined();
+    expect(railOf(upTo((e) => e.type === "business.channel_changed"))).toBe("imessage");
+    expect(railOf(reduceAll(GOLDEN_PATH))).toBe("imessage");
+    expect(railOf(reduceAll([ev("business.listed", { display_name: "Sal's Auto" }, { business_id: "b1" }), ev("business.channel_changed", { to: "text_enabled", rail: "dial" }, { business_id: "b1" })]))).toBe("dial");
+  });
+
+  it("calls it a Dial-to-Dial line only on the dial rail", () => {
+    expect(phoneLabel("dial")).toBe("Sal's Auto line · Dial-to-Dial");
+    for (const rail of ["imessage", "whatsapp", "sms", undefined]) expect(phoneLabel(rail)).toBe("Sal's Auto · the owner's phone");
   });
 });
 
