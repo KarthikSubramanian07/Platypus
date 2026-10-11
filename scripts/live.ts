@@ -18,7 +18,7 @@ const DIAL = "https://api.getdial.ai/api/v1";
 const port = Number(process.env.PORT ?? 8787);
 const apiKey = process.env.DIAL_API_KEY?.trim();
 
-const missing = ["DIAL_API_KEY", "DIAL_FROM_NUMBER_ID", "ALLOWED_NUMBERS", "CONTEXT_MCP_SECRET", "CONTEXT_MCP_TOKEN"].filter((k) => !process.env[k]?.trim());
+const missing = ["DIAL_API_KEY", "DIAL_FROM_NUMBER_ID", "ALLOWED_NUMBERS", "CONTEXT_MCP_SECRET", "CONTEXT_MCP_TOKEN", "GATEWAY_TOKEN"].filter((k) => !process.env[k]?.trim());
 if (missing.length) {
   console.error(`pnpm live needs ${missing.join(", ")} in .env. Run pnpm run doctor for details.`);
   process.exit(2);
