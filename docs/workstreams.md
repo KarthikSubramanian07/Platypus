@@ -82,6 +82,14 @@ Work in this order, against `FakeDial` through the fake `OwnerChannels` (`DIAL_I
 - Never force-push `main`. Merge locally rather than with GitHub's merge button, so `.gitattributes` applies.
 - `pnpm check` must be green before anything reaches `main`.
 
+## Staying in sync through Alike
+
+Both sessions run with Alike, so they share decisions without anyone relaying them.
+- **At the start of a session:** open your work with `resolve_work_item` on your branch (`phone-side` or `agent-side`).
+- **When you make a call that affects the other side, record it:** use `record_decision` with a `governs` path anchor for each file or folder it covers. The other side's sessions then see it when they touch that code.
+- **The seams and ownership on this page are already recorded as decisions.** Read any Alike pointer that touches your files before changing them.
+- **Messages to the other person** (`inform_colleague`, `ask_colleague`) go out only after your human says yes.
+
 ## Integration (3:15, both sides)
 
 1. Merge both branches into `main`.
