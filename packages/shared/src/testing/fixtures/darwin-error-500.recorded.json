@@ -1,0 +1,29 @@
+{
+  "_provenance": {
+    "source": "api.darwin.so POST /api/v3/search, anonymous",
+    "recorded_at": "2026-10-11T18:11:07Z",
+    "latency_ms": 1050,
+    "x_request_id": "22fedee9-a037-48da-a099-481a37b5ede0",
+    "note": "Real response, recorded verbatim. The demo's oil-change query returned HTTP 500 twice on 2026-10-11; a no_match could not be recorded yet."
+  },
+  "request": {
+    "query": "Book an oil change for my 2019 Honda Civic tomorrow afternoon at an independent auto repair shop near 1025 Sansome St, San Francisco",
+    "context": [
+      {
+        "type": "budget",
+        "amountMinor": 12000,
+        "currency": "USD"
+      },
+      {
+        "type": "deadline",
+        "at": "2026-10-13T00:00:00Z"
+      }
+    ],
+    "maxResults": 5
+  },
+  "status": 500,
+  "body": {
+    "statusCode": 500,
+    "message": "Internal server error"
+  }
+}
