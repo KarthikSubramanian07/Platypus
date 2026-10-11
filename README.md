@@ -10,6 +10,17 @@
 
 Most of the 33 million US small businesses will never build an API. They have a phone. Every personal agent that "calls for you" calls the same shop again for every booking. **We call once.** The call books a real, paying job, then asks the owner one question: *"Next time a customer's agent needs you, can I text you instead?"* After a yes, every agent books that shop by text, and the owner answers with one letter.
 
+| Judged on | Where to look |
+| --- | --- |
+| Time saved (40%) | [Time saved](#time-saved): about 20 minutes of calling around becomes under a minute, and a 4 minute call becomes a 10 second text |
+| Technical execution (25%) | [The AI can't fake a booking](#the-ai-cant-fake-a-booking), and `pnpm verify`, which runs every check with no keys |
+| Market and path (15%) | [Why it wins](#why-it-wins) |
+| Originality (10%) | The call *is* the onboarding: it books a paying job and converts the shop in the same 75 seconds |
+| Product and demo (10%) | [The demo](#the-demo), and [/live](https://tryplatypus.pages.dev/live) in your browser |
+| Dial, Darwin, Alike | [Partners](#partners), with what breaks without each one |
+
+Agents evaluating this repo should start at [AGENTS.md](AGENTS.md).
+
 ---
 
 ## How it works
@@ -53,7 +64,7 @@ The architecture is built so that a booking is never confirmed just because a mo
 
 | Package | Owns |
 | --- | --- |
-| [`gateway`](packages/gateway) | The MCP server agents call (nine tools), the Darwin lookup and the route decision |
+| [`gateway`](packages/gateway) | The MCP server agents call (ten tools), the Darwin lookup and the route decision |
 | [`voice`](packages/voice) | Dial outbound calls with the AI disclosure first, and the Context MCP server for the five mid-call tools |
 | [`text`](packages/text) | Owner texts: signed webhooks, STOP and PAUSE handled before any model, reply classification |
 | [`shared`](packages/shared) | Zod contracts, SQLite, the event log and SSE stream, the booking state machine, the fakes |
@@ -82,7 +93,7 @@ The architecture is built so that a booking is never confirmed just because a mo
 
 ## Real vs mocked
 
-- **Real:** a live Dial AI call to a real phone that books through our tools mid-call, stores consent in the owner's own words, then sends a real iMessage that gets a real Y. Also real: the contracts, state machine, consent rules, event log and both auditors; the MCP tools and routing; the live Darwin client, with a daily smoke check; and Dial request shapes, checked against Dial's OpenAPI spec.
+- **Real:** a live Dial AI call to a real phone that books through our tools mid-call, stores consent in the owner's own words, then sends a real iMessage that gets a real Y. Also real: the contracts, state machine, consent rules, event log and both auditors; the ten MCP tools and routing; the live Darwin client, with a daily smoke check; and Dial request shapes, checked against Dial's OpenAPI spec.
 - **Mocked:** Eddy's Auto is not a real business. Its line is Karthik's phone, and he is not a mechanic. The other five shops are fictional, and the site's replay runs on fakes. SMS to regular phones waits on 10DLC registration (iMessage is approved). The time-saved figures are estimates.
 
 ## Run it
@@ -93,10 +104,9 @@ Node 22.12 or newer and pnpm 10. Fakes mode needs no keys.
 pnpm install && cp .env.example .env
 pnpm dev                                          # gateway on :8787, site on :5173
 pnpm --filter @platypus/gateway demo:cli oil      # drive the golden path over MCP
-pnpm check                                        # lint, typecheck, tests
-pnpm ci:audit-diff                                # both auditors, every log
+pnpm verify                                       # every check, ending in a scorecard
 ```
 
 Agents can read [`/llms.txt`](https://tryplatypus.pages.dev/llms.txt), and every page returns Markdown when asked with `Accept: text/markdown`.
 
-MIT licensed. Built at SpeedHacks in San Francisco on October 11, 2026. The README visuals are regenerated with `node scripts/readme/shoot.mjs`.
+MIT licensed. Built at SpeedHacks in San Francisco on October 11, 2026.
