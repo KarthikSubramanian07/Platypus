@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "darwin": {
+      "type": "http",
+      "url": "https://mcp.darwin.so/mcp"
+    }
+  }
+}
