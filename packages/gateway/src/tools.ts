@@ -77,7 +77,7 @@ export class GatewayError extends Error {
   }
 }
 
-export const RATE_LIMIT = { calls: 30, windowMs: 60_000 } as const;
+export const RATE_LIMIT = { calls: 120, windowMs: 60_000 } as const;
 /** Idempotency keys and rate-limit buckets idle longer than this are dropped. */
 export const STATE_TTL_MS = 60 * 60_000;
 /** A business is never asked about more than this many open requests at once, across all agents. */

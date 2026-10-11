@@ -15,7 +15,7 @@ const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 const MAX_ERROR_CHARS = 300;
 export const MAX_BODY_BYTES = 256 * 1024;
 /** Across all agents; each agent's per-tool limit in tools.ts sits on top of this. */
-export const GLOBAL_REQUESTS_PER_MINUTE = 120;
+export const GLOBAL_REQUESTS_PER_MINUTE = 600;
 /** The shortest GATEWAY_TOKEN accepted when /mcp is public through PUBLIC_BASE_URL. */
 export const MIN_TOKEN_CHARS = 16;
 
