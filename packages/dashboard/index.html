@@ -71,7 +71,6 @@
       </a>
       <div class="nav-links">
         <a href="#demo">Demo</a>
-        <a href="/live" data-live-link>Live dashboard</a>
         <a href="#shift">Why now</a>
         <a href="#time">Time saved</a>
         <a href="#how">How it works</a>
@@ -92,8 +91,8 @@
         After one yes, every AI agent books that business by text, and the owner answers with one letter.
       </p>
       <div class="actions">
-        <button id="replay" class="btn btn-primary" type="button">Watch the golden path</button>
-        <a class="btn btn-ghost" href="#moat">Why this compounds</a>
+        <a class="btn btn-primary btn-live" href="/live" data-live-link><span class="live-dot" aria-hidden="true"></span>Open the live dashboard</a>
+        <button id="replay" class="btn btn-ghost" type="button">Watch the golden path</button>
       </div>
 
       <ul class="receipt" aria-label="Time saved per booking, estimated">
@@ -112,7 +111,7 @@
           </div>
           <p class="section-lede">
             This is the real event log, replayed from a run recorded against our test fakes through the real booking state machine.
-            Every row is an append-only event with an actor, a reason and a confidence. Our shop owner today is Eddy. Eddy is not a mechanic.
+            Every row is an append-only event with an actor, a reason and a confidence. Today the shop's owner, Sal, is Dial's AI on a second Dial number. Sal is not a mechanic either.
           </p>
         </div>
 
@@ -579,7 +578,7 @@
           <div>
             <p class="honest-tag honest-mock">Mocked or not built yet</p>
             <ul>
-              <li>Sal's Auto is not a real shop. Its phone belongs to a teammate, who is not a mechanic.</li>
+              <li>Sal's Auto is not a real shop. Its line is a second Dial number, answered by Dial's AI playing the owner, until Dial approves a real number.</li>
               <li>This page's replay uses FakeDial. The live Dial call is being wired on the phone side.</li>
               <li>Five of six seeded businesses use 555-01xx numbers, which are reserved for fiction.</li>
               <li>Texts to regular phones wait on 10DLC; today's rail is iMessage, WhatsApp or Dial.</li>

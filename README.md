@@ -100,7 +100,7 @@ sequenceDiagram
 1. In Claude Desktop, a customer types: *"Oil change tomorrow afternoon, under $120, near 1025 Sansome."* Claude calls `search_providers`, then `request_booking`, on the Platypus MCP server.
 2. The gateway runs Darwin Search v3 with the budget and deadline as context. When Darwin has no agent that is ready to take the job (for our trades it answers with listed agents, none of them ready), the dashboard shows that gap and its reason, and Platypus goes to the phone.
 3. The gateway attaches routing signals for the candidate shop: typical price, median reply time, and acceptance rate.
-4. There is no consent on record, so the route is **call**. Dial places an outbound call to Sal's Auto, which today is a teammate's phone. The AI discloses itself, then asks for a price and an opening.
+4. There is no consent on record, so the route is **call**. Dial places an outbound call to Sal's Auto, whose line today is a second Dial number answered by Dial's AI playing the owner. The AI discloses itself, then asks for a price and an opening.
 5. During the call, the voice agent calls our tools through Dial's Context MCP: `check_slot`, `hold_slot`, `create_booking`, `record_consent` and `set_text_number`. Each one lights up on the dashboard.
 6. The owner says *"Yeah, text me."* Consent is stored with that sentence and the call id, and Sal's card flips from PHONE-ONLY to TEXT-ENABLED.
 7. Claude polls `get_booking` and renders a typed result: *Booked: Sal's Auto, tomorrow 2:00pm, $89, SAL-4K2.*
@@ -424,7 +424,7 @@ curl -sS -i -H 'Accept: text/markdown' https://tryplatypus.pages.dev/some-path-t
 
 | Real | Mocked or not yet built |
 | --- | --- |
-| The shared foundation: contracts, booking state machine, holds, consent rules, event log, SSE stream, CI | Sal's Auto is not a real business. Its phone belongs to a teammate, Karthik, who is not a mechanic. |
+| The shared foundation: contracts, booking state machine, holds, consent rules, event log, SSE stream, CI | Sal's Auto is not a real business. Its line is a second Dial number, answered by Dial's AI playing the owner, until Dial approves a real number. |
 | The gateway's nine MCP tools over streamable HTTP and stdio, routing, and the demo CLI | FakeDial plays the scripted demo call for development. The live Dial call is built on the phone side. |
 | Dial API shapes in the contracts and fakes, checked against Dial's OpenAPI spec and SDK on 2026-10-11 | Darwin has not yet returned a `no_match` for the demo query; it returns listed agents, none ready. The only `no_match` in the repo is a test double labeled SYNTHETIC; it refuses to run in live mode and never appears in the fixture or on the dashboard. |
 | The live Darwin Search v3 client, search ladder and daily smoke check; fake responses are recorded from the live API | Texts to regular phones need 10DLC, which is filed after the event. Today's rail is iMessage, WhatsApp, or a second Dial number. |

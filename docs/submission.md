@@ -55,13 +55,13 @@ All figures are **estimates**, not measurements.
 **Real**
 
 - The foundation: contracts (Zod, exported as JSON Schema), a booking state machine where `confirm()` is the only way into `confirmed`, a database that refuses a consent row without the quoted sentence and call id, an append-only event log with a live stream, and CI.
-- A live Dial outbound call, placed from our Dial number to a second Dial number that stands in for Sal's Auto's line, with the AI disclosure as the first sentence and the booking made through our tools during the call.
+- A live Dial outbound call, placed from our Dial number to a second Dial number that stands in for Sal's Auto's line, with the AI disclosure as the first sentence and the booking made through our tools during the call. The call, the mid-call tool calls, the consent capture and the text exchange are real Dial traffic between two Dial numbers.
 - Darwin Search v3, queried live before the call. The dashboard shows what Darwin returned.
 - Real Dial texts between two Dial numbers: the booking request, and the owner's Y that confirms it (sent from the dashboard's owner-phone panel, see below).
 
 **Mocked or not yet built**
 
-- Sal's Auto is not a business: its line is a second Dial number, the owner on the call is [confirm: who answers the shop line: Dial's inbound AI playing the owner, or Karthik through Dial], and no oil change is booked at any real shop.
+- Sal's Auto is not a business: its line is a second Dial number, and the owner on the call is Dial's AI playing the owner from a script, because Dial approves real numbers only after review. No oil change is booked at any real shop.
 - The other five shops on the dashboard are fictional, with phone numbers reserved for fiction.
 - No real phone number is involved yet: calls and texts run between two Dial numbers until Dial approves a real number. Dial approves real numbers after review, for messaging (SMS and iMessage) after a review on their backend, and plain SMS also needs 10DLC registration. The owner replies to texts from the dashboard's owner-phone panel, not from a phone.
 - Darwin has never returned `no_match` for our trades. It answers with a completed search and no ready agent, and we report exactly that. We do not use Darwin Act or Publish, and Darwin is never simulated.

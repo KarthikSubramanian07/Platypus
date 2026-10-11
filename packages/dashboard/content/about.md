@@ -22,7 +22,7 @@ A platypus fits no category and lives in two worlds. So does Main Street: on the
 
 ## Status
 
-Platypus is a working prototype. The booking core, the MCP gateway, the Darwin integration and the test suite are real; the demo shop is a teammate's phone, and texts to regular phones wait on 10DLC registration. The [README](https://github.com/KarthikSubramanian07/Platypus#what-is-real-today-and-what-is-mocked) lists exactly what is real and what is mocked.
+Platypus is a working prototype. The booking core, the MCP gateway, the Darwin integration and the test suite are real; the demo shop's line is a second Dial number answered by Dial's AI, and texts to regular phones wait on 10DLC registration. The [README](https://github.com/KarthikSubramanian07/Platypus#what-is-real-today-and-what-is-mocked) lists exactly what is real and what is mocked.
 
 - [Developers](/developers): connect an agent to Platypus.
 - [Contact](/contact): reach the team.
