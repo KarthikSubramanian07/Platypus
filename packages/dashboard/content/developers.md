@@ -46,6 +46,7 @@ Browser origins other than localhost are refused, so a web page can't reach `/mc
 | `get_availability` | Known open slots in a window. Empty doesn't mean unavailable: Platypus asks the owner. |
 | `request_booking` | Ask for a booking. Returns at once with status `pending` and the route chosen: `darwin_act`, `call` or `text`. |
 | `get_booking` | Current state of a booking. Poll it until the status is final. |
+| `wait_for_booking` | Wait for the owner's answer. Returns as soon as the status changes, or after a timeout; call it again until the status is final. |
 | `confirm_booking` | Accept a time the owner proposed in a counter-offer. |
 | `reschedule_booking` | Ask to move a confirmed booking; it stays `rescheduled` until the owner agrees. |
 | `cancel_booking` | Cancel a booking; the owner is told by text if they opted in. |

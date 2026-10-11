@@ -15,7 +15,7 @@ Platypus is a working prototype built at SpeedHacks (San Francisco, October 11, 
 
 ## Docs
 
-- [Developer guide](https://tryplatypus.pages.dev/developers.md): quickstart, MCP endpoint and headers, the nine tools, booking outcomes, API keys.
+- [Developer guide](https://tryplatypus.pages.dev/developers.md): quickstart, MCP endpoint and headers, the ten tools, booking outcomes, API keys.
 - [Home page](https://tryplatypus.pages.dev/index.md): the product, time saved, how it works, guarantees.
 - [Technical](https://tryplatypus.pages.dev/technical.md): the route decision, the architecture, and the rules the code enforces.
 - [Business](https://tryplatypus.pages.dev/business.md): why now, the landscape, the business model, roadmap and risks.
