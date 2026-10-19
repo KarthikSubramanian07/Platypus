@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "happy-dom": "^20.14.6",
-    "marked": "^18.1.0",
+    "marked": "^18.1.1",
     "vite": "^8.3.4"
   }
 }
