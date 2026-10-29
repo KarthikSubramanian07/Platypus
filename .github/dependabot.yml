@@ -20,6 +20,11 @@ updates:
         dependency-type: production
         update-types: [minor, patch]
     # Majors arrive as individual PRs so each breaking change is reviewed on its own.
+    ignore:
+      # Node types follow the runtimes CI tests (22 and 24), not the newest Node.
+      # Types from a later major would typecheck APIs that Node 22 does not have.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     # Workflows plus the composite setup action they share.
