@@ -24,11 +24,11 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@hono/node-server": "^2.1.4",
+    "@hono/node-server": "^2.1.5",
     "better-sqlite3": "^12.11.1",
     "hono": "^4.13.13",
     "ulid": "^3.0.2",
-    "zod": "^4.6.6"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
