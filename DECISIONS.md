@@ -35,8 +35,8 @@ Packages export TypeScript source, and tsx, Vitest and Vite read it directly. Wh
 **TypeScript is pinned to 6.0.**
 TypeScript 7 is the latest release, but typescript-eslint 8 supports TypeScript below 6.1 only. We will upgrade when typescript-eslint does.
 
-**better-sqlite3 12, not 13.**
-Version 13 dropped its prebuilt-binary install path and failed to build without node-gyp. Version 12.11 installs prebuilt binaries on Node 22 and 24.
+**better-sqlite3 13, with its install build switched off.**
+Version 13 stopped downloading binaries at install time and now ships N-API prebuilds inside the package. Because the package has a `binding.gyp` and no install script, pnpm runs an implicit node-gyp compile, which fails without a C++ toolchain. `pnpm-workspace.yaml` lists it under `ignoredBuiltDependencies`, so pnpm skips that compile and the shipped binary loads on Node 22 and 24. Cost: a platform outside its prebuild list (macOS, Linux glibc and musl, Windows, each on x64 and arm64) would have to remove that line and build from source.
 
 **The SQL is portable to Postgres.**
 Timestamps are ISO-8601 text, JSON is text, ids are prefixed ULIDs, and every foreign key points to a table created earlier. Only the append-only trigger is SQLite-specific, and it lives in its own `*.sqlite.sql` migration. Why: the spec names Postgres for production, and we did not want an ORM.
