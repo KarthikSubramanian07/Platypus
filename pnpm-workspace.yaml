@@ -2,5 +2,9 @@ packages:
   - packages/*
 
 onlyBuiltDependencies:
-  - better-sqlite3
   - esbuild
+
+# better-sqlite3 13 ships N-API prebuilds for every platform we run on. Its
+# only build step is the implicit node-gyp compile, which needs a C++ toolchain.
+ignoredBuiltDependencies:
+  - better-sqlite3
