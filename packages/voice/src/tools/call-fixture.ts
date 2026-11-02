@@ -1,5 +1,5 @@
 import { createBooking } from "@platypus/shared/booking";
-import { getBusinessBySlug, insertRow, openDb, seed, updateRow, type Booking, type Business, type Call, type Db } from "@platypus/shared/db";
+import { cloneDb, getBusinessBySlug, insertRow, openDb, seed, updateRow, type Booking, type Business, type Call, type Db } from "@platypus/shared/db";
 import { EventBus, listEvents, type PlatypusEvent } from "@platypus/shared/events";
 import type { VoiceToolContext } from "@platypus/shared/contracts";
 import type { Clock } from "./voice-tools";
@@ -46,16 +46,29 @@ export const TOMORROW_AFTERNOON = { start: "2026-10-12T19:00:00.000Z", end: "202
 export const AGENT_NUMBER = "+15550100000";
 
 /**
+ * The migrated, seeded database every fixture starts from, built once per test file.
+ * Replaying the migrations and the seed for each fixture made property tests that build
+ * hundreds of fixtures slow enough to hit the test timeout on a loaded machine.
+ */
+let seeded: Db | undefined;
+function seededDb(): Db {
+  if (!seeded) {
+    seeded = openDb(":memory:");
+    seed(seeded, { clock: testClock(FIXTURE_NOW) });
+  }
+  return cloneDb(seeded);
+}
+
+/**
  * An in-memory database seeded with the six businesses, a pending oil-change
  * booking for Eddy's Auto, and a live outbound call to Sal's (fictional) number.
  */
 export function callFixture(): CallFixture {
-  const db = openDb(":memory:");
+  const db = seededDb();
   const bus = new EventBus();
   const published: PlatypusEvent[] = [];
   bus.subscribe((e) => published.push(e));
   const clock = testClock(FIXTURE_NOW);
-  seed(db, { clock });
   const sal = getBusinessBySlug(db, "sals-auto")!;
   const mira = getBusinessBySlug(db, "mira-hair-studio")!;
   const booking = createBooking(

@@ -15,11 +15,25 @@ export const DEFAULT_DB_PATH = "data/platypus.db";
  */
 export function openDb(path: string = process.env.PLATYPUS_DB ?? DEFAULT_DB_PATH): Db {
   if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });
-  const db = new Database(path);
+  const db = configure(new Database(path));
+  migrate(db);
+  return db;
+}
+
+/**
+ * Copies a database into a new in-memory one, schema, rows and connection settings alike.
+ * Tests use it to build a migrated, seeded database once and hand each case its own
+ * copy, which is far cheaper than replaying every migration and the seed per case.
+ */
+export function cloneDb(source: Db): Db {
+  return configure(new Database(source.serialize()));
+}
+
+/** Connection settings are per connection, not stored in the file, so every open applies them. */
+function configure(db: Db): Db {
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   db.pragma("busy_timeout = 5000");
-  migrate(db);
   return db;
 }
 
