@@ -8,3 +8,8 @@ onlyBuiltDependencies:
 # only build step is the implicit node-gyp compile, which needs a C++ toolchain.
 ignoredBuiltDependencies:
   - better-sqlite3
+
+# eslint and typescript-eslint still require minimatch ^10; only 11.0.1+ fixes
+# the globparts denial-of-service advisory. Drop once upstream moves to 11.
+overrides:
+  minimatch: ^11.0.1
