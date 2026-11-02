@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { manualClock } from "../clock";
 import { newId } from "../ids";
-import { getBusinessByNumber, getBusinessBySlug, insertRow, listBusinesses, migrate, openDb, seed, selectRows } from "./index";
+import { cloneDb, getBusinessByNumber, getBusinessBySlug, insertRow, listBusinesses, migrate, openDb, seed, selectRows, updateRow } from "./index";
 
 const ALLOWED = ["+15550100001", "+15550100002"];
 
@@ -37,6 +37,36 @@ describe("migrations", () => {
     });
     expect(() => db.prepare("UPDATE events SET type = 'tampered'").run()).toThrow(/append-only/);
     expect(() => db.prepare("DELETE FROM events").run()).toThrow(/append-only/);
+  });
+
+  it("clone into an independent copy that keeps the schema, rows and connection settings", () => {
+    const source = openDb(":memory:");
+    seed(source, { allowedNumbers: ALLOWED });
+    insertRow(source, "events", {
+      id: newId("event"),
+      type: "test.appended",
+      actor: "system",
+      business_id: null,
+      booking_id: null,
+      call_id: null,
+      message_id: null,
+      consent_id: null,
+      hold_id: null,
+      payload: {},
+      reason: null,
+      confidence: 1,
+      created_at: new Date().toISOString(),
+    });
+    const copy = cloneDb(source);
+    expect(migrate(copy)).toEqual([]);
+    expect(listBusinesses(copy)).toEqual(listBusinesses(source));
+    expect(copy.pragma("foreign_keys", { simple: true })).toBe(1);
+    expect(() => copy.prepare("DELETE FROM events").run()).toThrow(/append-only/);
+
+    const sal = getBusinessBySlug(copy, "sals-auto")!;
+    updateRow(copy, "businesses", sal.id, { do_not_call: true });
+    expect(getBusinessBySlug(copy, "sals-auto")!.do_not_call).toBe(true);
+    expect(getBusinessBySlug(source, "sals-auto")!.do_not_call).toBe(false);
   });
 
   it("refuse a consent row without its evidence", () => {
