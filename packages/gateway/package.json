@@ -13,8 +13,8 @@
     "demo:cli": "tsx src/cli.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.32.1",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@platypus/shared": "workspace:*",
-    "hono": "^4.13.13"
+    "hono": "^4.13.16"
   }
 }
