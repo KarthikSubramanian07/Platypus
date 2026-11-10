@@ -16,7 +16,9 @@ describe("addCopyButtons", () => {
     expect(buttons[0]!.getAttribute("aria-label")).toBe("Copy this command");
     expect(buttons[0]!.textContent).toBe("Copy");
     expect(document.querySelector(".code-block > pre")).not.toBeNull();
+    expect(document.querySelector(".code-block > pre")!.getAttribute("tabindex")).toBe("0");
     expect(document.querySelectorAll(".table-scroll > table")).toHaveLength(1);
+    expect(document.querySelector(".table-scroll")!.getAttribute("tabindex")).toBe("0");
   });
 
   it("copies the command and says so, then resets", async () => {
