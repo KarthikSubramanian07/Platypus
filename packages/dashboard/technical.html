@@ -168,7 +168,7 @@
           <article class="rule">
             <header><span>01</span><h3>Only <code>confirm()</code> can confirm, and only with evidence</h3></header>
             <p>A quoted yes on the call, a Y by text, or a rule the owner approved. Nothing else can be expressed.</p>
-            <pre><code><span class="k">export function</span> <span class="f">confirm</span>(ctx, bookingId,
+            <pre tabindex="0"><code><span class="k">export function</span> <span class="f">confirm</span>(ctx, bookingId,
   evidence: <span class="t">ConfirmationEvidence</span>) {
   <span class="c">// "call" | "text" | "rule". A transcript
   // alone cannot be expressed here.</span>
@@ -178,7 +178,7 @@
           <article class="rule">
             <header><span>02</span><h3>Consent cannot exist without its proof</h3></header>
             <p>The database refuses a consent row without the owner's sentence and the call.</p>
-            <pre><code><span class="k">CHECK</span> (
+            <pre tabindex="0"><code><span class="k">CHECK</span> (
   (source = <span class="s">'call'</span> <span class="k">AND</span> call_id <span class="k">IS NOT NULL</span>
     <span class="k">AND</span> <span class="f">LENGTH</span>(quoted_sentence) &gt; 0)
   <span class="k">OR</span> (source = <span class="s">'join_text'</span>
@@ -189,7 +189,7 @@
           <article class="rule">
             <header><span>03</span><h3>Every change is an append-only event</h3></header>
             <p>Actor, reason and confidence on every event. Nobody can edit history, including us.</p>
-            <pre><code><span class="k">CREATE TRIGGER</span> events_no_update
+            <pre tabindex="0"><code><span class="k">CREATE TRIGGER</span> events_no_update
   <span class="k">BEFORE UPDATE ON</span> events
 <span class="k">BEGIN</span>
   <span class="k">SELECT</span> <span class="f">RAISE</span>(ABORT, <span class="s">'events are append-only'</span>);
@@ -199,7 +199,7 @@
           <article class="rule">
             <header><span>04</span><h3>Only allowed numbers can ever ring</h3></header>
             <p>Checked right before anything that can reach a phone, in the real adapter and the fakes.</p>
-            <pre><code><span class="k">export function</span> <span class="f">assertAllowedNumber</span>(number,
+            <pre tabindex="0"><code><span class="k">export function</span> <span class="f">assertAllowedNumber</span>(number,
   allowed = <span class="f">parseAllowedNumbers</span>(env.ALLOWED_NUMBERS)) {
   <span class="k">if</span> (!allowed.<span class="f">includes</span>(number))
     <span class="k">throw new</span> <span class="t">NumberNotAllowedError</span>(number);
