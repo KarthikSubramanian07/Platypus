@@ -75,8 +75,18 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 }
 .cap[data-quote="true"] { font-style: italic; color: var(--green); padding-bottom: 0.06em; }
 .focal { margin: 0; transition: opacity var(--dur) var(--ease-out); }
-.scene[data-state="todo"] .cap { color: var(--faint); }
-.scene[data-state="todo"] .focal { opacity: 0.4; }
+/* Upcoming scenes stay visually quieter via muted ink, not opacity, so contrast holds. */
+.scene[data-state="todo"] .cap { color: var(--muted); }
+.scene[data-state="todo"] .focal { opacity: 1; filter: none; }
+.scene[data-state="todo"] .ask-from,
+.scene[data-state="todo"] .darwin-head,
+.scene[data-state="todo"] .work-head,
+.scene[data-state="todo"] .tool,
+.scene[data-state="todo"] .darwin-result,
+.scene[data-state="todo"] .darwin-line,
+.scene[data-state="todo"] .darwin-query,
+.scene[data-state="todo"] .ask-facts li { color: var(--muted); }
+.scene[data-state="todo"] .ask-facts li { background: var(--panel); }
 
 /* Scene 1: the agent's request, as the message it is. */
 .ask {
@@ -141,11 +151,11 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 .shop-back { transform: rotateY(180deg); background: var(--green); color: #f4f1ea; box-shadow: 0 30px 60px -30px rgba(21, 63, 55, 0.6); }
 .shop p { margin: 0; }
 .shop-trade { font: 500 13px var(--mono); letter-spacing: 0.04em; color: var(--muted); }
-.shop-back .shop-trade { color: var(--mint); }
+.shop-back .shop-trade { color: #d7efe6; }
 .shop-name { margin-top: 6px !important; font: 400 clamp(34px, 3.2vw, 46px)/1.05 var(--serif); letter-spacing: -0.02em; }
 .shop-state { margin-top: auto !important; display: flex; align-items: center; gap: 14px; font: 600 14px/1 var(--mono); letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-3); }
 .shop-back .shop-state { color: #f4f1ea; }
-.shop-cell { margin-top: 12px !important; font: 14px var(--mono); color: var(--mint); }
+.shop-cell { margin-top: 12px !important; font: 14px var(--mono); color: #d7efe6; }
 .shop-cell:empty { display: none; }
 /* The switch is the logo: a phone-only business flipped to text-enabled. */
 .switch { position: relative; flex-shrink: 0; width: 56px; height: 32px; border-radius: 999px; background: #dad6cc; }
@@ -155,7 +165,12 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 
 /* Scene 7: one call, then a Y for every job after. */
 .payoff { width: 100%; }
-.ledger { display: flex; align-items: center; gap: 12px; list-style: none; margin: 0; padding: 0 0 30px; -webkit-mask-image: linear-gradient(90deg, #000 62%, transparent 96%); mask-image: linear-gradient(90deg, #000 62%, transparent 96%); }
+.ledger {
+  display: flex; align-items: center; gap: 12px; list-style: none; margin: 0; padding: 0 0 30px;
+  max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  -webkit-mask-image: linear-gradient(90deg, #000 62%, transparent 96%); mask-image: linear-gradient(90deg, #000 62%, transparent 96%);
+}
+.ledger:focus-visible { outline: 2px solid var(--olive); outline-offset: 3px; }
 .led-call { flex-shrink: 0; display: inline-flex; align-items: center; gap: 11px; height: 76px; padding: 0 28px 0 24px; border-radius: 999px; background: var(--ink-2); color: #f4f1ea; font: 500 20px var(--sans); font-variant-numeric: tabular-nums; }
 .led-call svg { width: 24px; height: 24px; fill: var(--mint); }
 .led-y { position: relative; flex-shrink: 0; display: grid; place-items: center; width: 76px; height: 76px; border-radius: 24px; border: 1.5px dashed var(--line-warm); color: var(--green); }
@@ -258,7 +273,15 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 @keyframes ag-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
 .ag-compose { display: flex; align-items: center; justify-content: space-between; margin: 0 14px 34px; padding: 10px 10px 10px 16px; border-radius: 22px; background: #fff; border: 1px solid rgba(0, 0, 0, 0.08); font: 400 16px var(--ios-font); color: #a1a1a6; }
 .ag-compose b { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #1c5449; color: #fff; font-size: 16px; }
-@media (prefers-reduced-motion: reduce) { .ag-caret, .ag-tool-dot, .ag-them, .ag-tool { animation: none !important; } }
+.skip {
+  position: absolute; left: 12px; top: -48px; z-index: 20;
+  background: var(--ink); color: #fff; padding: 10px 14px; border-radius: 10px;
+}
+.skip:focus { top: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
 
 /* Lock screen */
 .scr-lock { text-align: center; background: radial-gradient(90% 60% at 18% 8%, rgba(236, 246, 240, 0.85) 0%, transparent 60%), radial-gradient(80% 60% at 100% 100%, #0f2e28 0%, transparent 70%), linear-gradient(168deg, #cfe6dc 0%, #7fb9a5 34%, #2b6b5d 68%, #12352e 100%); }
@@ -342,6 +365,7 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
   .step button { padding: 8px 10px; font-size: 13px; }
 }
 /* Phones and narrow windows: the phone pins across the top, the scenes scroll beneath it. */
+body.story-page { overflow-x: clip; }
 @media (max-width: 860px) {
   :root { --head: 56px; --stage: 44dvh; --cap: clamp(30px, 8.4vw, 44px); }
   .head { padding: 0 16px; gap: 12px; }
@@ -351,7 +375,8 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
   .story { grid-template-columns: minmax(0, 1fr); }
   .stage { order: -1; z-index: 5; height: var(--stage); padding: 10px 16px 6px; gap: 8px; background: var(--bg); box-shadow: 0 10px 18px -14px rgba(21, 40, 34, 0.35); }
   .stage-note { font-size: 11px; }
-  .scenes { padding: 0 16px; }
+  .scenes { padding: 0 16px; min-width: 0; }
+  .phone-fit { --s: min(0.7, calc((100vw - 32px) / 408)); width: calc(408px * var(--s)); height: calc(854px * var(--s)); }
   .scene { min-height: calc(100dvh - var(--head) - var(--stage)); scroll-margin-top: calc(var(--head) + var(--stage)); justify-content: flex-start; gap: 22px; padding: 28px 0 40px; }
   .ask, .darwin { border-radius: 20px; }
   .ask { padding: 18px 20px 20px; }
