@@ -358,8 +358,12 @@ body[data-final="true"] .beat-caption { font-size: clamp(22px, 2.4vw, 30px); }
 .biz-trade { font: 500 10.5px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .biz-name { font: 400 18px var(--serif); color: var(--ink); }
 .biz-quote { font: italic 14px var(--serif); color: var(--olive); }
-.supply-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.supply-wrap {
+  max-width: 100%; min-width: 0;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
 .supply-wrap:focus-visible { outline: 2px solid var(--olive); outline-offset: 2px; }
+.more, .more-grid, .panel { max-width: 100%; min-width: 0; }
 .supply { width: 100%; border-collapse: collapse; font-size: 14px; }
 .supply th, .supply td { padding: 9px 8px; border-bottom: 1px solid var(--line); text-align: left; font-weight: 400; }
 .supply thead th { font: 500 10.5px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
@@ -408,8 +412,10 @@ body[data-final="true"] .top #replay { display: none; }
   .story { width: 100%; }
   .ev { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .ev-time { display: none; }
+  .top, .progress, .more, .foot { padding-left: 12px; padding-right: 12px; }
+  .stage { padding: 12px 12px 20px; }
   /* Keep the phone inside the viewport at 320px without sideways page scroll. */
-  .phone-fit { --s: min(0.8, calc((100vw - 40px) / 402)); width: calc(402px * var(--s)); height: calc(860px * var(--s)); }
+  .phone-fit { --s: min(0.8, calc((100vw - 24px) / 402)); width: calc(402px * var(--s)); height: calc(860px * var(--s)); }
 }
 body.live { overflow-x: clip; }
 
