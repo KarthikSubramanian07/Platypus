@@ -20,11 +20,15 @@ body[data-hydrating="true"] * { transition: none !important; animation: none !im
 
 /* ---- Header ------------------------------------------------------------------------- */
 .top {
-  display: flex; align-items: center; gap: 14px;
+  display: flex; align-items: center; gap: 14px; min-width: 0;
   max-width: var(--page); margin: 0 auto; padding: 14px 28px 6px;
 }
 .top-page { font: 500 12px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding-left: 14px; border-left: 1px solid var(--line); }
-.top-right { margin-left: auto; display: flex; align-items: center; gap: 10px; font: 12.5px var(--mono); color: var(--muted); }
+.top-right {
+  margin-left: auto; display: flex; align-items: center; justify-content: flex-end;
+  flex-wrap: wrap; gap: 8px; min-width: 0; max-width: 100%;
+  font: 12.5px var(--mono); color: var(--muted);
+}
 .top-right .conn { white-space: nowrap; }
 .tag { font: 500 10px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 7px; border-radius: 6px; border: 1px dashed var(--line-warm); color: var(--ink-3); }
 .pill {
@@ -361,10 +365,13 @@ body[data-final="true"] .beat-caption { font-size: clamp(22px, 2.4vw, 30px); }
 .supply-wrap {
   max-width: 100%; min-width: 0;
   overflow-x: auto; -webkit-overflow-scrolling: touch;
+  /* Keep wide tables inside this scroller so they cannot widen the page. */
+  contain: inline-size;
 }
 .supply-wrap:focus-visible { outline: 2px solid var(--olive); outline-offset: 2px; }
 .more, .more-grid, .panel { max-width: 100%; min-width: 0; }
-.supply { width: 100%; border-collapse: collapse; font-size: 14px; }
+.more:not([open]) .more-grid { display: none; }
+.supply { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 14px; }
 .supply th, .supply td { padding: 9px 8px; border-bottom: 1px solid var(--line); text-align: left; font-weight: 400; }
 .supply thead th { font: 500 10.5px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .supply .num { text-align: right; font-variant-numeric: tabular-nums; }
