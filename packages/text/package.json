@@ -13,7 +13,7 @@
     "eval:model": "EVAL_MODEL=1 vitest run src/evals.model.test.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.133.0",
+    "@anthropic-ai/sdk": "^1.6.0",
     "@platypus/shared": "workspace:*",
     "chrono-node": "^2.10.3",
     "hono": "^4.13.13",
