@@ -16,7 +16,7 @@
     "@anthropic-ai/sdk": "^0.133.0",
     "@platypus/shared": "workspace:*",
     "chrono-node": "^2.10.3",
-    "hono": "^4.13.13",
+    "hono": "^4.13.16",
     "libphonenumber-js": "^1.13.15",
     "ulid": "^3.0.2",
     "zod": "^4.6.7"
