@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.133.0",
-    "@hono/node-server": "^2.1.5",
+    "@hono/node-server": "^2.1.6",
     "@modelcontextprotocol/server": "^2.3.1",
     "@platypus/shared": "workspace:*",
     "@platypus/text": "workspace:*",
