@@ -26,6 +26,8 @@ export function addCopyButtons(root: ParentNode = document): void {
     wrap.className = "code-block";
     pre.replaceWith(wrap);
     wrap.append(pre);
+    // Code blocks can scroll sideways; keep the region itself keyboard-reachable.
+    if (!pre.hasAttribute("tabindex")) pre.tabIndex = 0;
     const button = document.createElement("button");
     button.type = "button";
     button.className = "copy-btn";
@@ -58,6 +60,9 @@ export function addCopyButtons(root: ParentNode = document): void {
     if (table.parentElement?.classList.contains("table-scroll")) continue;
     const scroller = document.createElement("div");
     scroller.className = "table-scroll";
+    scroller.tabIndex = 0;
+    scroller.setAttribute("role", "region");
+    scroller.setAttribute("aria-label", "Scrollable table");
     table.replaceWith(scroller);
     scroller.append(table);
   }

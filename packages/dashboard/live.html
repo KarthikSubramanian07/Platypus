@@ -16,6 +16,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   </head>
   <body class="live" data-hydrating="true">
+    <a class="skip" href="#main">Skip to the demo</a>
     <header class="top">
       <a class="brand" href="/" aria-label="Platypus home" title="Oh, there you are.">
         <span class="brand-mark" aria-hidden="true"><i class="fedora"></i></span>
@@ -39,7 +40,7 @@
       <button id="replay-final" class="pill pill-dark" type="button" hidden>Replay</button>
     </section>
 
-    <main class="stage">
+    <main id="main" class="stage">
       <div class="phone-col">
         <div id="phone-fit" class="phone-fit">
           <div id="phone" class="iphone" data-screen="lock" role="img" aria-label="The shop owner's phone">
@@ -157,7 +158,7 @@
         </section>
         <section class="panel" aria-labelledby="transcript-title">
           <h3 id="transcript-title" class="panel-title">Call transcript</h3>
-          <ol id="transcript" class="transcript"></ol>
+          <ol id="transcript" class="transcript" tabindex="0"></ol>
         </section>
         <section class="panel panel-wide" aria-labelledby="biz-title">
           <h3 id="biz-title" class="panel-title">Businesses <span id="biz-meta" class="panel-meta"></span></h3>
@@ -165,7 +166,7 @@
         </section>
         <section class="panel panel-wide" aria-labelledby="supply-title">
           <h3 id="supply-title" class="panel-title">Supply <span class="panel-meta">computed from the event log</span></h3>
-          <div class="supply-wrap">
+          <div class="supply-wrap" tabindex="0" role="region" aria-label="Supply table">
             <table class="supply">
               <thead>
                 <tr><th scope="col">Business</th><th scope="col">Channel</th><th scope="col" class="num">Median reply</th><th scope="col" class="num">Last price</th><th scope="col" class="num">Opt-in</th></tr>
@@ -176,7 +177,7 @@
         </section>
         <section class="panel panel-wide" aria-labelledby="stream-title">
           <h3 id="stream-title" class="panel-title">Event stream <span id="stream-meta" class="panel-meta">0 events</span></h3>
-          <ol id="stream" class="stream"></ol>
+          <ol id="stream" class="stream" tabindex="0"></ol>
         </section>
       </div>
     </details>

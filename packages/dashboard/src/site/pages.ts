@@ -73,6 +73,7 @@ export function renderPage(page: SitePage, bodyHtml: string): string {
     <script type="application/ld+json">${pageJsonLd(page)}</script>
   </head>
   <body class="doc-page">
+    <a class="skip" href="#main">Skip to the content</a>
     <nav class="nav" aria-label="Primary">
       <a class="brand" href="/" aria-label="Platypus home" title="Oh, there you are.">
         <span class="brand-mark" aria-hidden="true"><i class="fedora"></i></span>
@@ -86,7 +87,7 @@ export function renderPage(page: SitePage, bodyHtml: string): string {
       </div>
       <a class="nav-source" href="https://github.com/KarthikSubramanian07/Platypus" rel="noopener">Source <span aria-hidden="true">↗</span></a>
     </nav>
-    <main class="doc">
+    <main id="main" class="doc" tabindex="-1">
       <p class="hand-label"><span class="hand-text">${escapeHtml(page.note)}</span><svg class="hand-arrow" viewBox="0 0 80 60" fill="none" aria-hidden="true"><path d="M8 6 C 30 4, 56 16, 64 44" /><path d="M54 38 L 65 47 L 70 33" /></svg></p>
       <article class="prose">
 ${bodyHtml}

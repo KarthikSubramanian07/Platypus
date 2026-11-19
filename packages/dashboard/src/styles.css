@@ -231,6 +231,7 @@ h3 { font: 600 18px/1.3 var(--sans); letter-spacing: -0.01em; }
   overscroll-behavior: contain;
   scrollbar-width: thin;
 }
+.events:focus-visible { outline: 2px solid var(--olive); outline-offset: 2px; }
 .event {
   display: grid;
   grid-template-columns: 96px 78px minmax(0, 1fr) 72px;
@@ -415,6 +416,7 @@ h3 { font: 600 18px/1.3 var(--sans); letter-spacing: -0.01em; }
   background: #12241f; color: #e4ece7; border-radius: 12px;
   font: 12.5px/1.6 var(--mono); tab-size: 2;
 }
+.rule pre:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
 .rule pre code { background: none; border: 0; padding: 0; color: inherit; font: inherit; white-space: pre; }
 .rule pre .k { color: #9fd3c1; }
 .rule pre .f { color: #f1d38c; }
@@ -596,6 +598,8 @@ h3 { font: 600 18px/1.3 var(--sans); letter-spacing: -0.01em; }
 .prose em { color: var(--ink-2); }
 .prose table { width: 100%; margin: 18px 0 0; border-collapse: collapse; font-size: 15px; }
 .prose .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.prose .table-scroll:focus-visible,
+.prose pre:focus-visible { outline: 2px solid var(--olive); outline-offset: 2px; }
 .prose th, .prose td { text-align: left; vertical-align: top; padding: 10px 12px; border-top: 1px solid var(--line); }
 .prose thead th { border-top: 0; font: 500 11px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--green); }
 .prose code { white-space: normal; overflow-wrap: anywhere; }
