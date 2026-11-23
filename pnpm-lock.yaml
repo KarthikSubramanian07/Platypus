@@ -15,8 +15,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.15.0)
       '@hono/node-server':
-        specifier: ^2.1.8
-        version: 2.1.8(hono@4.13.18)
+        specifier: ^2.1.11
+        version: 2.1.11(hono@4.13.19)
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.2
@@ -30,8 +30,8 @@ importers:
         specifier: ^17.14.0
         version: 17.14.0
       hono:
-        specifier: ^4.13.18
-        version: 4.13.18
+        specifier: ^4.13.19
+        version: 4.13.19
       playwright:
         specifier: ^1.65.1
         version: 1.65.1
@@ -85,20 +85,20 @@ importers:
         specifier: workspace:*
         version: link:../shared
       hono:
-        specifier: ^4.13.18
-        version: 4.13.18
+        specifier: ^4.13.19
+        version: 4.13.19
 
   packages/shared:
     dependencies:
       '@hono/node-server':
-        specifier: ^2.1.8
-        version: 2.1.8(hono@4.13.18)
+        specifier: ^2.1.11
+        version: 2.1.11(hono@4.13.19)
       better-sqlite3:
-        specifier: ^13.1.1
-        version: 13.1.1
+        specifier: ^13.2.0
+        version: 13.2.0
       hono:
-        specifier: ^4.13.18
-        version: 4.13.18
+        specifier: ^4.13.19
+        version: 4.13.19
       ulid:
         specifier: ^3.0.2
         version: 3.0.2
@@ -116,8 +116,8 @@ importers:
   packages/text:
     dependencies:
       '@anthropic-ai/sdk':
-        specifier: ^1.8.0
-        version: 1.8.0(zod@4.6.7)
+        specifier: ^1.11.0
+        version: 1.11.0(zod@4.6.7)
       '@platypus/shared':
         specifier: workspace:*
         version: link:../shared
@@ -125,11 +125,11 @@ importers:
         specifier: ^2.10.3
         version: 2.10.3
       hono:
-        specifier: ^4.13.18
-        version: 4.13.18
+        specifier: ^4.13.19
+        version: 4.13.19
       libphonenumber-js:
-        specifier: ^1.13.16
-        version: 1.13.16
+        specifier: ^1.13.17
+        version: 1.13.17
       ulid:
         specifier: ^3.0.2
         version: 3.0.2
@@ -144,11 +144,11 @@ importers:
   packages/voice:
     dependencies:
       '@anthropic-ai/sdk':
-        specifier: 1.8.0
-        version: 1.8.0(zod@4.6.7)
+        specifier: 1.11.0
+        version: 1.11.0(zod@4.6.7)
       '@hono/node-server':
-        specifier: ^2.1.8
-        version: 2.1.8(hono@4.13.18)
+        specifier: ^2.1.11
+        version: 2.1.11(hono@4.13.19)
       '@modelcontextprotocol/server':
         specifier: ^2.4.0
         version: 2.4.0
@@ -159,8 +159,8 @@ importers:
         specifier: workspace:*
         version: link:../text
       hono:
-        specifier: ^4.13.18
-        version: 4.13.18
+        specifier: ^4.13.19
+        version: 4.13.19
       ulid:
         specifier: ^3.0.2
         version: 3.0.2
@@ -177,8 +177,8 @@ importers:
 
 packages:
 
-  '@anthropic-ai/sdk@1.8.0':
-    resolution: {integrity: sha512-yDOArk2+Qpd/djEKmZjrv7JZ+pn5iBHARJ9PAdvfhGf4H5wNqTgY/2K0/yDKdQdm8G8hrNQchMlBAHpPK7yBfg==}
+  '@anthropic-ai/sdk@1.11.0':
+    resolution: {integrity: sha512-lW16YCGJ7ItUy92hehGjuMIxvhCeW8pYi4w4jzzfo8UtRbEamagUJAzAEh1VxS6wHfDh6yB+/KE/Rqp2i6elIw==}
     hasBin: true
     peerDependencies:
       zod: ^3.25.0 || ^4.0.0
@@ -432,6 +432,12 @@ packages:
 
   '@fontsource/source-serif-4@5.3.1':
     resolution: {integrity: sha512-cWcTCXjYYrgF9A67fThVir1VSc0lPEYmwQ6jA4pPt01s2MSCi/maINUcZoCzaqnU8fyUReDO97eGcBUkHgOeug==}
+
+  '@hono/node-server@2.1.11':
+    resolution: {integrity: sha512-KzKz9vl4vvr1vgLHamj+g5uonbrj5NwAdO3yzOS6cd2HjALVeOgTgeZOyAzNxejbkfOOPIcvuf/Tg8l1pEFLog==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      hono: ^4 || ^5.0.0-0
 
   '@hono/node-server@2.1.8':
     resolution: {integrity: sha512-jdf7FHh6A1lzjpHHQUgxsg2GeER2vMetnAOfeActzcoli6jamlK+NAwL6Dsr5Fl3BS3tYUQzCdtZjU8Qxv7bEA==}
@@ -783,8 +789,8 @@ packages:
     resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
     engines: {node: 18 || 20 || >=22}
 
-  better-sqlite3@13.1.1:
-    resolution: {integrity: sha512-JjyLCATp+VLxZVFyWkicyzKYwpEFLCrV4MmshW97xv3JXdhw5jBDcsbEWRGm2L/96E+k7rtjON8q9nml05h3Pw==}
+  better-sqlite3@13.2.0:
+    resolution: {integrity: sha512-Z8Q/9x/uNyKxA1v4FNodyItRVRw1TeKBrmj32JhxhR0ceNcBY+wMobt/Bv7M7TzwPAXjnZRtNaEsATnUZSKWZQ==}
     engines: {node: '>=22'}
 
   body-parser@2.4.0:
@@ -1080,8 +1086,8 @@ packages:
     resolution: {integrity: sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==}
     engines: {node: '>= 0.4'}
 
-  hono@4.13.18:
-    resolution: {integrity: sha512-H9q/E1XizaWstJxUW881dmLxEj+t/TrGGnyxINkm4+sK0qUwsMtFdo2BWI9Vs3cIS19MU6b6iCijoUoEf4f3DA==}
+  hono@4.13.19:
+    resolution: {integrity: sha512-KmXvQAXwcAHV+muzbIwoJ23niEB5nMoDVr9WcRkU8mvjUECm/1+7v4Jgp7P7a+H6MLFrh+vXrGonGrGS+RQfkA==}
     engines: {node: '>=16.9.0'}
 
   hookified@1.15.1:
@@ -1167,8 +1173,8 @@ packages:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
 
-  libphonenumber-js@1.13.16:
-    resolution: {integrity: sha512-tIOCM9yx2Go6d5/ZANe0K+G4AZek1Ymx81HxQpf19Sri4zMP95eQbKdnUGHAvFQ4nx0PeLhFqvAfisTADXj3tQ==}
+  libphonenumber-js@1.13.17:
+    resolution: {integrity: sha512-V92dxRHhYTsHF5B6IjR8rtKW6qL7xKuERPFFqZt7XQl8A+NikbwEzjhxGpM+R6JnWjaL7/wokWSdTG/eyYAscQ==}
 
   lightningcss-android-arm64@1.33.0:
     resolution: {integrity: sha512-gEpRTalKdosp4Bb8qWtc2iOgE5SeIHlpS1up9bFq2wAyYhl1UdTObYiHe98zEM9SQvSoqQZ1IQD0JNpg3Ml5pg==}
@@ -1464,8 +1470,8 @@ packages:
     resolution: {integrity: sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==}
     engines: {node: '>=0.10.0'}
 
-  standardwebhooks@1.1.1:
-    resolution: {integrity: sha512-bCbX9ZEyFkWPsRz7Bl3NuQUJohmwGSev/yhr7vhaGPlc4AfIrspIRa6cPTBuI1ItmrTDJ4d/S2hCsfe4+vQGnQ==}
+  standardwebhooks@1.3.0:
+    resolution: {integrity: sha512-5W9skHjqAm2dlA9wWvglTP+oX47JX4lFXVk1aJV7+TG1snvTR4QXaVgPscEzvOw9GRreeavMwbqEeL+MGhZHCg==}
 
   statuses@2.0.2:
     resolution: {integrity: sha512-DvEy55V3DB7uknRo+4iOGT5fP1slR8wQohVdknigZPMpMstaKJQWhwiYBACJE3Ul2pTnATihhBYnRhZQHGBiRw==}
@@ -1680,11 +1686,11 @@ packages:
 
 snapshots:
 
-  '@anthropic-ai/sdk@1.8.0(zod@4.6.7)':
+  '@anthropic-ai/sdk@1.11.0(zod@4.6.7)':
     dependencies:
       '@opentelemetry/api': 1.10.0
       json-schema-to-ts: 3.1.1
-      standardwebhooks: 1.1.1
+      standardwebhooks: 1.3.0
     optionalDependencies:
       zod: 4.6.7
 
@@ -1853,9 +1859,13 @@ snapshots:
 
   '@fontsource/source-serif-4@5.3.1': {}
 
-  '@hono/node-server@2.1.8(hono@4.13.18)':
+  '@hono/node-server@2.1.11(hono@4.13.19)':
     dependencies:
-      hono: 4.13.18
+      hono: 4.13.19
+
+  '@hono/node-server@2.1.8(hono@4.13.19)':
+    dependencies:
+      hono: 4.13.19
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -1908,7 +1918,7 @@ snapshots:
 
   '@modelcontextprotocol/sdk@1.32.2(zod@4.6.7)':
     dependencies:
-      '@hono/node-server': 2.1.8(hono@4.13.18)
+      '@hono/node-server': 2.1.8(hono@4.13.19)
       ajv: 8.20.0
       ajv-formats: 3.0.1(ajv@8.20.0)
       content-type: 1.0.5
@@ -1918,7 +1928,7 @@ snapshots:
       eventsource-parser: 3.1.1
       express: 5.3.0
       express-rate-limit: 8.7.4(express@5.3.0)
-      hono: 4.13.18
+      hono: 4.13.19
       jose: 6.2.17
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
@@ -2191,7 +2201,7 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  better-sqlite3@13.1.1:
+  better-sqlite3@13.2.0:
     dependencies:
       node-addon-api: 8.9.2
 
@@ -2550,7 +2560,7 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  hono@4.13.18: {}
+  hono@4.13.19: {}
 
   hookified@1.15.1: {}
 
@@ -2618,7 +2628,7 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
 
-  libphonenumber-js@1.13.16: {}
+  libphonenumber-js@1.13.17: {}
 
   lightningcss-android-arm64@1.33.0:
     optional: true
@@ -2901,7 +2911,7 @@ snapshots:
 
   source-map-js@1.2.2: {}
 
-  standardwebhooks@1.1.1:
+  standardwebhooks@1.3.0:
     dependencies:
       '@stablelib/base64': 1.0.1
       fast-sha256: 1.3.0
