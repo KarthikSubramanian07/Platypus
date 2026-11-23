@@ -32,6 +32,6 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
-    "fast-check": "^4.10.2"
+    "fast-check": "^4.10.3"
   }
 }
