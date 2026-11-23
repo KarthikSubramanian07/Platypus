@@ -23,6 +23,6 @@
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "^2.4.0",
-    "fast-check": "^4.10.2"
+    "fast-check": "^4.10.3"
   }
 }
